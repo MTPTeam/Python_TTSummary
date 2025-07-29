@@ -1,4 +1,4 @@
-import xlsxwriter # change 1
+import xlsxwriter
 import re
 import os
 import sys
