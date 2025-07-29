@@ -1,5 +1,5 @@
-import xlsxwriter # MM change
-import re #LT change
+import xlsxwriter
+import re
 import os
 import sys
 import time
