@@ -1,4 +1,4 @@
-import xlsxwriter #dev branch test
+import xlsxwriter
 import re
 import os
 import sys
