@@ -200,6 +200,8 @@ def TTS_RI(path, mypath = None):
         
         
         vrt_2GympieNth = {
+            # 'CRD': (),
+            # 'AUR': (),
             'GYN':     (40, 10613),
             'GMR':     (39, 9187),
             'WOO':     (38, 8811),
@@ -486,7 +488,7 @@ def TTS_RI(path, mypath = None):
         
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
@@ -651,7 +653,7 @@ def TTS_RI(path, mypath = None):
         
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
-        SORT_ORDER_UNIT = ['EMU', 'NGR', 'IMU100','SMU','HYBRID', 'ICE', 'DEPT']
+        SORT_ORDER_UNIT = ['REP','EMU', 'NGR', 'IMU100','SMU','HYBRID', 'ICE', 'DEPT']
         SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
         # print('rsx_days: ',d_list)   
     

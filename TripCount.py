@@ -45,7 +45,7 @@ OpenWorkbook   = True
 
 
 
-
+### Used to classify into AM Peak, PM Peak, Off Peak, etc
 ampeak_srt = '06:00:00'
 ampeak_end = '09:00:00'
 pmpeak_srt = '15:30:00'
@@ -53,7 +53,7 @@ pmpeak_end = '18:30:00'
 
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
+
 
 
 ### Used to filter out stations where passengers cannot board
@@ -125,10 +125,30 @@ non_revenue_stations = [
     
     'DUP', #Dutton Park
     'RKE', #Rocklea
+    
+    'BWJ',    #Beerwah Junction
+    'BEJ',    #Beewah East Junction
+    'MNYE',   #Mayne North Yard Entrance
+    'BHNJ',   #Bowen Hills North Jn
+    'SIG10D', #Signal 10 Departure
+    'KPRS',   #Kippa-Ring Stable
+    'ORMJ',   #Ormeau Junction
+    'SLYJ',   #Salisbury Junction
+    'YLYJ',   #Yeerongpilly Junction
+    'STP',    #Southern Tunnel Portal
+    'NTP',    #Northern Tunnel Portal
+    'LBR',    #Land Bridge
+    'ZZZTJN', #Tunnel Jn
+    'MEJ',    #Mayne East Junction
+    'CYJ',    #Clapham Yard Junction
+    'SIG9A',  #Signal 9 Arrival
+    'MES',    #Mayne East Yard
+    'FRK',    #Fork Timing Point
+    'TNYBCHJ',#Tennyson Branch Junction
     ]
 
 
-
+weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 
 
 
@@ -211,7 +231,7 @@ def TTS_TC(path, mypath = None):
         
         ### uniquestations_dict and network_vrt_dict are used to determine what Line that trip belongs to
         ### Virtual run time (vrt) dictionaries for each line are used to categorised trips into PMP, AMP, OffPeak etc when trip has no Central timing point
-        ###   (Useful for closure works)
+        ###   (Useful for timetables with closures)
         vrt_2Beenleigh = {
             'BNT':     (30, 3910),
             'BNHS':    (29, 3990),
@@ -269,6 +289,8 @@ def TTS_TC(path, mypath = None):
             }
         
         vrt_2GympieNth = {
+            # 'CRD': (),
+            # 'AUR': (),
             'GYN':     (40, 10613),
             'GMR':     (39, 9187),
             'WOO':     (38, 8811),
@@ -543,7 +565,6 @@ def TTS_TC(path, mypath = None):
         
         network_vrt_dict = {
             'Beenleigh':                  vrt_2Beenleigh,
-            # 'Caboolture':  vrt_2GympieNth,
             'Caboolture':                 vrt_2Caboolture,
             'Sunshine Coast':             vrt_2GympieNth,
             'Cleveland':                  vrt_2Cleveland,
@@ -561,15 +582,13 @@ def TTS_TC(path, mypath = None):
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
             'Caboolture':                 ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN'),
-            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
             'Gold Coast':                 ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST'),
             'Airport':                    ('BIT','BDT'),
             'Ipswich':                    ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
-            'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
-            # 'Ipswich':                    ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
             'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
             'Redcliffe Peninsula':        ('KGR','MRD','MGH','MGE','RWL','KPR','KPRS'),
             'Shorncliffe':                ('BHA','BQY','BQYS','NUD','BZL','NBD','DEG','SGE','SHC'),
@@ -581,34 +600,7 @@ def TTS_TC(path, mypath = None):
         
         
         
-        ### Initialise a list for each worksheet
-        BDTmth_am   = []
-        BDTmth_amc  = []
-        BDTmth_pm   = []
-        BDTmth_pmc  = []
-        BDTmth_opi  = []
-        BDTmth_opo  = []
-        BDTfri_am   = []
-        BDTfri_amc  = []
-        BDTfri_pm   = []
-        BDTfri_pmc  = []
-        BDTfri_opi  = []
-        BDTfri_opo  = []
-        BDTsat_in   = []
-        BDTsat_out  = []
-        BDTsun_in   = []
-        BDTsun_out  = []
-        
-        SHUTmth_inb = []
-        SHUTmth_out = []
-        SHUTfri_inb = []
-        SHUTfri_out = []
-        SHUTsat_inb = []
-        SHUTsat_out = []
-        SHUTsun_inb = []
-        SHUTsun_out = []
-        
-        
+        ### Initialise a list for each worksheet    
         mth_am  = []
         mth_amc = []
         mth_pm  = []
@@ -627,9 +619,6 @@ def TTS_TC(path, mypath = None):
         sun_out = []
         
     
-        RSW_thru    = []
-        GYNNBR_thru = []
-        GYNNBR_shut = []
         
         
         
@@ -637,8 +626,9 @@ def TTS_TC(path, mypath = None):
         
         
         
-        
+    
         def stoptime_info(entry_index): 
+            """ Returns the arrvial and departure times for a given location  """
             x = entry_index
             
             departure = entries[x].attrib['departure'] 
@@ -666,30 +656,6 @@ def TTS_TC(path, mypath = None):
                 timestring = timestring[:-3]
             
             return timestring
-                    
-        def findtrips_inc_shuttles(station1, station2):
-            entry = [tn,'Innercity Shuttle',oID,odep,cbdID, cbdarr, cbddep,dID,darr]
-            
-            if oID in station1 and dID in station2:
-                if weekdayKey == '1':
-                    SHUTsun_inb.append(entry)
-                if weekdayKey == '2':
-                    SHUTsat_inb.append(entry)
-                if weekdayKey == '4':
-                    SHUTfri_inb.append(entry)
-                if weekdayKey == '120':
-                    SHUTmth_inb.append(entry)
-                
-                
-            if oID in station2 and dID in station1:
-                if weekdayKey == '1':
-                    SHUTsun_out.append(entry)
-                if weekdayKey == '2':
-                    SHUTsat_out.append(entry)
-                if weekdayKey == '4':
-                    SHUTfri_out.append(entry)
-                if weekdayKey == '120':
-                    SHUTmth_out.append(entry)
         
         
         
@@ -703,7 +669,9 @@ def TTS_TC(path, mypath = None):
                     
                     
         def findtrips(line,termini):
-            
+            """ 
+            Collates a list of trips for each line, given it stops at one of the set starting/ending locations for that line
+            """
             
             
             entry = [tn,line,oID,odep,cbdID, cbdarr, cbddep,dID,darr]
@@ -739,17 +707,17 @@ def TTS_TC(path, mypath = None):
                     else: mth_opo.append(entry)  
                     
     
-        # test = []
+        ### Parses the rsx
+        ### Starts gathering data about each service
+        ### Declares the location for the cbd timing point
+        ### Uses the 'virtual run time' method to get virtual cbd arrival and departure times (vcbdarr / vcbddep) in case an actual cbd timing point does not exist
+        ### Starts sorting the services into lines and periods using the findtrips function call
         revenue_parse = [x for x in root.iter('train') if 'Empty' not in [y for y in x.iter('entry')][0].attrib['trainTypeId'] ]
         for train in revenue_parse:
             weekdayKey = train[0][0][0].attrib['weekdayKey']
             tn  = train.attrib['number']
             entries = [x for x in train.iter('entry') if x.attrib['stationID'] not in non_revenue_stations]
-            # for x in entries:
-            #     pair = (x.attrib['stationID'],x.attrib['stationName']) 
-            #     if pair not in test:
-            #         print(pair)
-            #         test.append(pair)
+
     
             sIDdict = {x.attrib['stationID'] for x in entries}        
             stations = [x.attrib['stationID'] for x in entries]
@@ -881,49 +849,25 @@ def TTS_TC(path, mypath = None):
             findtrips('Beenleigh',          ['BNH','BNHS','BNT','CEP','KRY'])
             findtrips('Caboolture',         ['CAB','CAW'])
             findtrips('Cleveland',          ['CVN','MNY','CNQ'])
-            findtrips('Springfield',        ['SFC'])
+            findtrips('Springfield',        ['SFC','DAR'])
             findtrips('Doomben',            ['DBN'])
             findtrips('Ferny Grove',        ['FYG'])
             findtrips('Shorncliffe',        ['SHC','NTG'])
             findtrips('Redcliffe Peninsula',['KPR'])
             findtrips('Gold Coast',         ['VYS','VYST'])
-            findtrips('Sunshine Coast',     ['GYN','NBR'])
+            findtrips('Sunshine Coast',     ['GYN','NBR','CRD'])
             findtrips('Rosewood',           ['RSW'])
             
             if 'RSW' not in stations:
                 findtrips('Ipswich',        ['IPS','IPSS'])
             
-            entry = [tn,'RSWthru',oID,odep,cbdID, cbdarr, cbddep,dID,darr]
-            if dID == 'RSW' and oID not in ['IPS','IPSS']:
-                RSW_thru.append(entry)
-            if oID == 'RSW' and dID not in ['IPS','IPSS']:
-                RSW_thru.append(entry)
-                
-                
-                
-                
-            entry = [tn,'GYNNBRshuttle',oID,odep,cbdID, cbdarr, cbddep,dID,darr]
-            
-            if dID in ['CAB','CAE','CAW'] and oID in ['GYN','NBR']:
-                GYNNBR_shut.append(entry)
-            if oID in ['CAB','CAE','CAW'] and dID in ['GYN','NBR']:
-                GYNNBR_shut.append(entry)
-                
-            
-            
-            entry = [tn,'GYNNBRthru',oID,odep,cbdID, cbdarr, cbddep,dID,darr]
-            if dID not in ['CAB','CAE','CAW'] and oID in ['GYN','NBR']:
-                GYNNBR_thru.append(entry)
-            if oID not in ['CAB','CAE','CAW'] and dID in ['GYN','NBR']:
-                GYNNBR_thru.append(entry)
-            
             
         
     
     
         
-        
-        
+        ### Creates the worksheets for each period + the summary sheet
+        ### Adds formatting
         info_sheet           = workbook.add_worksheet('Info Sheet')
         Mon_Thu_AM           = workbook.add_worksheet('Mon_Thu_AM')
         Mon_Thu_AM_Contra    = workbook.add_worksheet('Mon_Thu_AM_Contra')
@@ -1374,17 +1318,6 @@ def TTS_TC(path, mypath = None):
                     os.startfile(rf'{filename_xlsx}')
                     print('\nOpening workbook')  
         
-        
-        
-        # if CreateWorkbook:
-        #     workbook.close()
-        #     print('Creating workbook')  
-        #     if OpenWorkbook and __name__ == "__main__":
-        #         os.startfile(rf'{filename_xlsx}')
-        #         print('\nOpening workbook')  
-        #     else:
-        #         if copyfile:
-        #             shutil.copy(filename_xlsx, mypath) 
         
         
         

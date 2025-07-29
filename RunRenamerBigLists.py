@@ -61,7 +61,12 @@ sun_emuimu_ew = ['OA','OB','OC','OD','OE','OF','OG','OH','OI','OJ','OK','OL','OM
                  'RA','RB','RC','RD','RE','RF','RG','RH','RI','RJ','RK','RL','RM','RN','RO','RP','RQ','RR','RS','RT','RU','RV','RW','RX','RY','RZ']
 
 
-
+#QTMP Electric Workings Allocation...
+wk_rep_ew  = []
+wkd_rep_ew = []
+sat_rep_ew = []
+sun_rep_ew = []
+# Script needs further modification to facilitate new unit type
 
 
 

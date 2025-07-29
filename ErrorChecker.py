@@ -57,12 +57,14 @@ train_numbers_dict = {
     'J':'3-EMU',
     'T':'6-IMU100',
     'U':'3-IMU100',
-    'H':'Empty_6-DEPT'
+    'H':'Empty_6-DEPT',
+    'F':'6-REP',
+    'G':'Empty_6-REP'
     }
 
-stable_locations = ['WFE','WFW','IPSS','IPS','RDKS','ROBS','MNY',
+stable_locations = ['WFE','WFW','IPSS','IPS','RDKS','ROBS','MNY','ORMS',
                     'BNHS','ETB','ETF','ETS','YN','MNS','MWS','CPM','PETS','KPRS',
-                    'CAE','CAW','CAB','EMHS','WOBS','NBR','GYN','BQYS','MES','FEE']
+                    'CAE','CAW','CAB','EMHS','BWHS','WOBS','NBR','GYN','BQYS','MES','FEE']
 
 
 
@@ -210,6 +212,8 @@ try:
     
     
     vrt_2GympieNth = {
+        # 'CRD': (),
+        # 'AUR': (),
         'GYN':     (40, 10613),
         'GMR':     (39, 9187),
         'WOO':     (38, 8811),
@@ -496,7 +500,7 @@ try:
     
     uniquestations_dict = {
         'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-        'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+        'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
         'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
         'Doomben':                    ('CYF','HDR','ACO','DBN'),
         'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),

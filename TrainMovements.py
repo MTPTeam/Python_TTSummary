@@ -28,8 +28,8 @@ import logging
 # --------------------------------------------------------------------------------------------------- #
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
-# CreateWorkbook = True
-# OpenWorkbook = True
+CreateWorkbook = True
+OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
 
@@ -155,6 +155,26 @@ non_revenue_stations = [
     
     'DUP', #Dutton Park
     'RKE', #Rocklea
+    
+    'BWJ',    #Beerwah Junction
+    'BEJ',    #Beewah East Junction
+    'MNYE',   #Mayne North Yard Entrance
+    'BHNJ',   #Bowen Hills North Jn
+    'SIG10D', #Signal 10 Departure
+    'KPRS',   #Kippa-Ring Stable
+    'ORMJ',   #Ormeau Junction
+    'SLYJ',   #Salisbury Junction
+    'YLYJ',   #Yeerongpilly Junction
+    'STP',    #Southern Tunnel Portal
+    'NTP',    #Northern Tunnel Portal
+    'LBR',    #Land Bridge
+    'ZZZTJN', #Tunnel Jn
+    'MEJ',    #Mayne East Junction
+    'CYJ',    #Clapham Yard Junction
+    'SIG9A',  #Signal 9 Arrival
+    'MES',    #Mayne East Yard
+    'FRK',    #Fork Timing Point
+    'TNYBCHJ',#Tennyson Branch Junction
     ]
 
 
@@ -342,6 +362,8 @@ def TTS_TM(path, mypath = None):
         
         
         vrt_2GympieNth = {
+            # 'CRD': (),
+            # 'AUR': (),
             'GYN':     (40, 10613),
             'GMR':     (39, 9187),
             'WOO':     (38, 8811),
@@ -640,7 +662,7 @@ def TTS_TM(path, mypath = None):
         
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),

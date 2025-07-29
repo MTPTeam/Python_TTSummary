@@ -124,7 +124,7 @@ def TTS_SB(path, mypath = None):
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
         SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['EMU', 'NGR', 'IMU100','SMU','HYBRID', 'ICE', 'DEPT']
+        SORT_ORDER_UNIT = ['REP','NGR', 'IMU100','EMU','SMU','HYBRID', 'ICE', 'DEPT']
         d_list.sort(key=SORT_ORDER_WEEK.index)
         u_list.sort(key=SORT_ORDER_UNIT.index)
         weekdays = set(d_list).intersection({'8','16','32','64'})
@@ -409,65 +409,71 @@ def TTS_SB(path, mypath = None):
         # Formatting
         #########################################################################################
         #########################################################################################
-        imu = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
-        emu = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
-        ngr = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
-        ice = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
-        smu = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
+        qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
+        ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
+        imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
+        emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
+        smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
+        dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
         
-        imured = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C'})
-        emured = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C'})
-        ngrred = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C'})
-        icered = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C'})
-        smured = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C'})
+        # qtmpred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C'})
+        # ngrred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C'})
+        # imured  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C'})
+        # emured  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C'})
+        # smured  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C'})
+        # deptred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C'})
         
-        imubold = workbook.add_format({'align':'center','bg_color':'#FDE9D9','bold':True,'bottom':1})
-        emubold = workbook.add_format({'align':'center','bg_color':'#DAEEF3','bold':True,'bottom':1})
-        ngrbold = workbook.add_format({'align':'center','bg_color':'#E4DFEC','bold':True,'bottom':1})
-        icebold = workbook.add_format({'align':'center','bg_color':'#EBF1DE','bold':True,'bottom':1})
-        smubold = workbook.add_format({'align':'center','bg_color':'#F2DCDB','bold':True,'bottom':1})
+        qtmpbold = workbook.add_format({'align':'center','bg_color':'#FFB7B7','bold':True,'bottom':1})
+        ngrbold  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','bold':True,'bottom':1})
+        imubold  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','bold':True,'bottom':1})
+        emubold  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','bold':True,'bottom':1})
+        smubold  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','bold':True,'bottom':1})
+        deptbold = workbook.add_format({'align':'center','bg_color':'#EBF1DE','bold':True,'bottom':1})
         
-        imubig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_size':16})
-        emubig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_size':16})
-        ngrbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_size':16})
-        icebig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_size':16})
-        smubig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_size':16})
+        qtmpbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_size':16})
+        ngrbig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_size':16})
+        imubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_size':16})
+        emubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_size':16})
+        smubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_size':16})
+        deptbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_size':16})
         
-        imubigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_color':'#CC194C','font_size':16})
-        emubigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_color':'#CC194C','font_size':16})
-        ngrbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_color':'#CC194C','font_size':16})
-        icebigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
-        smubigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_color':'#CC194C','font_size':16})
+        qtmpbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_color':'#CC194C','font_size':16})
+        ngrbigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_color':'#CC194C','font_size':16})
+        imubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_color':'#CC194C','font_size':16})
+        emubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_color':'#CC194C','font_size':16})
+        smubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_color':'#CC194C','font_size':16})
+        deptbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
         
-        imuboldred = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
-        emuboldred = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
-        ngrboldred = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
-        iceboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        smuboldred = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
+        qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
+        ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
+        imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
+        emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
+        smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
+        deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
         
-        size16vc = workbook.add_format({'font_size':16,'align':'center','valign':'vcenter'})
+        # size16vc = workbook.add_format({'font_size':16,'align':'center','valign':'vcenter'})
         
         
         font_dict = {
+            'REP':    [qtmp,qtmpbold,qtmpbig,qtmpbigred,qtmpboldred],
+            'NGR':    [ngr,ngrbold,ngrbig,ngrbigred,ngrboldred],
             'IMU100': [imu,imubold,imubig,imubigred,imuboldred],
             'EMU':    [emu,emubold,emubig,emubigred,emuboldred],
-            'NGR':    [ngr,ngrbold,ngrbig,ngrbigred,ngrboldred],
-            'ICE':    [ice,icebold,icebig,icebigred,iceboldred],
-            'DEPT':   [ice,icebold,icebig,icebigred,iceboldred],
             'HYBRID': [emu,emubold,emubig,emubigred,emuboldred],
-            'SMU':    [smu,smubold,smubig,smubigred,smuboldred]
+            'SMU':    [smu,smubold,smubig,smubigred,smuboldred],
+            'DEPT':   [dept,deptbold,deptbig,deptbigred,deptboldred]
             }
         
         title                   = workbook.add_format({'bold':True,'align':'center'})
         header                  = workbook.add_format({'bold':True,'align':'center','bg_color':'#CCCCCC'})
-        size14                  = workbook.add_format({'font_size':16})
+        # size14                  = workbook.add_format({'font_size':16})
         size16                  = workbook.add_format({'font_size':16})
         
         boldleft                = workbook.add_format({'bold':True,'align':'left'})
-        boldcenter              = workbook.add_format({'bold':True,'align':'center'})
+        # boldcenter              = workbook.add_format({'bold':True,'align':'center'})
         boldright               = workbook.add_format({'bold':True,'align':'right'})
-        greyedouttext           = workbook.add_format({'align':'center','font_color':'#666666'})
+        # greyedouttext           = workbook.add_format({'align':'center','font_color':'#666666'})
         centered                = workbook.add_format({'align':'center'})
         redcentered             = workbook.add_format({'align':'center','font_color':'#CC194C'})
         redboldleft             = workbook.add_format({'bold':True,'align':'left','font_color':'#CC194C'})
@@ -475,11 +481,11 @@ def TTS_SB(path, mypath = None):
         
         leftborder              = workbook.add_format({'left':1,'align':'center'})
         boldbottomleftborder    = workbook.add_format({'left':1,'bottom':1,'align':'center','bold':True})
-        leftborderred           = workbook.add_format({'left':1,'align':'center','font_color':'#CC194C'})
+        # leftborderred           = workbook.add_format({'left':1,'align':'center','font_color':'#CC194C'})
         leftborder_unbalanced   = workbook.add_format({'left':1,'align':'center','bg_color':'#CCB233'})
         
         topleftborder           = workbook.add_format({'top':1,'left':1,'align':'center'})
-        topleftborderredfont    = workbook.add_format({'top':1,'left':1,'align':'center','font_color':'#CC194C'})
+        # topleftborderredfont    = workbook.add_format({'top':1,'left':1,'align':'center','font_color':'#CC194C'})
         topleftborderredbg      = workbook.add_format({'top':1,'left':1,'align':'center','font_color':'#FFFFFF','bg_color':'#CC194C'})
         
         topborder               = workbook.add_format({'top':1,'align':'center'})
@@ -490,16 +496,16 @@ def TTS_SB(path, mypath = None):
         boldleftvc              = workbook.add_format({'bold':True,'align':'left','valign':'vcenter'})
         boldleftvc_unbalanced_b = workbook.add_format({'bold':True,'align':'left','valign':'vcenter','bg_color':'#CCB233'})
         boldleftvc_unbalanced_r = workbook.add_format({'bold':True,'align':'left','valign':'vcenter','bg_color':'#CC194C'}) 
-        boldcentervc14          = workbook.add_format({'bold':True,'align':'center','valign':'vcenter','font_size':14})
+        # boldcentervc14          = workbook.add_format({'bold':True,'align':'center','valign':'vcenter','font_size':14})
         
-        border                  = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':14})
+        # border                  = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':14})
         border16                = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':16})
-        tborder                 = workbook.add_format({'border':2, 'border_color':'#000000', 'align':'center','font_size':14})
-        rborder                 = workbook.add_format({'border':1, 'border_color':'#CC194C', 'align':'center','font_size':14,'font_color':'#CC194C'})
+        # tborder                 = workbook.add_format({'border':2, 'border_color':'#000000', 'align':'center','font_size':14})
+        # rborder                 = workbook.add_format({'border':1, 'border_color':'#CC194C', 'align':'center','font_size':14,'font_color':'#CC194C'})
         rborder16               = workbook.add_format({'border':1, 'border_color':'#CC194C', 'align':'center','font_size':16,'font_color':'#CC194C'})
         
-        boldborder              = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True})
-        boldborderred           = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True,'font_color':'#FF0000'})
+        # boldborder              = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True})
+        # boldborderred           = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True,'font_color':'#FF0000'})
         
         
         top                     = workbook.add_format({'top':1})
@@ -510,7 +516,7 @@ def TTS_SB(path, mypath = None):
         
         
         
-        wfeoptions  = ['WFE','WFW']
+        wfeoptions  = ['WFE','WFW','FEE']
         ipssoptions = ['IPSS','IPS']
         rdksoptions = ['RDKS']
         robsoptions = ['ROBS']
@@ -528,14 +534,14 @@ def TTS_SB(path, mypath = None):
         gynoptions  = ['GYN']
         bqysoptions = ['BQYS']
         cpmoptions  = ['CPM']
-        
-        
+        ormsoptions = ['ORMS']
+        bwhsoptions = ['BWHS']
         
         
         
         # Create a list of acceptable locations to end a run
         acceptable_stables = []
-        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions]
+        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,mesoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions,cpmoptions,ormsoptions,bwhsoptions]
         for x in s_yards:
                 for y in x: acceptable_stables.append(y)
         acceptable_stables.remove('RS')
@@ -706,6 +712,24 @@ def TTS_SB(path, mypath = None):
         cpm_sat_out = []; cpm_sat_in = []; 
         cpm_sun_out = []; cpm_sun_in = [];
         
+        orms_mon_out = []; orms_mon_in = []; 
+        orms_tue_out = []; orms_tue_in = []; 
+        orms_wed_out = []; orms_wed_in = []; 
+        orms_thu_out = []; orms_thu_in = []; 
+        orms_mth_out = []; orms_mth_in = []; 
+        orms_fri_out = []; orms_fri_in = []; 
+        orms_sat_out = []; orms_sat_in = []; 
+        orms_sun_out = []; orms_sun_in = [];
+        
+        bwhs_mon_out = []; bwhs_mon_in = []; 
+        bwhs_tue_out = []; bwhs_tue_in = []; 
+        bwhs_wed_out = []; bwhs_wed_in = []; 
+        bwhs_thu_out = []; bwhs_thu_in = []; 
+        bwhs_mth_out = []; bwhs_mth_in = []; 
+        bwhs_fri_out = []; bwhs_fri_in = []; 
+        bwhs_sat_out = []; bwhs_sat_in = []; 
+        bwhs_sun_out = []; bwhs_sun_in = [];
+        
         
         # Fill the empty lists with runs given it starts or finishes at one of the options
         build_weeklists(wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in,            wfeoptions)
@@ -726,6 +750,8 @@ def TTS_SB(path, mypath = None):
         build_weeklists(gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in,            gynoptions)
         build_weeklists(bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in,    bqysoptions)
         build_weeklists(cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in,            cpmoptions)
+        build_weeklists(orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in,    ormsoptions)
+        build_weeklists(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in,    bwhsoptions)
         
         # Create blank worksheets for each stabling yard
         Info = workbook.add_worksheet('Info')
@@ -748,6 +774,8 @@ def TTS_SB(path, mypath = None):
         GympieNth = workbook.add_worksheet('Gympie North')
         Banyo = workbook.add_worksheet('Banyo')
         Clapham = workbook.add_worksheet('Clapham')
+        Ormeau = workbook.add_worksheet('Ormeau')
+        BeerwahSouth = workbook.add_worksheet('Beerwah South')
         
         # Use the lists we've just filled to populate the blank worksheets we've just created
         write_sheet(Wulkuraka,  wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,            wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in)
@@ -768,6 +796,8 @@ def TTS_SB(path, mypath = None):
         write_sheet(GympieNth,  gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,            gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in)
         write_sheet(Banyo,      bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,    bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in)
         write_sheet(Clapham,    cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,            cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in)
+        write_sheet(Ormeau,     orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,    orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in)
+        write_sheet(BeerwahSouth,bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in)
         
         
         
@@ -782,13 +812,12 @@ def TTS_SB(path, mypath = None):
         Summary.set_column(0,0,15)
         
             
-        monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
-        monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
-        monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
-        monice = tueice = wedice = thuice = mthice = friice = satice = sunice = 0  
-        mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
-        monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
-        monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0 
+        # monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
+        # monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
+        # monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
+        # mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
+        # monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
+        # monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0 
         
         stables_dict = {
             'Wulkuraka':    (wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in),
@@ -808,7 +837,9 @@ def TTS_SB(path, mypath = None):
             'Nambour':      (nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,           nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in),
             'Gympie North': (gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in),
             'Banyo':        (bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in),
-            'Clapham':      (cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,                   cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in),
+            'Clapham':      (cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in),
+            'Ormeau':       (orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in),
+            'Beerwah South':(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in),
                 }
         
         sheet_dict = {
@@ -829,7 +860,9 @@ def TTS_SB(path, mypath = None):
             'Nambour':      Nambour,
             'Gympie North': GympieNth,
             'Banyo':        Banyo,
-            'Clapham':      Clapham
+            'Clapham':      Clapham,
+            'Ormeau':       Ormeau,
+            'Beerwah South': BeerwahSouth,
                 }
         
         

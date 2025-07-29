@@ -46,7 +46,8 @@ weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Th
 entries_to_exclude = ['RSWJ','YNA','RSF',
                       'ZZZTJN','SIG9A','SIG10D',
                       'TNYBCHJ','YLYJ','STP','NTP',
-                      'BHNJ','LBR','MEJ','SLYJ','MNYE']
+                      'BHNJ','LBR','MEJ','SLYJ','MNYE',
+                      'BWJ','BEJ','ORMJ','CYJ','FRK']
 
 ### Some stations will have a double entry if dwelling at the station for long enough, one for arrive and one for depart
 ### Stations or locations in this list should only have a single entry regardless of dwell time otherwise it causes errors in the HASTUS Importer
@@ -79,9 +80,9 @@ HASTUS_stableconverter = {
     'MES':'MES_S',
     'MNS':'MNS_S',
     'ORMS':'ORM_S',
-    # 'CPM':'CPM_S',
+    'CPM':'CPM_S',
     'FEE':'WFE_S',
-    
+    'BWHS': 'BWH_S',
     # '':'',
     # '':'',
     # '':'',
@@ -292,6 +293,7 @@ def TTS_H(path, mypath = None):
         ### The most error-prone function of the exporter, direction is regularly an issue
         ### Might need new method for direction selection (line irrelevant in this report)
         vrt_2Beenleigh = {
+			'ORMS':	   (31, 4010),
             'BNT':     (30, 3910),
             'BNHS':    (29, 3990),
             'BNH':     (28, 2879),
@@ -327,25 +329,28 @@ def TTS_H(path, mypath = None):
         
         
         vrt_2GympieNth = {
-            'GYN':     (40, 10613),
-            'GMR':     (39, 9187),
-            'WOO':     (38, 8811),
-            'TRA':     (37, 8393),
-            'COZ':     (36, 8163),
-            'PMQ':     (35, 7673),
-            'COO':     (34, 7223),
-            'SSE':     (33, 6978),
-            'EUM':     (32, 6893),
-            'NHR':     (31, 4300),
-            'YAN':     (30, 6503),
-            'NBR':     (29, 7000), 
-            'WOB':     (28, 5693),
-            'WOBS':    (27, 5363),
-            'PAL':     (26, 5483),
-            'EUD':     (25, 5153),
-            'MOH':     (24, 4763),
-            'LSH':     (23, 4433),
-            'BWH':     (22, 4163),
+            # 'CRD': (),
+            # 'AUR': (),
+            'GYN':     (41, 10613),
+            'GMR':     (40, 9187),
+            'WOO':     (39, 8811),
+            'TRA':     (38, 8393),
+            'COZ':     (37, 8163),
+            'PMQ':     (36, 7673),
+            'COO':     (35, 7223),
+            'SSE':     (34, 6978),
+            'EUM':     (33, 6893),
+            'NHR':     (32, 4300),
+            'YAN':     (31, 6503),
+            'NBR':     (30, 7000), 
+            'WOB':     (29, 5693),
+            'WOBS':    (28, 5363),
+            'PAL':     (27, 5483),
+            'EUD':     (26, 5153),
+            'MOH':     (25, 4763),
+            'LSH':     (24, 4433),
+            'BWH':     (23, 4163),
+			'BWHS':    (22, 4163),
             'GSS':     (21, 3893),
             'BEB':     (20, 3413),
             'EMH':     (19, 3143),
@@ -625,7 +630,7 @@ def TTS_H(path, mypath = None):
         
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','BWHS','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
@@ -896,6 +901,11 @@ def TTS_H(path, mypath = None):
                     drct = '13' if decreasing else '12'
                 elif line in ['Caboolture - Gympie North','Doomben','Ferny Grove','Inner City','Redcliffe','Shorncliffe','Normanby']:
                     drct = '12' if decreasing else '13'
+                    
+                    
+                # drcttest = 'Up' if drct == '12' else 'Down'
+                # if tn in ['EW03','EU06']:
+                #     print(f'{tn}: {drcttest} ({oID} to {dID})')
       
                     
       
@@ -1013,7 +1023,7 @@ def TTS_H(path, mypath = None):
                         empty     = entry[1]
                         direction = entry[2]
                         stations  = entry[3]
-                        wl([nl,'trip',l,tn,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
+                        wl([nl,'trip',l,tn,l,tn,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
                         
                         
                         for station in stations:
@@ -1130,8 +1140,6 @@ def TTS_H(path, mypath = None):
         
         
         
-        
-            
         if ProcessDoneMessagebox and __name__ == "__main__":
             from tkinter import messagebox
             messagebox.showinfo('HASTUS Converter','Process Done')

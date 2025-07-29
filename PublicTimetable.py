@@ -270,9 +270,34 @@ stationmaster = {
     'Mayne East':'MES',
     'Mayne East Stabling':'MES',
     'Clapham Yard':'CPM',
+    
+    'Beerwah Junction': 'BWJ', 
+    'Beewah East Junction': 'BEJ', 
+    'Aura': 'AUR', 
+    'Caloundra Road': 'CRD', 
+    'Mayne North Yard Entrance': 'MNYE', 
+    'Bowen Hills North Jn': 'BHNJ', 
+    'Signal 10 Departure': 'SIG10D', 
+    'Kippa-Ring Stable': 'KPRS', 
+    'Ormeau Junction': 'ORMJ', 
+    'Salisbury Junction': 'SLYJ', 
+    'Yeerongpilly Junction': 'YLYJ', 
+    'Southern Tunnel Portal': 'STP', 
+    'Northern Tunnel Portal': 'NTP', 
+    'Land Bridge': 'LBR', 
+    'Tunnel Jn': 'ZZZTJN', 
+    'Mayne East Junction': 'MEJ', 
+    'Clapham Yard Junction': 'CYJ', 
+    'Signal 9 Arrival': 'SIG9A', 
+    'Mayne East Yard': 'MES', 
+    'Fork Timing Point': 'FRK', 
+    'Tennyson Branch Junction': 'TNYBCHJ', 
 
     'Comes From': 'CF',
     'Continues To': 'CT',
+    
+    
+    
   }
 
 
@@ -283,6 +308,7 @@ stationmaster = {
 ### Code can be changed to iterate 'entries' over only revenue locations and skip this step but this method works fine too
 city = 'RS'
 stablingmaster = {
+    'ORMS':'ORM',
     'CAW':'CAB',
     'BNT':'BNH',
     'BNHS':'BNH',
@@ -491,6 +517,8 @@ def TTS_PTT(path, mypath = None):
         
         
         vrt_2GympieNth = {
+            # 'CRD': (),
+            # 'AUR': (),
             'GYN':     (35, 10613),
             'GMR':     (34, 9187),
             'WOO':     (33, 8811),
@@ -766,7 +794,7 @@ def TTS_PTT(path, mypath = None):
         
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','MBN','TNY','YLY','YRG','FFI','DUP'),
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
+            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),

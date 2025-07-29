@@ -80,9 +80,25 @@ sun_emuimu_ew = iter(['OA','OB','OC','OD','OE','OF','OG','OH','OI','OJ','OK','OL
                      'RA','RB','RC','RD','RE','RF','RG','RH','RI','RJ','RK','RL','RM','RN','RO','RP','RQ','RR','RS','RT','RU','RV','RW','RX','RY','RZ'])
 
 
+#QTMP Electric Workings Allocation...
+mth_rep_ew = iter([])
+fri_rep_ew = iter([])
+sat_rep_ew = iter([])
+sun_rep_ew = iter([])
+# Script needs further modification to facilitate new unit type
+
+
+
+
+
 
 
 ew_dict = {
+    # ('REP','120'):   mth_rep_ew,
+    # ('REP','4'):     fri_rep_ew,
+    # ('REP','2'):     sat_rep_ew,
+    # ('REP','1'):     sun_rep_ew,
+    
     ('IMU100','120'):   mth_emuimu_ew,
     ('IMU100','4'):     fri_emuimu_ew,
     ('IMU100','2'):     sat_emuimu_ew,

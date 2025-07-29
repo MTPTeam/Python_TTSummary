@@ -35,7 +35,7 @@ wkdk_rename = {
     ('120','32'):'Tue',
     ('120','16'):'Wed',
     ('120','8'): 'Thu',
-    ('120',):'Mon-Thu',
+    ('120',):'Mon-Thu', 
     ('4',):'Fri',
     ('2',):'Sat',
     ('1',):'Sun'
@@ -127,7 +127,7 @@ def TTS_SC(path, mypath = None):
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
         SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['NGR', 'IMU100','EMU','SMU','HYBRID', 'ICE', 'DEPT']
+        SORT_ORDER_UNIT = ['REP','NGR', 'IMU100','EMU','SMU','HYBRID', 'DEPT']
         d_list.sort(key=SORT_ORDER_WEEK.index)
         u_list.sort(key=SORT_ORDER_UNIT.index)
         weekdays = set(d_list).intersection({'8','16','32','64'})
@@ -233,35 +233,35 @@ def TTS_SC(path, mypath = None):
             Could be other, unused units
             """
             
-            emutest = [100]
+            qtmptest = [100]
             ngrtest = [100]
             imutest = [100]
-            icetest = [100]
+            emutest = [100]
             deptest = [100]
             hybtest = [100]
             smutest = [100]
-        
-            emucount = 0
+            
+            qtmpcount = 0
             ngrcount = 0
             imucount = 0
-            icecount = 0
+            emucount = 0
             depcount = 0
             hybcount = 0
             smucount = 0
             
             for x in daylist:
+                if x[2] == 'REP':
+                    qtmptest.append(qtmptest[qtmpcount] + x[8])
+                    qtmpcount += 1
                 if x[2] == 'NGR':
                     ngrtest.append(ngrtest[ngrcount] + x[8])
                     ngrcount += 1
-                if x[2] == 'EMU':
-                    emutest.append(emutest[emucount] + x[8])
-                    emucount += 1
                 if x[2] == 'IMU100':
                     imutest.append(imutest[imucount] + x[8])
                     imucount += 1
-                if x[2] == 'ICE':
-                    icetest.append(icetest[icecount] + x[8])
-                    icecount += 1
+                if x[2] == 'EMU':
+                    emutest.append(emutest[emucount] + x[8])
+                    emucount += 1
                 if x[2] == 'DEPT':
                     deptest.append(deptest[depcount] + x[8])
                     depcount += 1
@@ -272,16 +272,16 @@ def TTS_SC(path, mypath = None):
                     smutest.append(smutest[smucount] + x[8])
                     smucount += 1
             
-            t_emu = float(100-min(emutest))
+            t_qtmp = float(100-min(qtmptest))
             t_ngr = float(100-min(ngrtest))
             t_imu = float(100-min(imutest))
-            t_ice = float(100-min(icetest))
+            t_emu = float(100-min(emutest))
             t_dep = float(100-min(deptest))
             t_hyb = float(100-min(hybtest))
             t_smu = float(100-min(smutest))
             
-            t_all = t_emu + t_ngr + t_imu + t_ice + t_dep + t_hyb + t_smu
-            type_dict = {'IMU100':t_imu, 'EMU':t_emu, 'NGR':t_ngr, 'ICE':t_ice, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu}
+            t_all =  t_qtmp + t_ngr + t_imu + t_emu + t_dep + t_hyb + t_smu
+            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu}
             
             return [t_all]+[type_dict.get(uu) for uu in u_list]
         
@@ -529,38 +529,42 @@ def TTS_SC(path, mypath = None):
         # Formatting
         #########################################################################################
         #########################################################################################
-        imu = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
-        emu = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
-        ngr = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
-        ice = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
-        smu = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
+        qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
+        imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
+        emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
+        ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
+        smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
+        dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
         
-        imubold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FDE9D9','bottom':1})
-        emubold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#DAEEF3','bottom':1})
-        ngrbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#E4DFEC','bottom':1})
-        icebold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#EBF1DE','bottom':1})
-        smubold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#F2DCDB','bottom':1})
+        qtmpbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFB7B7','bottom':1})
+        imubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FDE9D9','bottom':1})
+        emubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#DAEEF3','bottom':1})
+        ngrbold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#E4DFEC','bottom':1})
+        smubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#F2DCDB','bottom':1})
+        deptbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#EBF1DE','bottom':1})
         
-        imuboldred = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
-        emuboldred = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
-        ngrboldred = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
-        iceboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        smuboldred = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
+        qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
+        imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
+        emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
+        ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
+        smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
+        deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
-        imuborder = workbook.add_format({'align':'center','bg_color':'#FDE9D9','left':1,'right':1})
-        emuborder = workbook.add_format({'align':'center','bg_color':'#DAEEF3','left':1,'right':1})
-        ngrborder = workbook.add_format({'align':'center','bg_color':'#E4DFEC','left':1,'right':1})
-        iceborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
-        smuborder = workbook.add_format({'align':'center','bg_color':'#F2DCDB','left':1,'right':1})
+        qtmpborder = workbook.add_format({'align':'center','bg_color':'#FFB7B7','left':1,'right':1})
+        imuborder  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','left':1,'right':1})
+        emuborder  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','left':1,'right':1})
+        ngrborder  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','left':1,'right':1})
+        smuborder  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','left':1,'right':1})
+        deptborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
         
         font_dict = {
-            'IMU100': [imu,imubold,imuboldred,imuborder],
-            'EMU':    [ice,icebold,iceboldred,iceborder],
+            'REP':    [qtmp,qtmpbold,qtmpboldred,qtmpborder],
             'NGR':    [ngr,ngrbold,ngrboldred,ngrborder],
-            'ICE':    [ice,icebold,iceboldred,iceborder],
-            'DEPT':   [ice,icebold,iceboldred,iceborder],
+            'IMU100': [imu,imubold,imuboldred,imuborder],
+            'EMU':    [emu,emubold,emuboldred,emuborder],
             'HYBRID': [emu,emubold,emuboldred,emuborder],
-            'SMU':    [smu,smubold,smuboldred,smuborder]
+            'SMU':    [smu,smubold,smuboldred,smuborder],
+            'DEPT':   [dept,deptbold,deptboldred,deptborder]
             }
         
         title                 = workbook.add_format({'bold':True,'align':'center'})
@@ -598,7 +602,7 @@ def TTS_SC(path, mypath = None):
         
         
         # Outline stabling locations
-        wfeoptions  = ['WFE','WFW']
+        wfeoptions  = ['WFE','WFW','FEE']
         ipssoptions = ['IPSS','IPS']
         rdksoptions = ['RDKS']
         robsoptions = ['ROBS']
@@ -616,13 +620,15 @@ def TTS_SC(path, mypath = None):
         gynoptions  = ['GYN']
         bqysoptions = ['BQYS']
         cpmoptions  = ['CPM']
+        ormsoptions = ['ORMS']
+        bwhsoptions = ['BWHS']
         
         # To be displayed in red font if a run starts or finishes at one of these non-stable locations
         nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
         
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
         acceptable_stables = []
-        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions]
+        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,mesoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions,cpmoptions,ormsoptions,bwhsoptions]
         for x in s_yards:
                 for y in x: acceptable_stables.append(y)
         acceptable_stables.remove('RS')
@@ -792,7 +798,23 @@ def TTS_SC(path, mypath = None):
         cpm_sat = []
         cpm_sun = []
         
-        
+        orms_mon = []
+        orms_tue = []
+        orms_wed = []
+        orms_thu = []
+        orms_mth = []
+        orms_fri = []
+        orms_sat = []
+        orms_sun = []
+		
+        bwhs_mon = []
+        bwhs_tue = []
+        bwhs_wed = []
+        bwhs_thu = []
+        bwhs_mth = []
+        bwhs_fri = []
+        bwhs_sat = []
+        bwhs_sun = []
         
         
         
@@ -818,6 +840,8 @@ def TTS_SC(path, mypath = None):
         build_weeklists(gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun,           gynoptions)
         build_weeklists(bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun,   bqysoptions)
         build_weeklists(cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun,           cpmoptions)
+        build_weeklists(orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun,   ormsoptions)
+        build_weeklists(bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun,   bwhsoptions)
         
         # Create blank worksheets for each stabling yard
         Info = workbook.add_worksheet('Info')
@@ -840,6 +864,8 @@ def TTS_SC(path, mypath = None):
         GympieNth = workbook.add_worksheet('Gympie North')
         Banyo = workbook.add_worksheet('Banyo')
         Clapham = workbook.add_worksheet('Clapham')
+        Ormeau = workbook.add_worksheet('Ormeau')
+        BeerwahSouth = workbook.add_worksheet('Beerwah South')
         
         
         # Use the lists we've just filled to populate the blank worksheets we've just created
@@ -861,6 +887,8 @@ def TTS_SC(path, mypath = None):
         write_sheet(GympieNth,    gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun) 
         write_sheet(Banyo,        bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun) 
         write_sheet(Clapham,      cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun) 
+        write_sheet(Ormeau,       orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun)
+        write_sheet(BeerwahSouth, bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
         
         
         
@@ -909,7 +937,9 @@ def TTS_SC(path, mypath = None):
             'Nambour':      3,
             'Gympie North': 1,
             'Banyo':        4,
-            'Clapham':      '/'
+            'Clapham':      '/',
+            'Ormeau':      '/',
+            'Beerwah South': 8,
                 }
         
         stables_dict = {
@@ -930,7 +960,9 @@ def TTS_SC(path, mypath = None):
             'Nambour':      (nbr_mon,nbr_tue,nbr_wed,nbr_thu,nbr_mth,nbr_fri,nbr_sat,nbr_sun),
             'Gympie North': (gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun),
             'Banyo':        (bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun),
-            'Clapham':      (cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun)
+            'Clapham':      (cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun),
+            'Ormeau':       (orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun),
+            'Beerwah South':(bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
                 }
         
         
@@ -939,10 +971,10 @@ def TTS_SC(path, mypath = None):
         
         
         # Initialise overnight stabling variables to calculate totals for each unit type for each day
-        monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
+        monqtmp = tueqtmp = wedqtmp = thuqtmp = mthqtmp = friqtmp = satqtmp = sunqtmp = 0
         monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
         monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
-        monice = tueice = wedice = thuice = mthice = friice = satice = sunice = 0  
+        monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
         mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
         monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
         monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0       
@@ -1061,17 +1093,16 @@ def TTS_SC(path, mypath = None):
             ##########################################################################################
             ##########################################################################################
             ##########################################################################################
-            
-            if 'EMU' in u_list:
-                emuidx = u_list.index('EMU')
-                monemu += mon_os_bkdwn[emuidx]
-                tueemu += tue_os_bkdwn[emuidx]
-                wedemu += wed_os_bkdwn[emuidx]
-                thuemu += thu_os_bkdwn[emuidx]
-                mthemu += mth_os_bkdwn[emuidx]
-                friemu += fri_os_bkdwn[emuidx]
-                satemu += sat_os_bkdwn[emuidx]
-                sunemu += sun_os_bkdwn[emuidx]
+            if 'REP' in u_list:
+                qtmpidx = u_list.index('REP')
+                monqtmp += mon_os_bkdwn[qtmpidx]
+                tueqtmp += tue_os_bkdwn[qtmpidx]
+                wedqtmp += wed_os_bkdwn[qtmpidx]
+                thuqtmp += thu_os_bkdwn[qtmpidx]
+                mthqtmp += mth_os_bkdwn[qtmpidx]
+                friqtmp += fri_os_bkdwn[qtmpidx]
+                satqtmp += sat_os_bkdwn[qtmpidx]
+                sunqtmp += sun_os_bkdwn[qtmpidx]
             
             if 'NGR' in u_list:
                 ngridx = u_list.index('NGR')
@@ -1095,16 +1126,16 @@ def TTS_SC(path, mypath = None):
                 satimu += sat_os_bkdwn[imuidx]
                 sunimu += sun_os_bkdwn[imuidx]
             
-            if 'ICE' in u_list:
-                iceidx = u_list.index('ICE')
-                monice += mon_os_bkdwn[iceidx]
-                tueice += tue_os_bkdwn[iceidx]
-                wedice += wed_os_bkdwn[iceidx]
-                thuice += thu_os_bkdwn[iceidx]
-                mthice += mth_os_bkdwn[iceidx]
-                friice += fri_os_bkdwn[iceidx]
-                satice += sat_os_bkdwn[iceidx]
-                sunice += sun_os_bkdwn[iceidx]
+            if 'EMU' in u_list:
+                emuidx = u_list.index('EMU')
+                monemu += mon_os_bkdwn[emuidx]
+                tueemu += tue_os_bkdwn[emuidx]
+                wedemu += wed_os_bkdwn[emuidx]
+                thuemu += thu_os_bkdwn[emuidx]
+                mthemu += mth_os_bkdwn[emuidx]
+                friemu += fri_os_bkdwn[emuidx]
+                satemu += sat_os_bkdwn[emuidx]
+                sunemu += sun_os_bkdwn[emuidx]
             
             if 'DEPT' in u_list:
                 depidx = u_list.index('DEPT')
@@ -1146,21 +1177,21 @@ def TTS_SC(path, mypath = None):
         ##########################################################################################
         
         dailytotals_dict = {
-            '120':sum([mthemu,mthngr,mthimu,mthice,mthdep,mthhyb,mthsmu]),
-            '64': sum([monemu,monngr,monimu,monice,mondep,monhyb,monsmu]),
-            '32': sum([tueemu,tuengr,tueimu,tueice,tuedep,tuehyb,tuesmu]),
-            '16': sum([wedemu,wedngr,wedimu,wedice,weddep,wedhyb,wedsmu]),
-            '8':  sum([thuemu,thungr,thuimu,thuice,thudep,thuhyb,thusmu]),
-            '4':  sum([friemu,fringr,friimu,friice,fridep,frihyb,frismu]),
-            '2':  sum([satemu,satngr,satimu,satice,satdep,sathyb,satsmu]),
-            '1':  sum([sunemu,sunngr,sunimu,sunice,sundep,sunhyb,sunsmu]) 
+            '120':sum([mthqtmp,mthngr,mthimu,mthemu,mthdep,mthhyb,mthsmu]),
+            '64': sum([monqtmp,monngr,monimu,monemu,mondep,monhyb,monsmu]),
+            '32': sum([tueqtmp,tuengr,tueimu,tueemu,tuedep,tuehyb,tuesmu]),
+            '16': sum([wedqtmp,wedngr,wedimu,wedemu,weddep,wedhyb,wedsmu]),
+            '8':  sum([thuqtmp,thungr,thuimu,thuemu,thudep,thuhyb,thusmu]),
+            '4':  sum([friqtmp,fringr,friimu,friemu,fridep,frihyb,frismu]),
+            '2':  sum([satqtmp,satngr,satimu,satemu,satdep,sathyb,satsmu]),
+            '1':  sum([sunqtmp,sunngr,sunimu,sunemu,sundep,sunhyb,sunsmu]) 
             }
         
         type_dict = {
+            'REP':      [monqtmp,tueqtmp,wedqtmp,thuqtmp,mthqtmp,friqtmp,satqtmp,sunqtmp],
+            'NGR':      [monngr,tuengr,wedngr,thungr,mthngr,fringr,satngr,sunngr],
             'IMU100':   [monimu,tueimu,wedimu,thuimu,mthimu,friimu,satimu,sunimu],
             'EMU':      [monemu,tueemu,wedemu,thuemu,mthemu,friemu,satemu,sunemu],
-            'NGR':      [monngr,tuengr,wedngr,thungr,mthngr,fringr,satngr,sunngr],
-            'ICE':      [monice,tueice,wedice,thuice,mthice,friice,satice,sunice],
             'DEPT':     [mondep,tuedep,weddep,thudep,mthdep,fridep,satdep,sundep],
             'HYBRID':   [monhyb,tuehyb,wedhyb,thuhyb,mthhyb,frihyb,sathyb,sunhyb],
             'SMU':      [monsmu,tuesmu,wedsmu,thusmu,mthsmu,frismu,satsmu,sunsmu]
