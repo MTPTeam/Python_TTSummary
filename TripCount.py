@@ -7,7 +7,7 @@ import os
 import sys
 import shutil
 
-from tkinter import Tk
+from tkinter import Tk, Label, Button, font, messagebox
 from tkinter.filedialog import askopenfilename
 
 import traceback
@@ -151,32 +151,78 @@ non_revenue_stations = [
 weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 
 
-
-
-
-
-
-
-
-
-def TTS_TC(path, mypath = None):
-    
+def TTS_TC(root, path, mypath = None):
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
     
+    def select_station():
+        # Function for station selection
+        def on_button_click(station):
+            nonlocal selected_station
+            selected_station = station
+            root.quit()  # Stop the event loop instead of destroying immediately
+
+        def on_closing():
+            from tkinter import messagebox
+            messagebox.showinfo("Task Cancelled", "The task has been cancelled.")
+            root.quit()  # Stop the event loop instead of destroying immediately
+    
+        # Create a new tkinter window using the Tk class
+        root.deiconify()  # Make the hidden root window visible
+        
+        root.title("Select CBD Reference Station")
+        root.geometry("375x175")
+        root.attributes('-topmost', True)  # Ensure it appears above other windows
+
+        # Define a larger font for the label and buttons
+        large_font = font.Font(size=12)
+
+        # Add a label to the window
+        label = Label(root, text="Please select a CBD reference station:", font=large_font)
+        label.pack(pady=15)
+
+        # Add "Roma Street" and "Central Station" buttons
+        roma_button = Button(root, text="Roma Street - RS", command=lambda: on_button_click("Roma Street"), font=large_font)
+        roma_button.pack(pady=5)
+
+        central_button = Button(root, text="Central Station - BNC", command=lambda: on_button_click("Central Station"), font=large_font)
+        central_button.pack(pady=15)
+
+        # Bind the close event to the on_closing function
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        
+        # Run the tkinter event loop
+        selected_station = None
+        root.mainloop()
+
+        # Hide the root window again for cleanup
+        root.withdraw()
+        
+        # Return the selected station
+        return selected_station
+    
     try:
-            
+
+        station = select_station()
+        if station is None:
+            print("No station selected. Exiting.")
+            return
+        
+        print(f"Selected Station: {station}\n")
+        
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]
         
         if __name__ == "__main__":
             print(filename,'\n')
-    
         tree = ET.parse(filename)
         root = tree.getroot()
         
         filename = filename[:-4]
-        filename_xlsx = f'TripCount-{filename}.xlsx'
+        if station == "Roma Street":
+            filename_xlsx = f'TripCountROMA-{filename}.xlsx'
+        elif station == "Central Station":
+            filename_xlsx = f'TripCountCENTRAL-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         
         
@@ -748,7 +794,11 @@ def TTS_TC(path, mypath = None):
                 cbdID = 'RTL'
                 cbdidx = stations.index(cbdID)
                 cbdarr, cbddep = stoptime_info(cbdidx)
-            elif 'RS' in stations:
+            elif 'BNC' in stations and station == "Central Station":
+                cbdID = 'BNC'
+                cbdidx = stations.index(cbdID)
+                cbdarr, cbddep = stoptime_info(cbdidx)
+            elif 'RS' in stations and station == "Roma Street":
                 cbdID = 'RS'
                 cbdidx = stations.index(cbdID)
                 cbdarr, cbddep = stoptime_info(cbdidx)
@@ -1335,6 +1385,11 @@ def TTS_TC(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
-    TTS_TC(path)
+    root = Tk()  # Correctly use the imported Tk class here
+    root.withdraw()
+    path = askopenfilename(title="Select a file")
+    if path:  # Ensure a file was selected
+        TTS_TC(root, path)
+    else:
+        messagebox.showinfo('Trip Count Report','No file selected.')
+    root.destroy()
