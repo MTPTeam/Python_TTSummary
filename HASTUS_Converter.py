@@ -231,20 +231,19 @@ def TTS_H(path, mypath = None):
                                 run_ += x
                         run = run_
                         
-                elif (len(run) >= 3):
-                    if (run[2] == "E" and run[0].isnumeric()):
-                        run_ = ''
-                        if run[-1] == 'A':
-                            
-                            for x in run[0:]:
-                                if x.isnumeric():
-                                    run_ += x
-                            run_ += 'E'
-                            run_ += '-'   
-                            for x in run[3:]:
-                                if x.isalpha():
-                                    run_ += x
-                            run = run_
+                elif (len(run) >= 3 and run[2] == "E" and run[0].isnumeric()):
+                    run_ = ''
+                    if run[-1] == 'A':
+                        
+                        for x in run[0:]:
+                            if x.isnumeric():
+                                run_ += x
+                        run_ += 'E'
+                        run_ += '-'   
+                        for x in run[3:]:
+                            if x.isalpha():
+                                run_ += x
+                        run = run_
                     
                 elif (run[0].isalpha() and run[-1] == '1'):
                     run_ = ''
