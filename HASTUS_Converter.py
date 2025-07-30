@@ -219,13 +219,41 @@ def TTS_H(path, mypath = None):
             
             
             if '-' not in run:
-                
-                if (run[0].isalpha() and run[-1] == '1'):
+                if (run[0] == "E" and run[1].isnumeric()):
+                    if run[-1] == 'A':
+                        run_ = 'E'
+                        for x in run[1:]:
+                            if x.isnumeric():
+                                run_ += x
+                        run_ += '-'   
+                        for x in run[1:]:
+                            if x.isalpha():
+                                run_ += x
+                        run = run_
+                        
+                elif (len(run) >= 3 and run[2] == "E" and run[0].isnumeric()):
+                    run_ = ''
+                    if run[-1] == 'A':
+                        
+                        for x in run[0:]:
+                            if x.isnumeric():
+                                run_ += x
+                        run_ += 'E'
+                        run_ += '-'   
+                        for x in run[3:]:
+                            if x.isalpha():
+                                run_ += x
+                        run = run_
+                    
+                elif (run[0].isalpha() and run[-1] == '1'):
                     run_ = ''
                     for x in run:
                         if x.isalpha():
                             run_ += x
-                    run_ += '-1'
+                    run_ += '-'   
+                    for x in run:
+                        if x.isnumeric():
+                            run_ += x
                     run = run_
                     
                 elif (run[0].isnumeric() and run[-1] == 'A'):
@@ -233,10 +261,12 @@ def TTS_H(path, mypath = None):
                     for x in run:
                         if x.isnumeric():
                             run_ += x
-                    run_ += '-A'
+                    run_ += '-'   
+                    for x in run:
+                        if x.isalpha():
+                            run_ += x
                     run = run_
-            
-            
+                    
             
             if WeekdayKey not in d_list:
                 d_list.append(WeekdayKey)
@@ -707,10 +737,37 @@ def TTS_H(path, mypath = None):
                 unit       = origin['trainTypeId'].split('-',1)[1]
                 unit       = 'IMU' if unit == 'IMU100' else unit
                 run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
+    
                 
                 if '-' not in run:
-                    
-                    if (run[0].isalpha() and run[-1] == '1'):
+                    if (run[0] == "E" and run[1].isnumeric()):
+                        if run[-1] == 'A':
+                            run_ = 'E'
+                            for x in run[1:]:
+                                if x.isnumeric():
+                                    run_ += x
+                            run_ += '-'   
+                            for x in run[1:]:
+                                if x.isalpha():
+                                    run_ += x
+                            run = run_
+                            
+                    elif (len(run) >= 3):
+                        if (run[2] == "E" and run[0].isnumeric()):
+                            run_ = ''
+                            if run[-1] == 'A':
+                                
+                                for x in run[0:]:
+                                    if x.isnumeric():
+                                        run_ += x
+                                run_ += 'E'
+                                run_ += '-'   
+                                for x in run[3:]:
+                                    if x.isalpha():
+                                        run_ += x
+                                run = run_
+                        
+                    elif (run[0].isalpha() and run[-1] == '1'):
                         run_ = ''
                         for x in run:
                             if x.isalpha():
