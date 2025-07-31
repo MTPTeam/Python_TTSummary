@@ -73,15 +73,15 @@ HASTUS_stableconverter = {
     'YN':'MNS_S',
     'MNS':'MNS_S',
     'MWS':'MWS_S',
-    'WFE':'WUL_S',
+    'WFE':'WFE_S', #'WUL_S' 
     'WFW':'WFW_S',
     'VYST':'VYT3',
     'RKET':'RKY4',
     'MES':'MES_S',
     'MNS':'MNS_S',
     'ORMS':'ORM_S',
-    'CPM':'CPM_S',
-    'FEE':'WFE_S',
+    # 'CPM':'CPM_S', # moved logic to line 840-ish. CPM_S only used for stablers.
+    # 'FEE':'WFE_S', # 31/07 now referenced as FEE2, with FWE1 on the west
     'BWHS': 'BWH_S',
     # '':'',
     # '':'',
@@ -735,6 +735,12 @@ def TTS_H(path, mypath = None):
                 sIDs       = {x.attrib['stationID'] for x in entries}
                 sIDs_list  = [x.attrib['stationID'] for x in entries]
                 unit       = origin['trainTypeId'].split('-',1)[1]
+                # if unit == 'IMU100':
+                #     unit == 'IMU'
+                # elif unit == 'HYBRID':
+                #     unit == 'NGRE'
+                # else:
+                #     unit == unit
                 unit       = 'IMU' if unit == 'IMU100' else unit
                 run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
     
@@ -833,6 +839,11 @@ def TTS_H(path, mypath = None):
                             lsID = 'MNY_S'
                         elif tn == lastinrun and sID == 'MNY' and n == len(entries) - 1:
                             lsID = 'MNY_S'
+                            
+                        if tn == firstinrun and sID == 'CPM' and n == 0:
+                            lsID = 'CPM_S'
+                        elif tn == lastinrun and sID == 'CPM' and n == len(entries) - 1:
+                            lsID = 'CPM_S'
                             
                         elif tn == firstinrun and sID == 'CEN' and n == 0:
                             lsID = 'CAB_S'
