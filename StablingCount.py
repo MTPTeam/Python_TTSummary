@@ -118,6 +118,7 @@ def TTS_SC(path, mypath = None):
             origin = entries[0].attrib
             destin = entries[-1].attrib
             unit   = origin['trainTypeId'].split('-',1)[1]
+            # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
             if unit not in u_list:
                 u_list.append(unit)
             if WeekdayKey not in d_list:
@@ -127,7 +128,7 @@ def TTS_SC(path, mypath = None):
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
         SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['REP','NGR', 'IMU100','EMU','SMU','HYBRID', 'DEPT']
+        SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
         d_list.sort(key=SORT_ORDER_WEEK.index)
         u_list.sort(key=SORT_ORDER_UNIT.index)
         weekdays = set(d_list).intersection({'8','16','32','64'})
@@ -221,11 +222,17 @@ def TTS_SC(path, mypath = None):
             
             nonlocal row
             i = d_list.index(day)
-            Summary.write(      row, 4+n,   weekdaykey_dict.get(day))
-            Summary.write(      row, 5+n,   totals_col[i],      boldcenter)
-            Summary.write_row(  row, 6+n,   daylist_dict.get(day),        centered)
+            Summary.write(      row+1, 4+n,   weekdaykey_dict.get(day))
+            Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
+            Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
             row += 1
-                    
+        
+        def summary_totalheaders(unit):
+            """ Writes overnight stabling headers for each unit type """
+            
+            nonlocal col
+            Summary.write(row, 6+col, unit, font_dict.get(unit)[1])
+            col += 1            
         
         def startofdayunitcount(daylist):
             """ 
@@ -235,6 +242,7 @@ def TTS_SC(path, mypath = None):
             
             qtmptest = [100]
             ngrtest = [100]
+            ngretest = [100]
             imutest = [100]
             emutest = [100]
             deptest = [100]
@@ -243,6 +251,7 @@ def TTS_SC(path, mypath = None):
             
             qtmpcount = 0
             ngrcount = 0
+            ngrecount = 0
             imucount = 0
             emucount = 0
             depcount = 0
@@ -256,6 +265,9 @@ def TTS_SC(path, mypath = None):
                 if x[2] == 'NGR':
                     ngrtest.append(ngrtest[ngrcount] + x[8])
                     ngrcount += 1
+                if x[2] == 'NGRE':
+                    ngretest.append(ngretest[ngrecount] + x[8])
+                    ngrecount += 1
                 if x[2] == 'IMU100':
                     imutest.append(imutest[imucount] + x[8])
                     imucount += 1
@@ -274,14 +286,15 @@ def TTS_SC(path, mypath = None):
             
             t_qtmp = float(100-min(qtmptest))
             t_ngr = float(100-min(ngrtest))
+            t_ngre = float(100-min(ngretest))
             t_imu = float(100-min(imutest))
             t_emu = float(100-min(emutest))
             t_dep = float(100-min(deptest))
             t_hyb = float(100-min(hybtest))
             t_smu = float(100-min(smutest))
             
-            t_all =  t_qtmp + t_ngr + t_imu + t_emu + t_dep + t_hyb + t_smu
-            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu}
+            t_all =  t_qtmp + t_ngr + t_ngre + t_imu + t_emu + t_dep + t_hyb + t_smu
+            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'NGRE':t_ngre, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu}
             
             return [t_all]+[type_dict.get(uu) for uu in u_list]
         
@@ -295,7 +308,7 @@ def TTS_SC(path, mypath = None):
             stablechange = np.array(startcount)
             
             for entry in daylist:
-                if entry[2] == 'NGR':
+                if entry[2] == 'NGR' or entry[2] == 'NGRE':
                     threecarscalar = 1
                 else:
                     threecarscalar = 2 if entry[3] == 6 else 1
@@ -323,7 +336,7 @@ def TTS_SC(path, mypath = None):
             stablechange = np.array(startcount)
             
             for entry in daylist:
-                if entry[2] == 'NGR':
+                if entry[2] == 'NGR' or entry[2] == 'NGRE':
                     threecarscalar = 1
                 else:
                     threecarscalar = 2 if entry[3] == 6 else 1
@@ -422,7 +435,7 @@ def TTS_SC(path, mypath = None):
                 start_t   = v[5]
                 finish_t  = v[6]
                 
-                if unit == 'NGR':
+                if unit == 'NGR' or unit == 'NGRE':
                     delta = 1
                 else:
                     delta = 2 if cars == 6 else 1
@@ -470,7 +483,7 @@ def TTS_SC(path, mypath = None):
                     unit = entry[2]
                     cars = entry[3]
                     
-                    if unit == 'NGR':
+                    if unit == 'NGR' or unit == 'NGRE':
                         threecarscalar = 1
                     else:
                         threecarscalar = 2 if cars == 6 else 1
@@ -533,6 +546,7 @@ def TTS_SC(path, mypath = None):
         imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
         emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
         ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
+        ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
         smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
         dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
         
@@ -540,6 +554,7 @@ def TTS_SC(path, mypath = None):
         imubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FDE9D9','bottom':1})
         emubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#DAEEF3','bottom':1})
         ngrbold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#E4DFEC','bottom':1})
+        ngrebold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFFF93','bottom':1})
         smubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#F2DCDB','bottom':1})
         deptbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#EBF1DE','bottom':1})
         
@@ -547,6 +562,7 @@ def TTS_SC(path, mypath = None):
         imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
         emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
         ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
+        ngreboldred = workbook.add_format({'align':'center','bg_color':'#FFFF93','font_color':'#CC194C', 'bold':True})
         smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
         deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
@@ -554,12 +570,14 @@ def TTS_SC(path, mypath = None):
         imuborder  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','left':1,'right':1})
         emuborder  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','left':1,'right':1})
         ngrborder  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','left':1,'right':1})
+        ngreborder = workbook.add_format({'align':'center','bg_color':'#FFFF93','left':1,'right':1})
         smuborder  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','left':1,'right':1})
         deptborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
         
         font_dict = {
             'REP':    [qtmp,qtmpbold,qtmpboldred,qtmpborder],
             'NGR':    [ngr,ngrbold,ngrboldred,ngrborder],
+            'NGRE':   [ngre,ngrebold,ngreboldred,ngreborder],
             'IMU100': [imu,imubold,imuboldred,imuborder],
             'EMU':    [emu,emubold,emuboldred,emuborder],
             'HYBRID': [emu,emubold,emuboldred,emuborder],
@@ -973,6 +991,7 @@ def TTS_SC(path, mypath = None):
         # Initialise overnight stabling variables to calculate totals for each unit type for each day
         monqtmp = tueqtmp = wedqtmp = thuqtmp = mthqtmp = friqtmp = satqtmp = sunqtmp = 0
         monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
+        monngre = tuengre = wedngre = thungre = mthngre = fringre = satngre = sunngre = 0
         monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
         monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
         mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
@@ -1115,6 +1134,17 @@ def TTS_SC(path, mypath = None):
                 satngr += sat_os_bkdwn[ngridx]
                 sunngr += sun_os_bkdwn[ngridx]
             
+            if 'NGRE' in u_list:
+                ngreidx = u_list.index('NGRE')
+                monngre += mon_os_bkdwn[ngreidx]
+                tuengre += tue_os_bkdwn[ngreidx]
+                wedngre += wed_os_bkdwn[ngreidx]
+                thungre += thu_os_bkdwn[ngreidx]
+                mthngre += mth_os_bkdwn[ngreidx]
+                fringre += fri_os_bkdwn[ngreidx]
+                satngre += sat_os_bkdwn[ngreidx]
+                sunngre += sun_os_bkdwn[ngreidx]
+            
             if 'IMU100' in u_list:
                 imuidx = u_list.index('IMU100')
                 monimu += mon_os_bkdwn[imuidx]
@@ -1177,19 +1207,20 @@ def TTS_SC(path, mypath = None):
         ##########################################################################################
         
         dailytotals_dict = {
-            '120':sum([mthqtmp,mthngr,mthimu,mthemu,mthdep,mthhyb,mthsmu]),
-            '64': sum([monqtmp,monngr,monimu,monemu,mondep,monhyb,monsmu]),
-            '32': sum([tueqtmp,tuengr,tueimu,tueemu,tuedep,tuehyb,tuesmu]),
-            '16': sum([wedqtmp,wedngr,wedimu,wedemu,weddep,wedhyb,wedsmu]),
-            '8':  sum([thuqtmp,thungr,thuimu,thuemu,thudep,thuhyb,thusmu]),
-            '4':  sum([friqtmp,fringr,friimu,friemu,fridep,frihyb,frismu]),
-            '2':  sum([satqtmp,satngr,satimu,satemu,satdep,sathyb,satsmu]),
-            '1':  sum([sunqtmp,sunngr,sunimu,sunemu,sundep,sunhyb,sunsmu]) 
+            '120':sum([mthqtmp,mthngr,mthngre,mthimu,mthemu,mthdep,mthhyb,mthsmu]),
+            '64': sum([monqtmp,monngr,monngre,monimu,monemu,mondep,monhyb,monsmu]),
+            '32': sum([tueqtmp,tuengr,tuengre,tueimu,tueemu,tuedep,tuehyb,tuesmu]),
+            '16': sum([wedqtmp,wedngr,wedngre,wedimu,wedemu,weddep,wedhyb,wedsmu]),
+            '8':  sum([thuqtmp,thungr,thungre,thuimu,thuemu,thudep,thuhyb,thusmu]),
+            '4':  sum([friqtmp,fringr,fringre,friimu,friemu,fridep,frihyb,frismu]),
+            '2':  sum([satqtmp,satngr,satngre,satimu,satemu,satdep,sathyb,satsmu]),
+            '1':  sum([sunqtmp,sunngr,sunngre,sunimu,sunemu,sundep,sunhyb,sunsmu]) 
             }
         
         type_dict = {
             'REP':      [monqtmp,tueqtmp,wedqtmp,thuqtmp,mthqtmp,friqtmp,satqtmp,sunqtmp],
             'NGR':      [monngr,tuengr,wedngr,thungr,mthngr,fringr,satngr,sunngr],
+            'NGRE':     [monngre,tuengre,wedngre,thungre,mthngre,fringre,satngre,sunngre],
             'IMU100':   [monimu,tueimu,wedimu,thuimu,mthimu,friimu,satimu,sunimu],
             'EMU':      [monemu,tueemu,wedemu,thuemu,mthemu,friemu,satemu,sunemu],
             'DEPT':     [mondep,tuedep,weddep,thudep,mthdep,fridep,satdep,sundep],
@@ -1228,12 +1259,20 @@ def TTS_SC(path, mypath = None):
         
         
         row = len(stables_dict)*(ndays+2)+2
-        endrow = row + ndays - 1 
+        endrow = row + ndays
         if ndays == 1:
-            Summary.write(row,n,'Total Overnight Stabling',boldcentervc14)    
+            # Summary.write(row+1,n,'Total Overnight Stabling',boldcentervc14)
+            Summary.write(row,n+4,'Day',boldleft_bottom)
+            Summary.write(row,n+5,'Total',boldcenter_bottom)
+            Summary.merge_range(row+1,n,row+1,3+n,'Total Overnight Stabling',boldcentervc14)
         else:
-            Summary.merge_range(row,n,endrow,3+n,'Total Overnight Stabling',boldcentervc14)    
+            Summary.merge_range(row+1,n,endrow+1,3+n,'Total Overnight Stabling',boldcentervc14)    
+            Summary.write(row,n+4,'Day',boldleft_bottom)
+            Summary.write(row,n+5,'Total',boldcenter_bottom)
         
+        col = n
+        for unit in u_list:
+            summary_totalheaders(unit)     
         for day in d_list:
             summary_writetotals(day)
         
