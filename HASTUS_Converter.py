@@ -187,6 +187,36 @@ def TTS_H(path, mypath = None):
         
         
         
+        def format_run(run):
+            if '-' in run:
+                return run
+
+            newrun = ''
+            # ETCS case for E12A, E12B runs to become E12-A, E12-B runs - and for regular E12 runs
+            if run.startswith("E") and run[1].isnumeric():
+                digits = ''.join(x for x in run[1:] if x.isnumeric())
+                letters = ''.join(x for x in run[1:] if x.isalpha())
+                newrun = f"E{digits}-{letters}" if run.endswith(('A','B')) else f"E{digits}"
+            
+            # ETCS case for 34EA, 34EB runs to become 34E-A, 34E-B runs - and for regular 34E runs
+            elif len(run) >= 3 and run[0].isnumeric() and run[2] == "E":
+                digits = ''.join(x for x in run if x.isnumeric())
+                letters = ''.join(x for x in run[3:] if x.isalpha())
+                newrun = f"{digits}E-{letters}" if run.endswith(('A','B')) else f"{digits}E"
+            
+            # Case for 12A, 12B runs to become 12-A, 12-B runs
+            elif run[0].isnumeric() and run.endswith(('A','B')):
+                digits = ''.join(x for x in run if x.isnumeric())
+                letters = ''.join(x for x in run if x.isalpha())
+                newrun = f"{digits}-{letters}"
+            
+            # Case for AB1, AB2 runs to become AB-1, AB-2 runs
+            elif run[0].isalpha() and run.endswith(('1','2')):
+                letters = ''.join(x for x in run if x.isalpha())
+                digits = ''.join(x for x in run if x.isnumeric())
+                newrun = f"{letters}-{digits}"
+
+            return newrun if newrun else run
         
         
         
@@ -205,6 +235,7 @@ def TTS_H(path, mypath = None):
         for train in trains:
             tn         = train.attrib['number']
             run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
+            run        = format_run(run)
             WeekdayKey = train[0][0][0].attrib['weekdayKey']
             entries    = [x for x in train.iter('entry')]
             origin     = entries[0].attrib
@@ -217,37 +248,6 @@ def TTS_H(path, mypath = None):
             loID       = oID + otrack
             ldID       = dID + dtrack
             
-            def format_run(run):
-                if '-' in run:
-                    return run
-    
-                newrun = ''
-                # ETCS case for E12A, E12B runs to become E12-A, E12-B runs - and for regular E12 runs
-                if run.startswith("E") and run[1].isnumeric():
-                    digits = ''.join(x for x in run[1:] if x.isnumeric())
-                    letters = ''.join(x for x in run[1:] if x.isalpha())
-                    newrun = f"E{digits}-{letters}" if run.endswith(('A','B')) else f"E{digits}"
-                
-                # ETCS case for 34EA, 34EB runs to become 34E-A, 34E-B runs - and for regular 34E runs
-                elif len(run) >= 3 and run[0].isnumeric() and run[2] == "E":
-                    digits = ''.join(x for x in run if x.isnumeric())
-                    letters = ''.join(x for x in run[3:] if x.isalpha())
-                    newrun = f"{digits}E-{letters}" if run.endswith(('A','B')) else f"{digits}E"
-                
-                # Case for 12A, 12B runs to become 12-A, 12-B runs
-                elif run[0].isnumeric() and run.endswith(('A','B')):
-                    digits = ''.join(x for x in run if x.isnumeric())
-                    letters = ''.join(x for x in run if x.isalpha())
-                    newrun = f"{digits}-{letters}"
-                
-                # Case for AB1, AB2 runs to become AB-1, AB-2 runs
-                elif run[0].isalpha() and run.endswith(('1','2')):
-                    letters = ''.join(x for x in run if x.isalpha())
-                    digits = ''.join(x for x in run if x.isnumeric())
-                    newrun = f"{letters}-{digits}"
-    
-                return newrun if newrun else run
-            run = format_run(run)
             
             if WeekdayKey not in d_list:
                 d_list.append(WeekdayKey)
@@ -450,13 +450,16 @@ def TTS_H(path, mypath = None):
         
         
         vrt_2VarsityLs = {
-            'VYST':    (14,  4086),
-            'VYS':     (13,  3996),
-            'ROB':     (12,  3822),
-            'ROBS':    (11,  4542),
-            'NRG':     (10,  3524),
-            'HLN':     (9,   3242),
-            'CXM':     (8,   2962),
+            'VYST':    (17,  4086),
+            'VYS':     (16,  3996),
+            'ROB':     (15,  3822),
+            'ROBS':    (14,  4542),
+            'MRC':     (13,  3686),
+            'NRG':     (12,  3524),
+            'HLN':     (11,  3242),
+            'HID':     (10,  3094),
+            'CXM':     (9,   2962),
+            'PPA':     (8,   2846),
             'ORM':     (7,   2728),
             'BNH':     (6,   2336),
             'LGL':     (5,   1903),
@@ -645,7 +648,7 @@ def TTS_H(path, mypath = None):
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT'),
+            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
             'Springfield':                ('RHD','SFD','SFC'),
             'Ipswich - Rosewood':         ('WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'), #'MBN','TNY',
             'Redcliffe':                  ('KGR','MRD','MGH','MGE','RWL','KPR','KPRS'),
@@ -724,56 +727,7 @@ def TTS_H(path, mypath = None):
                 #     unit == unit
                 unit       = 'IMU' if unit == 'IMU100' else unit
                 run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
-    
-                
-                if '-' not in run:
-                    if (run[0] == "E" and run[1].isnumeric()):
-                        if run[-1] == 'A':
-                            run_ = 'E'
-                            for x in run[1:]:
-                                if x.isnumeric():
-                                    run_ += x
-                            run_ += '-'   
-                            for x in run[1:]:
-                                if x.isalpha():
-                                    run_ += x
-                            run = run_
-                            
-                    elif (len(run) >= 3 and run[2] == "E" and run[0].isnumeric()):
-                        run_ = ''
-                        if run[-1] == 'A':
-                            
-                            for x in run[0:]:
-                                if x.isnumeric():
-                                    run_ += x
-                            run_ += 'E'
-                            run_ += '-'   
-                            for x in run[3:]:
-                                if x.isalpha():
-                                    run_ += x
-                            run = run_
-                        
-                    elif (run[0].isalpha() and run[-1] == '1'):
-                        run_ = ''
-                        for x in run:
-                            if x.isalpha():
-                                run_ += x
-                        run_ += '-'   
-                        for x in run:
-                            if x.isnumeric():
-                                run_ += x
-                        run = run_
-                        
-                    elif (run[0].isnumeric() and run[-1] == 'A'):
-                        run_ = ''
-                        for x in run:
-                            if x.isnumeric():
-                                run_ += x
-                        run_ += '-'   
-                        for x in run:
-                            if x.isalpha():
-                                run_ += x
-                        run = run_
+                run        = format_run(run)
                 
                 oID        = origin['stationID']
                 dID        = destin['stationID']
