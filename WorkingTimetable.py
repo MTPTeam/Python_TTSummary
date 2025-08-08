@@ -262,7 +262,7 @@ stationmaster = {
     'Mayne North Stabling':'MNS',
     'Mayne 2':'MNE2',
     'Ormeau Stabling':'ORMS',
-    'Pimpama':'PIA',
+    'Pimpama':'PPA',
     'Hope Island':'HID',
     'Merrimac':'MRC',
     'Boggo Road':'BOG',
@@ -604,13 +604,16 @@ def TTS_WTT(path, mypath = None):
         
         
         vrt_2VarsityLs = {
-            'VYST':    (14,  4086),
-            'VYS':     (13,  3996),
-            'ROB':     (12,  3822),
-            'ROBS':    (11,  4542),
-            'NRG':     (10,  3524),
-            'HLN':     (9,   3242),
-            'CXM':     (8,   2962),
+            'VYST':    (17,  4086),
+            'VYS':     (16,  3996),
+            'ROB':     (15,  3822),
+            'ROBS':    (14,  4542),
+            'MRC':     (13,  3686),
+            'NRG':     (12,  3524),
+            'HLN':     (11,  3242),
+            'HID':     (10,  3094),
+            'CXM':     (9,   2962),
+            'PPA':     (8,   2846),
             'ORM':     (7,   2728),
             'BNH':     (6,   2336),
             'LGL':     (5,   1903),
@@ -776,7 +779,7 @@ def TTS_WTT(path, mypath = None):
             'Cleveland':                ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                  ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':              ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':  ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT'),
+            'Varsity Lakes - Airport':  ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
             'Ipswich':                  ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
             'Rosewood':                 ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
             'Ipswich-Rosewood':         ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
@@ -922,8 +925,8 @@ def TTS_WTT(path, mypath = None):
         fyg_D = zip_stations(['Mayne North','Mayne Yard Arrival','Mayne','Mayne Junction','Elec Train S','Campbell St','Exhibition','Normanby','Boggo Road','South Bank','South Brisbane','Roma St West Junction','Roma Street arrive','Roma Street platform','Roma Street depart','Central arrive','Central platform','Central depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Electric Depot Junction','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove platform','Ferny Grove'])
         fyg_U = zip_stations(['Ferny Grove platform','Ferny Grove','Keperra','Grovely','Oxford Park','Mitchelton','Gaythorne','Enoggera','Alderley','Newmarket','Wilston','Windsor','Electric Depot Junction','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Central arrive','Central platform','Central depart','Roma Street arrive','Roma Street platform','Roma Street depart','Normanby','Exhibition','Campbell St','Mayne Junction','Mayne','Mayne Yard Arrival','Mayne North','Elec Train S','Roma St West Junction','South Brisbane','South Bank','Boggo Road'])
         
-        vys_D = zip_stations(['Varsity Lakes TB','Varsity Lakes platform','Varsity Lakes','Robina platform','Robina','Robina Stabling Yard','Nerang','Helensvale arrive','Helensvale depart','Coomera arrive','Coomera depart','Pimpama','Ormeau','Beenleigh arrive','Beenleigh platform','Beenleigh depart','Loganlea','Altandi','Tennyson','Moolabin','Boggo Road platform','Boggo Road','South Bank','South Brisbane','Roma St West Junction','Roma St Fork','Mayne North','Mayne Yard Arrival','Mayne Junction','Elec Train S','Campbell St','Exhibition','Normanby','Roma Street arrive','Roma Street platform','Roma Street depart','Central arrive','Central platform','Central depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Mayne','Albion','Wooloowin','Eagle Junction platform','Eagle Junction','Airport Junction','International Airport','Domestic Airport'])
-        vys_U = zip_stations(['Domestic Airport','International Airport','Airport Junction','Eagle Junction platform','Eagle Junction','Wooloowin','Albion','Mayne','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Central arrive','Central platform','Central depart','Roma Street arrive','Roma Street platform','Roma Street depart','Normanby','Roma St Fork','Exhibition','Campbell St','Elec Train S','Roma St West Junction','Moolabin','Tennyson','South Brisbane','South Bank','Boggo Road platform','Boggo Road','Altandi','Loganlea','Beenleigh arrive','Beenleigh platform','Beenleigh depart','Ormeau','Pimpama','Coomera arrive','Coomera depart','Helensvale arrive','Helensvale depart','Nerang','Robina Stabling Yard','Robina platform','Robina','Varsity Lakes platform','Varsity Lakes','Varsity Lakes TB'])
+        vys_D = zip_stations(['Varsity Lakes TB','Varsity Lakes platform','Varsity Lakes','Robina platform','Robina','Robina Stabling Yard','Merrimac','Nerang','Helensvale arrive','Helensvale depart','Hope Island','Coomera arrive','Coomera depart','Pimpama','Ormeau','Beenleigh arrive','Beenleigh platform','Beenleigh depart','Loganlea','Altandi','Tennyson','Moolabin','Boggo Road platform','Boggo Road','South Bank','South Brisbane','Roma St West Junction','Roma St Fork','Mayne North','Mayne Yard Arrival','Mayne Junction','Elec Train S','Campbell St','Exhibition','Normanby','Roma Street arrive','Roma Street platform','Roma Street depart','Central arrive','Central platform','Central depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Mayne','Albion','Wooloowin','Eagle Junction platform','Eagle Junction','Airport Junction','International Airport','Domestic Airport'])
+        vys_U = zip_stations(['Domestic Airport','International Airport','Airport Junction','Eagle Junction platform','Eagle Junction','Wooloowin','Albion','Mayne','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Central arrive','Central platform','Central depart','Roma Street arrive','Roma Street platform','Roma Street depart','Normanby','Roma St Fork','Exhibition','Campbell St','Elec Train S','Roma St West Junction','Moolabin','Tennyson','South Brisbane','South Bank','Boggo Road platform','Boggo Road','Altandi','Loganlea','Beenleigh arrive','Beenleigh platform','Beenleigh depart','Ormeau','Pimpama','Coomera arrive','Coomera depart','Hope Island','Helensvale arrive','Helensvale depart','Nerang','Merrimac','Robina Stabling Yard','Robina platform','Robina','Varsity Lakes platform','Varsity Lakes','Varsity Lakes TB'])
         
         inc_D = zip_stations(['Boggo Road','South Bank','South Brisbane','Roma St West Junction','Roma Street arrive','Roma Street platform','Roma Street depart','Central arrive','Central platform','Central depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Mayne','Mayne Yard Arrival','Mayne North'])
         inc_U = zip_stations(['Mayne North','Mayne Yard Arrival','Elec Train Balloon','Mayne','Elec Train Flyover','Electric Depot Junction','Bowen Hills arrive','Bowen Hills platform','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley platform','Fortitude Valley depart','Central arrive','Central platform','Central depart','Roma Street arrive','Roma Street platform','Roma Street depart','Normanby','Exhibition','Campbell St','Elec Train S','Roma St West Junction','South Brisbane','South Bank','Boggo Road'])
