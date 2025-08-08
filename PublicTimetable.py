@@ -257,7 +257,7 @@ stationmaster = {
     'Mayne North Stabling':'MNS',
     'Mayne 2':'MNE2',
     'Ormeau Stabling':'ORMS',
-    'Pimpama':'PIA',
+    'Pimpama':'PPA',
     'Hope Island':'HID',
     'Merrimac':'MRC',
     
@@ -626,11 +626,16 @@ def TTS_PTT(path, mypath = None):
         
         
         vrt_2VarsityLs = {
-            'VYS':     (12,  3996),
-            'ROB':     (11,  3822),
-            'NRG':     (10,  3524),
-            'HLN':     (9,   3242),
-            'CXM':     (8,   2962),
+            'VYST':    (17,  4086),
+            'VYS':     (16,  3996),
+            'ROB':     (15,  3822),
+            'ROBS':    (14,  4542),
+            'MRC':     (13,  3686),
+            'NRG':     (12,  3524),
+            'HLN':     (11,  3242),
+            'HID':     (10,  3094),
+            'CXM':     (9,   2962),
+            'PPA':     (8,   2846),
             'ORM':     (7,   2728),
             'BNH':     (6,   2336),
             'LGL':     (5,   1903),
@@ -805,7 +810,7 @@ def TTS_PTT(path, mypath = None):
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT'),
+            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
             'Ipswich':                    ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
             'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
             'Ipswich - Rosewood':         ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
@@ -912,8 +917,8 @@ def TTS_PTT(path, mypath = None):
         fyg_in  = zip_stations(['Ferny Grove','Keperra','Grovely','Oxford Park','Mitchelton','Gaythorne','Enoggera','Alderley','Newmarket','Wilston','Windsor','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Continues To'])
         fyg_out = zip_stations(['Comes From','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove'])
         
-        vys_in  = zip_stations(['Varsity Lakes','Robina','Nerang','Helensvale','Coomera','Pimpama','Ormeau','Beenleigh','Loganlea','Altandi','Boggo Road','South Bank','South Brisbane','Roma Street arrive','Roma Street depart','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','International Airport','Domestic Airport','Continues To'])
-        vys_out = zip_stations(['Domestic Airport','International Airport','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street arrive','Roma Street depart','South Brisbane','South Bank','Boggo Road','Altandi','Loganlea','Beenleigh','Ormeau','Pimpama','Coomera','Helensvale','Nerang','Robina','Varsity Lakes'])
+        vys_in  = zip_stations(['Varsity Lakes','Robina','Merrimac','Nerang','Helensvale','Hope Island','Coomera','Pimpama','Ormeau','Beenleigh','Loganlea','Altandi','Boggo Road','South Bank','South Brisbane','Roma Street arrive','Roma Street depart','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','International Airport','Domestic Airport','Continues To'])
+        vys_out = zip_stations(['Domestic Airport','International Airport','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street arrive','Roma Street depart','South Brisbane','South Bank','Boggo Road','Altandi','Loganlea','Beenleigh','Ormeau','Pimpama','Coomera','Hope Island','Helensvale','Nerang','Merrimac','Robina','Varsity Lakes'])
         
         ips_in  = zip_stations(['Rosewood','Thagoona','Walloon','Karrabin','Wulkuraka','Thomas Street','Ipswich arrive','Ipswich depart','East Ipswich','Booval','Bundamba','Ebbw Vale','Dinmore','Riverview','Redbank','Goodna','Gailes','Wacol','Darra','Oxley','Corinda','Sherwood','Graceville','Chelmer','Indooroopilly','Taringa','Toowong','Auchenflower','Milton','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Continues To']) 
         ips_out = zip_stations(['Comes From','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Ebbw Vale','Bundamba','Booval','East Ipswich','Ipswich arrive','Ipswich depart','Thomas Street','Wulkuraka','Karrabin','Walloon','Thagoona','Rosewood'])
