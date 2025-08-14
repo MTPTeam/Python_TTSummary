@@ -59,7 +59,9 @@ train_numbers_dict = {
     'U':'3-IMU100',
     'H':'Empty_6-DEPT',
     'F':'6-REP',
-    'G':'Empty_6-REP'
+    'G':'Empty_6-REP',
+    'X':'6-NGRE',
+    'W':'Empty_6-NGRE'
     }
 
 stable_locations = ['WFE','WFW','IPSS','IPS','RDKS','ROBS','MNY','ORMS',
@@ -321,13 +323,16 @@ try:
     
     
     vrt_2VarsityLs = {
-        'VYST':    (14,  4086),
-        'VYS':     (13,  3996),
-        'ROB':     (12,  3822),
-        'ROBS':    (11,  4542),
-        'NRG':     (10,  3524),
-        'HLN':     (9,   3242),
-        'CXM':     (8,   2962),
+        'VYST':    (17,  4086),
+        'VYS':     (16,  3996),
+        'ROB':     (15,  3822),
+        'ROBS':    (14,  4542),
+        'MRC':     (13,  3686),
+        'NRG':     (12,  3524),
+        'HLN':     (11,  3242),
+        'HID':     (10,  3094),
+        'CXM':     (9,   2962),
+        'PPA':     (8,   2846),
         'ORM':     (7,   2728),
         'BNH':     (6,   2336),
         'LGL':     (5,   1903),
@@ -504,7 +509,7 @@ try:
         'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
         'Doomben':                    ('CYF','HDR','ACO','DBN'),
         'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-        'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT'),
+        'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
         'Ipswich':                    ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
         'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
         'Ipswich - Rosewood':         ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
@@ -820,7 +825,7 @@ try:
                 train2 = run_dict[k][i]
                 run    = k[0]
                 day    = weekdaykey_dict.get(k[1])
-                if pltfm1 != pltfm2:
+                if pltfm1 != pltfm2 and run not in ('XA','XB','100','101'):
                     mismatchedplatforms.append(f'Run {run} on {day} has mismatched platforms between {train1} and {train2} - {pltfm1} then {pltfm2}')
 
        
