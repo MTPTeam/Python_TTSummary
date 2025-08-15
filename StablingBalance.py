@@ -124,7 +124,7 @@ def TTS_SB(path, mypath = None):
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
         SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['REP','NGR', 'IMU100','EMU','SMU','HYBRID', 'ICE', 'DEPT']
+        SORT_ORDER_UNIT = ['REP','NGR', 'NGRE','IMU100','EMU','SMU','HYBRID', 'ICE', 'DEPT']
         d_list.sort(key=SORT_ORDER_WEEK.index)
         u_list.sort(key=SORT_ORDER_UNIT.index)
         weekdays = set(d_list).intersection({'8','16','32','64'})
@@ -411,6 +411,7 @@ def TTS_SB(path, mypath = None):
         #########################################################################################
         qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
         ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
+        ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
         imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
         emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
         smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
@@ -425,6 +426,7 @@ def TTS_SB(path, mypath = None):
         
         qtmpbold = workbook.add_format({'align':'center','bg_color':'#FFB7B7','bold':True,'bottom':1})
         ngrbold  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','bold':True,'bottom':1})
+        ngrebold = workbook.add_format({'align':'center','bg_color':'#FFFF93','bold':True,'bottom':1})
         imubold  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','bold':True,'bottom':1})
         emubold  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','bold':True,'bottom':1})
         smubold  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','bold':True,'bottom':1})
@@ -432,6 +434,7 @@ def TTS_SB(path, mypath = None):
         
         qtmpbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_size':16})
         ngrbig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_size':16})
+        ngrebig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFFF93','font_size':16})
         imubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_size':16})
         emubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_size':16})
         smubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_size':16})
@@ -439,6 +442,7 @@ def TTS_SB(path, mypath = None):
         
         qtmpbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_color':'#CC194C','font_size':16})
         ngrbigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_color':'#CC194C','font_size':16})
+        ngrebigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFFF93','font_color':'#CC194C','font_size':16})
         imubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_color':'#CC194C','font_size':16})
         emubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_color':'#CC194C','font_size':16})
         smubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_color':'#CC194C','font_size':16})
@@ -446,6 +450,7 @@ def TTS_SB(path, mypath = None):
         
         qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
         ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
+        ngreboldred = workbook.add_format({'align':'center','bg_color':'#FFFF93','font_color':'#CC194C', 'bold':True})
         imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
         emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
         smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
@@ -458,6 +463,7 @@ def TTS_SB(path, mypath = None):
         font_dict = {
             'REP':    [qtmp,qtmpbold,qtmpbig,qtmpbigred,qtmpboldred],
             'NGR':    [ngr,ngrbold,ngrbig,ngrbigred,ngrboldred],
+            'NGRE':   [ngre,ngrebold,ngrebig,ngrebigred,ngreboldred],
             'IMU100': [imu,imubold,imubig,imubigred,imuboldred],
             'EMU':    [emu,emubold,emubig,emubigred,emuboldred],
             'HYBRID': [emu,emubold,emubig,emubigred,emuboldred],
