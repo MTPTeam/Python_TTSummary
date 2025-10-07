@@ -499,8 +499,8 @@ def runtime_dashboard(path, mypath=None):
                         stop_type = "exp"
                         runtime = dep_2 - dep_1
                         
-                    origin_is_rev = origin not in non_revenue_stations
-                    dest_is_rev = destination not in non_revenue_stations
+                    origin_is_rev = origin not in non_revenue_stations and entries[i].attrib.get('stopTime')
+                    dest_is_rev = destination not in non_revenue_stations and stop_type == "stop"
                     
                     if origin_is_rev and not dest_is_rev and not (i+1 == len(entries)-1): 
                         pending_origin = {
