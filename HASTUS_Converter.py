@@ -47,7 +47,7 @@ entries_to_exclude = ['RSWJ','YNA','RSF',
                       'ZZZTJN','SIG9A','SIG10D',
                       'TNYBCHJ','YLYJ','STP','NTP',
                       'BHNJ','LBR','MEJ','SLYJ','MNYE',
-                      'BWJ','BEJ','ORMJ','CYJ','FRK']
+                      'BWJ','BEJ','ORMJ','CYJ','FRK','BWN']
 
 ### Some stations will have a double entry if dwelling at the station for long enough, one for arrive and one for depart
 ### Stations or locations in this list should only have a single entry regardless of dwell time otherwise it causes errors in the HASTUS Importer
@@ -83,6 +83,8 @@ HASTUS_stableconverter = {
     # 'CPM':'CPM_S', # moved logic to line 840-ish. CPM_S only used for stablers.
     # 'FEE':'WFE_S', # 31/07 now referenced as FEE2, with FWE1 on the west
     'BWHS': 'BWH_S',
+    'BIRS': 'BIR_S',
+    'BWSS': 'BWS_S',
     # '':'',
     # '':'',
     # '':'',
