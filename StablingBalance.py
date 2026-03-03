@@ -12,7 +12,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-
+import MTP_constants
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
@@ -20,13 +20,6 @@ CreateWorkbook = True
 OpenWorkbook = True
 
 
-
-
-
-
-
-
-weekdaykey_dict  = {'120':'Mon-Thu','64':'Mon','32':'Tue','16':'Wed','8':'Thu','4':'Fri','2':'Sat','1':'Sun'}
 
 wkdk_rename = {
     ('120',):    'Mon-Thu',
@@ -81,7 +74,6 @@ def TTS_SB(path, mypath = None):
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
-        weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
         tn_list = []
         tn_doubles = []
         for train in root.iter('train'):
@@ -91,7 +83,7 @@ def TTS_SB(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -881,7 +873,7 @@ def TTS_SB(path, mypath = None):
             Summary.write_row(erow+1,0,list((n+3)*' '),top)
             Summary.write(1,2+n,'Total',boldbottomleftborder)
             
-            Summary.write_column(srow,1,[weekdaykey_dict.get(d) for d in d_list],centered)
+            Summary.write_column(srow,1,[MTP_constants.WEEKDAYKEY.get(d) for d in d_list],centered)
             Summary.write(erow,1,'Total',boldtopborder)
             
             monday      = (stables_dict.get(k)[0], stables_dict.get(k)[8])
@@ -1015,7 +1007,7 @@ def TTS_SB(path, mypath = None):
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = weekdaykey_dict.get(run[1])
+                DoO       = MTP_constants.WEEKDAYKEY.get(run[1])
                 start_sID = run[2]
                 end_sID   = run[3]
                 

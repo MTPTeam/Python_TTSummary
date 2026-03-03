@@ -15,7 +15,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-
+import MTP_constants
 
 
 ### CreateFile toggles whether text files are generated on running the script
@@ -40,7 +40,6 @@ pmpeak_srt = '15:30:00'
 pmpeak_end = '18:30:00'
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 xl_daycode_dict = {
         '64':'M______',
         '32':'_T_____',
@@ -287,14 +286,14 @@ def TTS_TM(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
         
         if originpass or destinpass:
             print('           Error: First station pass or last station pass through a revenue location')
-            for tn,day in originpass: print(f' - First pass: {tn} on {weekdaykey_dict.get(day)} - ')
-            for tn,day in destinpass: print(f' - Last pass:  {tn} on {weekdaykey_dict.get(day)} - ')
+            for tn,day in originpass: print(f' - First pass: {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
+            for tn,day in destinpass: print(f' - Last pass:  {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
             time.sleep(15)
             sys.exit() 
         

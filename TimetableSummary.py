@@ -9,6 +9,7 @@ import logging
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import xml.etree.ElementTree as ET
+import MTP_constants
 from TripCount                 import TTS_TC
 from PublicTimetable           import TTS_PTT
 from WorkingTimetable          import TTS_WTT
@@ -115,7 +116,6 @@ try:
     ### Check for duplicate train numbers before executing the script
     ### Print warning for user if duplicates exist
     ### Print out all duplicates
-    weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
     tree = ET.parse(filename)
     root = tree.getroot()
     tn_list = []
@@ -128,7 +128,7 @@ try:
             
     if tn_doubles:
         print('           Error: Duplicate train numbers')
-        for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+        for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
         time.sleep(15)
         sys.exit()  
     

@@ -13,7 +13,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-
+import MTP_constants
 
 
 
@@ -28,7 +28,6 @@ OpenWorkbook = True
 
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 
 wkdk_rename = {
     ('120','64'):'Mon',
@@ -79,7 +78,6 @@ def TTS_SC(path, mypath = None):
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
-        weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
         tn_list = []
         tn_doubles = []
         for train in root.iter('train'):
@@ -89,7 +87,7 @@ def TTS_SC(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -222,7 +220,7 @@ def TTS_SC(path, mypath = None):
             
             nonlocal row
             i = d_list.index(day)
-            Summary.write(      row+1, 4+n,   weekdaykey_dict.get(day))
+            Summary.write(      row+1, 4+n,   MTP_constants.WEEKDAYKEY.get(day))
             Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
             Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
             row += 1
@@ -1075,7 +1073,7 @@ def TTS_SC(path, mypath = None):
                 Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
                 
             # Write days
-            Summary.write_column(firstrow,1,  [weekdaykey_dict.get(d) for d in d_list])
+            Summary.write_column(firstrow,1,  [MTP_constants.WEEKDAYKEY.get(d) for d in d_list])
            
             
             summary_dict = {
@@ -1364,7 +1362,7 @@ def TTS_SC(path, mypath = None):
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = weekdaykey_dict.get(run[1])
+                DoO       = MTP_constants.WEEKDAYKEY.get(run[1])
                 start_sID = run[2]
                 end_sID   = run[3]
                 
