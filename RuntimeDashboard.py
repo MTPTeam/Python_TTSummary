@@ -16,6 +16,7 @@ import webbrowser
 import threading
 import socket
 import ctypes
+import MTP_constants
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -23,7 +24,7 @@ ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-weekdaykey_dict = {'120': 'Monday-Thursday','64': 'Monday','32': 'Tuesday','16': 'Wednesday','8': 'Thursday','4': 'Friday','2': 'Saturday','1': 'Sunday'}
+#weekdaykey_dict = {'120': 'Monday-Thursday','64': 'Monday','32': 'Tuesday','16': 'Wednesday','8': 'Thursday','4': 'Friday','2': 'Saturday','1': 'Sunday'}
 weekdaykey_dict2 = {'120':'Mon', '4':'Fri', '2':'Sat', '1':'Sun'}
 weekdayabr_dict = {'Monday-Thursday':'Mon-Thurs', 'Friday':'Fri', 'Saturday':'Sat', 'Sunday':'Sun'}
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -423,7 +424,7 @@ def runtime_dashboard(path, mypath=None):
             for train in revtrains:
                 tn = train.attrib['number']
                 weekday_key = train[0][0][0].attrib['weekdayKey']
-                day = weekdaykey_dict.get(weekday_key, "Unknown")
+                day = MTP_constants.WEEKDAY_KEYS_MASTER.get(weekday_key, {}).get('long', "Unknown")
                 day2 = weekdaykey_dict2.get(weekday_key, "Unknown")
                 entries = list(train.iter('entry'))
                 line = entries[0].attrib.get('zuggattung', 'Unknown')
@@ -474,7 +475,7 @@ def runtime_dashboard(path, mypath=None):
             for train in revtrains:
                 tn = train.attrib['number']
                 weekday_key = train[0][0][0].attrib['weekdayKey']
-                day = weekdaykey_dict.get(weekday_key, "Unknown")
+                day = MTP_constants.WEEKDAY_KEYS_MASTER.get(weekday_key, {}).get('long', "Unknown")
                 day2 = weekdaykey_dict2.get(weekday_key, "Unknown")
                 entries = list(train.iter('entry'))
                 line = entries[0].attrib.get('zuggattung', 'Unknown')
