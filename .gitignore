@@ -6,3 +6,5 @@
 
 # Don't ignore Python files
 !*.py
+
+backups/
