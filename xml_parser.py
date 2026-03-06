@@ -1,7 +1,9 @@
+from importlib.resources import path
 import os
 import xml.etree.ElementTree as ET
 import re
-
+import MTP_constants
+import typing
 class TrainInfo:
 
     def __init__(self, train):
@@ -33,24 +35,38 @@ class TrainInfo:
         self.odep = self.origin['departure']
         self.ddep = self.destin['departure']
 
+        # additional (used by SC)
+        self.start_id = self.origin.get('stationID')
+        self.end_id   = self.destin.get('stationID')
+        self.start_time = self.odep
+        self.end_time   = self.ddep
+
+        # run ID 
+        self.run = self.lineID.split('~', 1)[1][1:] if '~' in self.lineID else self.lineID
+    
+    @staticmethod
+    def threecar_scalar(unit: str, cars: int) -> int:
+        # Return the scalar (unit delta) used in SC 
+        # - NGR/NGRE are single consist (1), other are 2 if 6 cars, else 1)
+        
+        if unit in ('NGR', 'NGRE'):
+            return 1
+        return 2 if cars == 6 else 1
 
 def load_rsx(path):
-    # loads rsx from user specified directory 
-    directory = '\\'.join(path.split('/')[0:-1])
-    os.chdir(directory)
-    filename = path.split('/')[-1] 
-    tree = ET.parse(filename) 
-    return tree.getroot(), filename[:-4]
+    # loads rsx from user specified directory (using absolute path)
+    tree = ET.parse(path)
+    filename_wo_ext = os.path.splitext(os.path.basename(path))[0]
+    return tree.getroot(), filename_wo_ext
+
 
 
 def extract_trains(root):
     return [TrainInfo(t) for t in root.iter('train')]
 
-
 def detect_duplicates(trains):
     # detects duplicates 
     seen = set()
-
     dup = []
 
     for t in trains:
@@ -77,10 +93,11 @@ def extract_day_and_unit_lists(trains):
 
 
 
-## TTS_SB specific function
-def build_run_dict(trains):
-    run_dict = {}
 
+def build_run_dict(trains):
+
+    # { (run, weekday): [unit, cars, trips, start_station, end_station, start_time, end_time, [train_numbers]] }
+    run_dict = {}
 
     for t in trains:
         run = t.lineID.split('~', 1)[1][1:] if '~' in t.lineID else t.lineID
@@ -106,6 +123,16 @@ def build_run_dict(trains):
     return run_dict
         
 
+
+def resolve_DoO(wkdk):
+    # wkdk is a tuple of strings like ('120','64')
+    for day in MTP_constants.DAY_PRIORITY:
+        if day in wkdk:
+            print("DEBUG:", day, type(MTP_constants.WEEKDAY_KEYS_MASTER[day]))
+            return MTP_constants.WEEKDAY_KEYS_MASTER[day]['short']   # or long/alias
+    return None
+
+
 def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days = False, want_units = False, want_runs = False):
     root , _ = load_rsx(path)
 
@@ -116,6 +143,31 @@ def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days =
     run_dict = build_run_dict(trains) if want_runs else None
 
     return root, trains, d_list, u_list, run_dict, duplicates
+
+
+def sort_days(days):
+    ORDER = ['64','32','16','8','120','4','2','1']
+    return sorted(days, key=ORDER.index)
+
+def sort_units(units):
+    ORDER = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID','ICE','DEPT']
+    return sorted(units, key=ORDER.index)
+
+
+def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True) -> typing.List[str]:
+    # Sorts days and optionally removes 120 when Mon–Thu codes are present. '120' = Mon–Thu composite code, explicit codes are {'64','32','16','8'} 
+    
+    sorted_days = sort_days(days)
+
+    if collapse_mon_thu:
+        weekday_codes = {'64', '32', '16', '8'}
+
+        # if any explicit weekday exists and '120' is present then remove '120'. 
+        if any(d in sorted_days for d in weekday_codes) and '120' in sorted_days:
+            sorted_days = [d for d in sorted_days if d != '120']
+
+    return sorted_days
+
 
 
 
