@@ -47,6 +47,37 @@ SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
 
 # print new location in excel file for easy debugging 
 
+    
+
+YARDS = {
+    'Wulkuraka':    ['WFE','WFW','FEE'],
+    'Ipswich':      ['IPSS','IPS'],
+    'Redbank':      ['RDKS'],
+    'Robina':       ['ROBS'],
+    'Manly':        ['MNY'],
+    'Beenleigh':    ['BNHS'],
+    'Mayne West':   ['ETB','ETF','ETS','MWS','RS','BHI'],
+    'Mayne North':  ['YN','MNS'],
+    'Mayne East':   ['MES'],
+    'Petrie':       ['PETS'],
+    'Kippa-Ring':   ['KPRS'],
+    'Caboolture':   ['CAE','CAW','CAB'],
+    'Elimbah':      ['EMHS'],
+    'Woombye':      ['WOBS'],
+    'Nambour':      ['NBR'],
+    'Gympie North': ['GYN'],
+    'Banyo':        ['BQYS'],
+    'Clapham':      ['CPM'],
+    'Ormeau':       ['ORMS'],
+    'Beerwah South':['BWHS'],
+}
+
+
+NON_STABLE_LOCATIONS = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
+
+
+
+
 
 
 

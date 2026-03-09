@@ -9,13 +9,13 @@ import xml.etree.ElementTree as ET
 
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
-
 import traceback
 import logging
 import MTP_constants
 from tkinter import messagebox
 
-from xml_parser import parse_rsx, TrainInfo, resolve_DoO, sort_days, sort_units, normalise_days
+from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
+from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store
 from utils import timetrim, csl
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -23,13 +23,8 @@ ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
 
-# To be displayed in red font if a run starts or finishes at one of these non-stable locations
-nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
-
-
 headers1 = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Start Time', '# Sets','# SetsByUnit']
 headers2 = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Finish Time', '# Sets','# SetsByUnit']
-
 
 
 def TTS_SB(path, mypath = None):
@@ -76,8 +71,8 @@ def TTS_SB(path, mypath = None):
         
         start_time = time.time()
         runs_without_stable = []
-        
-            
+        store = init_store(MTP_constants.YARDS, MTP_constants.SORT_ORDER_WEEK)
+        print(store)
         
         
         def writecell_unbalanced(r,c,value,unbalancedfont,balancedfont):
@@ -102,9 +97,9 @@ def TTS_SB(path, mypath = None):
                     sheet.write_row(idx,c,line,font_dict.get(line[2])[0])
                     
                     # Use red font if run ends at a station not a stabling yard
-                    if line[5] in nonstables:
+                    if line[5] in MTP_constants.NON_STABLE_LOCATIONS:
                         sheet.write(idx,c+5,line[5],font_dict.get(line[2])[4])
-                    if line[6] in nonstables:
+                    if line[6] in MTP_constants.NON_STABLE_LOCATIONS:
                         sheet.write(idx,c+6,line[6],font_dict.get(line[2])[4])
              
         
@@ -118,76 +113,7 @@ def TTS_SB(path, mypath = None):
             else:
                 sheet.merge_range(r, c, r+n_units-1, c, sum_of_units, font)    
             
-            
-        
-        
-        def build_daylists(daylist_out,daylist_in, wkdk, stable):
-            """ 
-            From the list of all runs, 
-            narrows down runs that either start or end at a particular stabling location, 
-            for that particular day of operation,
-            and appends that run to the associated in or out list,
-            depending on whether the run is starting at the stable or ending there
-            """
-            
-            DoO = resolve_DoO(wkdk)
-            for k,v in run_dict.items():
-                
-                
-                
-                run       = k[0]
-                D_o_run   = k[1]
-                
-                unit      = v[0]
-                cars      = v[1]
-                trips     = v[2]
-                start_sID = v[3]
-                end_sID   = v[4]
-                start_t   = v[5]
-                finish_t  = v[6]
-                
-                
-                if unit == 'NGR':
-                    delta = 1
-                else:
-                    delta = 2 if cars == 6 else 1
-                # delta = 2 if cars == 6 else 1
-                
-                
-                
-                if D_o_run in wkdk:
-                    if start_sID in stable:
-                        daylist_out.append([ run, DoO, unit, cars, trips, start_sID, end_sID, start_t, delta ])
-                    
-                    if end_sID in stable:
-                        daylist_in.append([ run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, delta ])
-        
-                        
-            daylist_out.sort(key=lambda val: val[7])
-            daylist_in.sort(key=lambda val: val[7])
-            daylist_out.sort(key=lambda val: {x:MTP_constants.SORT_ORDER_UNIT.index(x) for x in MTP_constants.SORT_ORDER_UNIT}[val[2]])
-            daylist_in.sort(key=lambda val: {x:MTP_constants.SORT_ORDER_UNIT.index(x) for x in MTP_constants.SORT_ORDER_UNIT}[val[2]])
-            
-            for x in daylist_out: x[7] = timetrim(x[7])
-            for x in daylist_in: x[7] = timetrim(x[7])
-            
-            
-        def build_weeklists(mon_out,tue_out,wed_out,thu_out,mth_out,fri_out,sat_out,sun_out,   mon_in,tue_in,wed_in,thu_in,mth_in,fri_in,sat_in,sun_in,    stableoptions, d_list):
-            """ Runs the build_daylists function for a full week """
 
-            # mon - thurs block
-            if '120' in d_list:
-                build_daylists(mth_out, mth_in, ('120',), stableoptions)
-
-            # Weekends
-            if '4' in d_list:
-                build_daylists(fri_out, fri_in, ('4',), stableoptions)
-            if '2' in d_list:
-                build_daylists(sat_out, sat_in, ('2',), stableoptions)
-            if '1' in d_list:
-                build_daylists(sun_out, sun_in, ('1',), stableoptions)
-                    
-            
         def write_day(sheet, daylist_out, daylist_in, row):
             """ 
             Separated by runs starting at or ending at the stable,
@@ -289,17 +215,7 @@ def TTS_SB(path, mypath = None):
             
         
         
-        
-        
-                
-        
-        
-        
-        
-        
         # Formatting
-        #########################################################################################
-        #########################################################################################
         qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
         ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
         ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
@@ -410,300 +326,34 @@ def TTS_SB(path, mypath = None):
         
         
         
-        
-        
-        
-        wfeoptions  = ['WFE','WFW','FEE']
-        ipssoptions = ['IPSS','IPS']
-        rdksoptions = ['RDKS']
-        robsoptions = ['ROBS']
-        mnyoptions  = ['MNY']
-        bnhsoptions = ['BNHS']
-        etsoptions  = ['ETB','ETF','ETS','MWS','RS','BHI']
-        ynoptions   = ['YN','MNS']
-        mesoptions  = ['MES']
-        petsoptions = ['PETS']
-        kprsoptions = ['KPRS']
-        caewoptions = ['CAE','CAW','CAB']
-        emhsoptions = ['EMHS']
-        wobsoptions = ['WOBS']
-        nbroptions  = ['NBR']
-        gynoptions  = ['GYN']
-        bqysoptions = ['BQYS']
-        cpmoptions  = ['CPM']
-        ormsoptions = ['ORMS']
-        bwhsoptions = ['BWHS']
-        
-        
-        
-        # Create a list of acceptable locations to end a run
-        acceptable_stables = []
-        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,mesoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions,cpmoptions,ormsoptions,bwhsoptions]
-        for x in s_yards:
-                for y in x: acceptable_stables.append(y)
-        acceptable_stables.remove('RS')
-        acceptable_stables.remove('BHI')
-        
-        
-        # Initialise in and out lists for each day, for each stabling yard
-        # Will be filled with runs on that particular day, starting or ending at that particular stabling location
-        wfe_mon_out = []; wfe_mon_in = []; 
-        wfe_tue_out = []; wfe_tue_in = []; 
-        wfe_wed_out = []; wfe_wed_in = []; 
-        wfe_thu_out = []; wfe_thu_in = []; 
-        wfe_mth_out = []; wfe_mth_in = []; 
-        wfe_fri_out = []; wfe_fri_in = []; 
-        wfe_sat_out = []; wfe_sat_in = []; 
-        wfe_sun_out = []; wfe_sun_in = []; 
-        
-        ipss_mon_out = []; ipss_mon_in = []; 
-        ipss_tue_out = []; ipss_tue_in = []; 
-        ipss_wed_out = []; ipss_wed_in = []; 
-        ipss_thu_out = []; ipss_thu_in = []; 
-        ipss_mth_out = []; ipss_mth_in = []; 
-        ipss_fri_out = []; ipss_fri_in = []; 
-        ipss_sat_out = []; ipss_sat_in = []; 
-        ipss_sun_out = []; ipss_sun_in = []; 
-        
-        rdks_mon_out = []; rdks_mon_in = []; 
-        rdks_tue_out = []; rdks_tue_in = []; 
-        rdks_wed_out = []; rdks_wed_in = []; 
-        rdks_thu_out = []; rdks_thu_in = []; 
-        rdks_mth_out = []; rdks_mth_in = []; 
-        rdks_fri_out = []; rdks_fri_in = []; 
-        rdks_sat_out = []; rdks_sat_in = []; 
-        rdks_sun_out = []; rdks_sun_in = []; 
-        
-        robs_mon_out = []; robs_mon_in = []; 
-        robs_tue_out = []; robs_tue_in = []; 
-        robs_wed_out = []; robs_wed_in = []; 
-        robs_thu_out = []; robs_thu_in = []; 
-        robs_mth_out = []; robs_mth_in = []; 
-        robs_fri_out = []; robs_fri_in = []; 
-        robs_sat_out = []; robs_sat_in = []; 
-        robs_sun_out = []; robs_sun_in = []; 
-        
-        mny_mon_out = []; mny_mon_in = []; 
-        mny_tue_out = []; mny_tue_in = []; 
-        mny_wed_out = []; mny_wed_in = [];
-        mny_thu_out = []; mny_thu_in = []; 
-        mny_mth_out = []; mny_mth_in = []; 
-        mny_fri_out = []; mny_fri_in = []; 
-        mny_sat_out = []; mny_sat_in = []; 
-        mny_sun_out = []; mny_sun_in = []; 
-        
-        bnhs_mon_out = []; bnhs_mon_in = []; 
-        bnhs_tue_out = []; bnhs_tue_in = []; 
-        bnhs_wed_out = []; bnhs_wed_in = []; 
-        bnhs_thu_out = []; bnhs_thu_in = []; 
-        bnhs_mth_out = []; bnhs_mth_in = []; 
-        bnhs_fri_out = []; bnhs_fri_in = []; 
-        bnhs_sat_out = []; bnhs_sat_in = []; 
-        bnhs_sun_out = []; bnhs_sun_in = []; 
-        
-        ets_mon_out = []; ets_mon_in = []; 
-        ets_tue_out = []; ets_tue_in = [];
-        ets_wed_out = []; ets_wed_in = [];
-        ets_thu_out = []; ets_thu_in = []; 
-        ets_mth_out = []; ets_mth_in = []; 
-        ets_fri_out = []; ets_fri_in = []; 
-        ets_sat_out = []; ets_sat_in = []; 
-        ets_sun_out = []; ets_sun_in = []; 
-        
-        yn_mon_out = []; yn_mon_in = []; 
-        yn_tue_out = []; yn_tue_in = []; 
-        yn_wed_out = []; yn_wed_in = []; 
-        yn_thu_out = []; yn_thu_in = []; 
-        yn_mth_out = []; yn_mth_in = []; 
-        yn_fri_out = []; yn_fri_in = []; 
-        yn_sat_out = []; yn_sat_in = []; 
-        yn_sun_out = []; yn_sun_in = [];
-        
-        mes_mon_out = []; mes_mon_in = []; 
-        mes_tue_out = []; mes_tue_in = []; 
-        mes_wed_out = []; mes_wed_in = []; 
-        mes_thu_out = []; mes_thu_in = []; 
-        mes_mth_out = []; mes_mth_in = []; 
-        mes_fri_out = []; mes_fri_in = []; 
-        mes_sat_out = []; mes_sat_in = []; 
-        mes_sun_out = []; mes_sun_in = [];
-        
-        pets_mon_out = []; pets_mon_in = []; 
-        pets_tue_out = []; pets_tue_in = []; 
-        pets_wed_out = []; pets_wed_in = []; 
-        pets_thu_out = []; pets_thu_in = []; 
-        pets_mth_out = []; pets_mth_in = []; 
-        pets_fri_out = []; pets_fri_in = []; 
-        pets_sat_out = []; pets_sat_in = []; 
-        pets_sun_out = []; pets_sun_in = [];
-        
-        kprs_mon_out = []; kprs_mon_in = []; 
-        kprs_tue_out = []; kprs_tue_in = []; 
-        kprs_wed_out = []; kprs_wed_in = []; 
-        kprs_thu_out = []; kprs_thu_in = []; 
-        kprs_mth_out = []; kprs_mth_in = []; 
-        kprs_fri_out = []; kprs_fri_in = []; 
-        kprs_sat_out = []; kprs_sat_in = []; 
-        kprs_sun_out = []; kprs_sun_in = []; 
-        
-        caew_mon_out = []; caew_mon_in = []; 
-        caew_tue_out = []; caew_tue_in = []; 
-        caew_wed_out = []; caew_wed_in = []; 
-        caew_thu_out = []; caew_thu_in = []; 
-        caew_mth_out = []; caew_mth_in = []; 
-        caew_fri_out = []; caew_fri_in = []; 
-        caew_sat_out = []; caew_sat_in = []; 
-        caew_sun_out = []; caew_sun_in = []; 
-        
-        emhs_mon_out = []; emhs_mon_in = []; 
-        emhs_tue_out = []; emhs_tue_in = []; 
-        emhs_wed_out = []; emhs_wed_in = []; 
-        emhs_thu_out = []; emhs_thu_in = []; 
-        emhs_mth_out = []; emhs_mth_in = []; 
-        emhs_fri_out = []; emhs_fri_in = []; 
-        emhs_sat_out = []; emhs_sat_in = []; 
-        emhs_sun_out = []; emhs_sun_in = [];
-        
-        wobs_mon_out = []; wobs_mon_in = []; 
-        wobs_tue_out = []; wobs_tue_in = []; 
-        wobs_wed_out = []; wobs_wed_in = []; 
-        wobs_thu_out = []; wobs_thu_in = []; 
-        wobs_mth_out = []; wobs_mth_in = []; 
-        wobs_fri_out = []; wobs_fri_in = []; 
-        wobs_sat_out = []; wobs_sat_in = []; 
-        wobs_sun_out = []; wobs_sun_in = []; 
-        
-        nbr_mon_out = []; nbr_mon_in = []; 
-        nbr_tue_out = []; nbr_tue_in = []; 
-        nbr_wed_out = []; nbr_wed_in = []; 
-        nbr_thu_out = []; nbr_thu_in = []; 
-        nbr_mth_out = []; nbr_mth_in = []; 
-        nbr_fri_out = []; nbr_fri_in = []; 
-        nbr_sat_out = []; nbr_sat_in = []; 
-        nbr_sun_out = []; nbr_sun_in = []; 
-        
-        gyn_mon_out = []; gyn_mon_in = []; 
-        gyn_tue_out = []; gyn_tue_in = []; 
-        gyn_wed_out = []; gyn_wed_in = []; 
-        gyn_thu_out = []; gyn_thu_in = []; 
-        gyn_mth_out = []; gyn_mth_in = []; 
-        gyn_fri_out = []; gyn_fri_in = []; 
-        gyn_sat_out = []; gyn_sat_in = []; 
-        gyn_sun_out = []; gyn_sun_in = []; 
-        
-        bqys_mon_out = []; bqys_mon_in = []; 
-        bqys_tue_out = []; bqys_tue_in = []; 
-        bqys_wed_out = []; bqys_wed_in = []; 
-        bqys_thu_out = []; bqys_thu_in = []; 
-        bqys_mth_out = []; bqys_mth_in = []; 
-        bqys_fri_out = []; bqys_fri_in = []; 
-        bqys_sat_out = []; bqys_sat_in = []; 
-        bqys_sun_out = []; bqys_sun_in = []; 
-        
-        cpm_mon_out = []; cpm_mon_in = []; 
-        cpm_tue_out = []; cpm_tue_in = []; 
-        cpm_wed_out = []; cpm_wed_in = []; 
-        cpm_thu_out = []; cpm_thu_in = []; 
-        cpm_mth_out = []; cpm_mth_in = []; 
-        cpm_fri_out = []; cpm_fri_in = []; 
-        cpm_sat_out = []; cpm_sat_in = []; 
-        cpm_sun_out = []; cpm_sun_in = [];
-        
-        orms_mon_out = []; orms_mon_in = []; 
-        orms_tue_out = []; orms_tue_in = []; 
-        orms_wed_out = []; orms_wed_in = []; 
-        orms_thu_out = []; orms_thu_in = []; 
-        orms_mth_out = []; orms_mth_in = []; 
-        orms_fri_out = []; orms_fri_in = []; 
-        orms_sat_out = []; orms_sat_in = []; 
-        orms_sun_out = []; orms_sun_in = [];
-        
-        bwhs_mon_out = []; bwhs_mon_in = []; 
-        bwhs_tue_out = []; bwhs_tue_in = []; 
-        bwhs_wed_out = []; bwhs_wed_in = []; 
-        bwhs_thu_out = []; bwhs_thu_in = []; 
-        bwhs_mth_out = []; bwhs_mth_in = []; 
-        bwhs_fri_out = []; bwhs_fri_in = []; 
-        bwhs_sat_out = []; bwhs_sat_in = []; 
-        bwhs_sun_out = []; bwhs_sun_in = [];
-        
-        
-        # Fill the empty lists with runs given it starts or finishes at one of the options
-        build_weeklists(wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in,            wfeoptions, d_list)
-        build_weeklists(ipss_mon_out,ipss_tue_out,ipss_wed_out,ipss_thu_out,ipss_mth_out,ipss_fri_out,ipss_sat_out,ipss_sun_out,   ipss_mon_in,ipss_tue_in,ipss_wed_in,ipss_thu_in,ipss_mth_in,ipss_fri_in,ipss_sat_in,ipss_sun_in,    ipssoptions, d_list)
-        build_weeklists(rdks_mon_out,rdks_tue_out,rdks_wed_out,rdks_thu_out,rdks_mth_out,rdks_fri_out,rdks_sat_out,rdks_sun_out,   rdks_mon_in,rdks_tue_in,rdks_wed_in,rdks_thu_in,rdks_mth_in,rdks_fri_in,rdks_sat_in,rdks_sun_in,    rdksoptions, d_list)
-        build_weeklists(robs_mon_out,robs_tue_out,robs_wed_out,robs_thu_out,robs_mth_out,robs_fri_out,robs_sat_out,robs_sun_out,   robs_mon_in,robs_tue_in,robs_wed_in,robs_thu_in,robs_mth_in,robs_fri_in,robs_sat_in,robs_sun_in,    robsoptions, d_list)
-        build_weeklists(mny_mon_out,mny_tue_out,mny_wed_out,mny_thu_out,mny_mth_out,mny_fri_out,mny_sat_out,mny_sun_out,           mny_mon_in,mny_tue_in,mny_wed_in,mny_thu_in,mny_mth_in,mny_fri_in,mny_sat_in,mny_sun_in,            mnyoptions, d_list)
-        build_weeklists(bnhs_mon_out,bnhs_tue_out,bnhs_wed_out,bnhs_thu_out,bnhs_mth_out,bnhs_fri_out,bnhs_sat_out,bnhs_sun_out,   bnhs_mon_in,bnhs_tue_in,bnhs_wed_in,bnhs_thu_in,bnhs_mth_in,bnhs_fri_in,bnhs_sat_in,bnhs_sun_in,    bnhsoptions, d_list)
-        build_weeklists(ets_mon_out,ets_tue_out,ets_wed_out,ets_thu_out,ets_mth_out,ets_fri_out,ets_sat_out,ets_sun_out,           ets_mon_in,ets_tue_in,ets_wed_in,ets_thu_in,ets_mth_in,ets_fri_in,ets_sat_in,ets_sun_in,            etsoptions, d_list)
-        build_weeklists(yn_mon_out,yn_tue_out,yn_wed_out,yn_thu_out,yn_mth_out,yn_fri_out,yn_sat_out,yn_sun_out,                   yn_mon_in,yn_tue_in,yn_wed_in,yn_thu_in,yn_mth_in,yn_fri_in,yn_sat_in,yn_sun_in,                    ynoptions, d_list)
-        build_weeklists(mes_mon_out,mes_tue_out,mes_wed_out,mes_thu_out,mes_mth_out,mes_fri_out,mes_sat_out,mes_sun_out,           mes_mon_in,mes_tue_in,mes_wed_in,mes_thu_in,mes_mth_in,mes_fri_in,mes_sat_in,mes_sun_in,            mesoptions, d_list)
-        build_weeklists(pets_mon_out,pets_tue_out,pets_wed_out,pets_thu_out,pets_mth_out,pets_fri_out,pets_sat_out,pets_sun_out,   pets_mon_in,pets_tue_in,pets_wed_in,pets_thu_in,pets_mth_in,pets_fri_in,pets_sat_in,pets_sun_in,    petsoptions, d_list)
-        build_weeklists(kprs_mon_out,kprs_tue_out,kprs_wed_out,kprs_thu_out,kprs_mth_out,kprs_fri_out,kprs_sat_out,kprs_sun_out,   kprs_mon_in,kprs_tue_in,kprs_wed_in,kprs_thu_in,kprs_mth_in,kprs_fri_in,kprs_sat_in,kprs_sun_in,    kprsoptions, d_list)
-        build_weeklists(caew_mon_out,caew_tue_out,caew_wed_out,caew_thu_out,caew_mth_out,caew_fri_out,caew_sat_out,caew_sun_out,   caew_mon_in,caew_tue_in,caew_wed_in,caew_thu_in,caew_mth_in,caew_fri_in,caew_sat_in,caew_sun_in,    caewoptions, d_list)
-        build_weeklists(emhs_mon_out,emhs_tue_out,emhs_wed_out,emhs_thu_out,emhs_mth_out,emhs_fri_out,emhs_sat_out,emhs_sun_out,   emhs_mon_in,emhs_tue_in,emhs_wed_in,emhs_thu_in,emhs_mth_in,emhs_fri_in,emhs_sat_in,emhs_sun_in,    emhsoptions, d_list)
-        build_weeklists(wobs_mon_out,wobs_tue_out,wobs_wed_out,wobs_thu_out,wobs_mth_out,wobs_fri_out,wobs_sat_out,wobs_sun_out,   wobs_mon_in,wobs_tue_in,wobs_wed_in,wobs_thu_in,wobs_mth_in,wobs_fri_in,wobs_sat_in,wobs_sun_in,    wobsoptions, d_list)
-        build_weeklists(nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,           nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in,            nbroptions, d_list)
-        build_weeklists(gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in,            gynoptions, d_list)
-        build_weeklists(bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in,    bqysoptions, d_list)
-        build_weeklists(cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in,            cpmoptions, d_list)
-        build_weeklists(orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in,    ormsoptions, d_list)
-        build_weeklists(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in,    bwhsoptions, d_list)
-        
-        # Create blank worksheets for each stabling yard
-        Info = workbook.add_worksheet('Info')
+        # Create Info & Summary before writing to them
+        Info    = workbook.add_worksheet('Info')
         Summary = workbook.add_worksheet('Summary')
-        Wulkuraka = workbook.add_worksheet('Wulkuraka')
-        Ipswich = workbook.add_worksheet('Ipswich')
-        Redbank = workbook.add_worksheet('Redbank')
-        Robina = workbook.add_worksheet('Robina')
-        Manly = workbook.add_worksheet('Manly')
-        Beenleigh = workbook.add_worksheet('Beenleigh')
-        MayneWest = workbook.add_worksheet('Mayne West')
-        MayneNorth = workbook.add_worksheet('Mayne North')
-        MayneEast = workbook.add_worksheet('Mayne East')
-        Petrie = workbook.add_worksheet('Petrie')
-        KippaRing = workbook.add_worksheet('Kippa-Ring')
-        Caboolture = workbook.add_worksheet('Caboolture')
-        Elimbah = workbook.add_worksheet('Elimbah')
-        Woombye = workbook.add_worksheet('Woombye')
-        Nambour = workbook.add_worksheet('Nambour')
-        GympieNth = workbook.add_worksheet('Gympie North')
-        Banyo = workbook.add_worksheet('Banyo')
-        Clapham = workbook.add_worksheet('Clapham')
-        Ormeau = workbook.add_worksheet('Ormeau')
-        BeerwahSouth = workbook.add_worksheet('Beerwah South')
+
+        # Build acceptable stables (unchanged)
+        acceptable_stables = [code for codes in MTP_constants.YARDS.values() for code in codes]
+        for bad in ('RS', 'BHI'):
+            if bad in acceptable_stables:
+                acceptable_stables.remove(bad)
+
+        # Build store for each yard (unchanged)
+        for yard_name, options in MTP_constants.YARDS.items():
+            build_weeklists_into_store(store, yard_name, options,
+                                    MTP_constants.SORT_ORDER_WEEK, d_list, run_dict)
+
+        # Create yard worksheets ONCE (no sheet_dict)
+        yard_sheets = [(yard, workbook.add_worksheet(yard)) for yard in MTP_constants.YARDS.keys()]
+
+        # Write each yard sheet using your legacy write_sheet via the adapter
+        for yard_name, ws in yard_sheets:
+            write_sheet_from_store(ws, store, yard_name,
+                                MTP_constants.SORT_ORDER_WEEK,
+                                write_sheet_legacy=write_sheet)
+
         
-        # Use the lists we've just filled to populate the blank worksheets we've just created
-        write_sheet(Wulkuraka,  wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,            wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in)
-        write_sheet(Ipswich,    ipss_mon_out,ipss_tue_out,ipss_wed_out,ipss_thu_out,ipss_mth_out,ipss_fri_out,ipss_sat_out,ipss_sun_out,    ipss_mon_in,ipss_tue_in,ipss_wed_in,ipss_thu_in,ipss_mth_in,ipss_fri_in,ipss_sat_in,ipss_sun_in)
-        write_sheet(Redbank,    rdks_mon_out,rdks_tue_out,rdks_wed_out,rdks_thu_out,rdks_mth_out,rdks_fri_out,rdks_sat_out,rdks_sun_out,    rdks_mon_in,rdks_tue_in,rdks_wed_in,rdks_thu_in,rdks_mth_in,rdks_fri_in,rdks_sat_in,rdks_sun_in)
-        write_sheet(Robina,     robs_mon_out,robs_tue_out,robs_wed_out,robs_thu_out,robs_mth_out,robs_fri_out,robs_sat_out,robs_sun_out,    robs_mon_in,robs_tue_in,robs_wed_in,robs_thu_in,robs_mth_in,robs_fri_in,robs_sat_in,robs_sun_in)
-        write_sheet(Manly,      mny_mon_out,mny_tue_out,mny_wed_out,mny_thu_out,mny_mth_out,mny_fri_out,mny_sat_out,mny_sun_out,            mny_mon_in,mny_tue_in,mny_wed_in,mny_thu_in,mny_mth_in,mny_fri_in,mny_sat_in,mny_sun_in)
-        write_sheet(Beenleigh,  bnhs_mon_out,bnhs_tue_out,bnhs_wed_out,bnhs_thu_out,bnhs_mth_out,bnhs_fri_out,bnhs_sat_out,bnhs_sun_out,    bnhs_mon_in,bnhs_tue_in,bnhs_wed_in,bnhs_thu_in,bnhs_mth_in,bnhs_fri_in,bnhs_sat_in,bnhs_sun_in)
-        write_sheet(MayneWest,  ets_mon_out,ets_tue_out,ets_wed_out,ets_thu_out,ets_mth_out,ets_fri_out,ets_sat_out,ets_sun_out,            ets_mon_in,ets_tue_in,ets_wed_in,ets_thu_in,ets_mth_in,ets_fri_in,ets_sat_in,ets_sun_in)
-        write_sheet(MayneNorth, yn_mon_out,yn_tue_out,yn_wed_out,yn_thu_out,yn_mth_out,yn_fri_out,yn_sat_out,yn_sun_out,                    yn_mon_in,yn_tue_in,yn_wed_in,yn_thu_in,yn_mth_in,yn_fri_in,yn_sat_in,yn_sun_in)
-        write_sheet(MayneEast,  mes_mon_out,mes_tue_out,mes_wed_out,mes_thu_out,mes_mth_out,mes_fri_out,mes_sat_out,mes_sun_out,            mes_mon_in,mes_tue_in,mes_wed_in,mes_thu_in,mes_mth_in,mes_fri_in,mes_sat_in,mes_sun_in)
-        write_sheet(Petrie,     pets_mon_out,pets_tue_out,pets_wed_out,pets_thu_out,pets_mth_out,pets_fri_out,pets_sat_out,pets_sun_out,    pets_mon_in,pets_tue_in,pets_wed_in,pets_thu_in,pets_mth_in,pets_fri_in,pets_sat_in,pets_sun_in)
-        write_sheet(KippaRing,  kprs_mon_out,kprs_tue_out,kprs_wed_out,kprs_thu_out,kprs_mth_out,kprs_fri_out,kprs_sat_out,kprs_sun_out,    kprs_mon_in,kprs_tue_in,kprs_wed_in,kprs_thu_in,kprs_mth_in,kprs_fri_in,kprs_sat_in,kprs_sun_in)
-        write_sheet(Caboolture, caew_mon_out,caew_tue_out,caew_wed_out,caew_thu_out,caew_mth_out,caew_fri_out,caew_sat_out,caew_sun_out,    caew_mon_in,caew_tue_in,caew_wed_in,caew_thu_in,caew_mth_in,caew_fri_in,caew_sat_in,caew_sun_in)
-        write_sheet(Elimbah,    emhs_mon_out,emhs_tue_out,emhs_wed_out,emhs_thu_out,emhs_mth_out,emhs_fri_out,emhs_sat_out,emhs_sun_out,    emhs_mon_in,emhs_tue_in,emhs_wed_in,emhs_thu_in,emhs_mth_in,emhs_fri_in,emhs_sat_in,emhs_sun_in)
-        write_sheet(Woombye,    wobs_mon_out,wobs_tue_out,wobs_wed_out,wobs_thu_out,wobs_mth_out,wobs_fri_out,wobs_sat_out,wobs_sun_out,    wobs_mon_in,wobs_tue_in,wobs_wed_in,wobs_thu_in,wobs_mth_in,wobs_fri_in,wobs_sat_in,wobs_sun_in)
-        write_sheet(Nambour,    nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,            nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in)
-        write_sheet(GympieNth,  gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,            gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in)
-        write_sheet(Banyo,      bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,    bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in)
-        write_sheet(Clapham,    cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,            cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in)
-        write_sheet(Ormeau,     orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,    orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in)
-        write_sheet(BeerwahSouth,bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in)
-        
-        
-        
-        
-        
+        stables_dict = make_legacy_stables_dict_from_store(store, MTP_constants.SORT_ORDER_WEEK)
+
         # Summary
-        #########################################################################################
-        #########################################################################################
-        
         Summary.write('A1','Daily Difference',boldleft)
         Summary.set_tab_color('#7FE57F')
         Summary.set_column(0,0,15)
@@ -716,52 +366,7 @@ def TTS_SB(path, mypath = None):
         # monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
         # monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0 
         
-        stables_dict = {
-            'Wulkuraka':    (wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in),
-            'Ipswich':      (ipss_mon_out,ipss_tue_out,ipss_wed_out,ipss_thu_out,ipss_mth_out,ipss_fri_out,ipss_sat_out,ipss_sun_out,   ipss_mon_in,ipss_tue_in,ipss_wed_in,ipss_thu_in,ipss_mth_in,ipss_fri_in,ipss_sat_in,ipss_sun_in),
-            'Redbank':      (rdks_mon_out,rdks_tue_out,rdks_wed_out,rdks_thu_out,rdks_mth_out,rdks_fri_out,rdks_sat_out,rdks_sun_out,   rdks_mon_in,rdks_tue_in,rdks_wed_in,rdks_thu_in,rdks_mth_in,rdks_fri_in,rdks_sat_in,rdks_sun_in),
-            'Robina':       (robs_mon_out,robs_tue_out,robs_wed_out,robs_thu_out,robs_mth_out,robs_fri_out,robs_sat_out,robs_sun_out,   robs_mon_in,robs_tue_in,robs_wed_in,robs_thu_in,robs_mth_in,robs_fri_in,robs_sat_in,robs_sun_in),
-            'Manly':        (mny_mon_out,mny_tue_out,mny_wed_out,mny_thu_out,mny_mth_out,mny_fri_out,mny_sat_out,mny_sun_out,           mny_mon_in,mny_tue_in,mny_wed_in,mny_thu_in,mny_mth_in,mny_fri_in,mny_sat_in,mny_sun_in),
-            'Beenleigh':    (bnhs_mon_out,bnhs_tue_out,bnhs_wed_out,bnhs_thu_out,bnhs_mth_out,bnhs_fri_out,bnhs_sat_out,bnhs_sun_out,   bnhs_mon_in,bnhs_tue_in,bnhs_wed_in,bnhs_thu_in,bnhs_mth_in,bnhs_fri_in,bnhs_sat_in,bnhs_sun_in),
-            'Mayne West':   (ets_mon_out,ets_tue_out,ets_wed_out,ets_thu_out,ets_mth_out,ets_fri_out,ets_sat_out,ets_sun_out,           ets_mon_in,ets_tue_in,ets_wed_in,ets_thu_in,ets_mth_in,ets_fri_in,ets_sat_in,ets_sun_in),
-            'Mayne North':  (yn_mon_out,yn_tue_out,yn_wed_out,yn_thu_out,yn_mth_out,yn_fri_out,yn_sat_out,yn_sun_out,                   yn_mon_in,yn_tue_in,yn_wed_in,yn_thu_in,yn_mth_in,yn_fri_in,yn_sat_in,yn_sun_in),
-            'Mayne East':   (mes_mon_out,mes_tue_out,mes_wed_out,mes_thu_out,mes_mth_out,mes_fri_out,mes_sat_out,mes_sun_out,           mes_mon_in,mes_tue_in,mes_wed_in,mes_thu_in,mes_mth_in,mes_fri_in,mes_sat_in,mes_sun_in),
-            'Petrie':       (pets_mon_out,pets_tue_out,pets_wed_out,pets_thu_out,pets_mth_out,pets_fri_out,pets_sat_out,pets_sun_out,   pets_mon_in,pets_tue_in,pets_wed_in,pets_thu_in,pets_mth_in,pets_fri_in,pets_sat_in,pets_sun_in),
-            'Kippa-Ring':   (kprs_mon_out,kprs_tue_out,kprs_wed_out,kprs_thu_out,kprs_mth_out,kprs_fri_out,kprs_sat_out,kprs_sun_out,   kprs_mon_in,kprs_tue_in,kprs_wed_in,kprs_thu_in,kprs_mth_in,kprs_fri_in,kprs_sat_in,kprs_sun_in),
-            'Caboolture':   (caew_mon_out,caew_tue_out,caew_wed_out,caew_thu_out,caew_mth_out,caew_fri_out,caew_sat_out,caew_sun_out,   caew_mon_in,caew_tue_in,caew_wed_in,caew_thu_in,caew_mth_in,caew_fri_in,caew_sat_in,caew_sun_in),
-            'Elimbah':      (emhs_mon_out,emhs_tue_out,emhs_wed_out,emhs_thu_out,emhs_mth_out,emhs_fri_out,emhs_sat_out,emhs_sun_out,   emhs_mon_in,emhs_tue_in,emhs_wed_in,emhs_thu_in,emhs_mth_in,emhs_fri_in,emhs_sat_in,emhs_sun_in),
-            'Woombye':      (wobs_mon_out,wobs_tue_out,wobs_wed_out,wobs_thu_out,wobs_mth_out,wobs_fri_out,wobs_sat_out,wobs_sun_out,   wobs_mon_in,wobs_tue_in,wobs_wed_in,wobs_thu_in,wobs_mth_in,wobs_fri_in,wobs_sat_in,wobs_sun_in),
-            'Nambour':      (nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,           nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in),
-            'Gympie North': (gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in),
-            'Banyo':        (bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in),
-            'Clapham':      (cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in),
-            'Ormeau':       (orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in),
-            'Beerwah South':(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in),
-                }
-        
-        sheet_dict = {
-            'Wulkuraka':    Wulkuraka,
-            'Ipswich':      Ipswich,
-            'Redbank':      Redbank,
-            'Robina':       Robina,
-            'Manly':        Manly,
-            'Beenleigh':    Beenleigh,
-            'Mayne West':   MayneWest,
-            'Mayne North':  MayneNorth,
-            'Mayne East':   MayneEast,
-            'Petrie':       Petrie,
-            'Kippa-Ring':   KippaRing,
-            'Caboolture':   Caboolture,
-            'Elimbah':      Elimbah,
-            'Woombye':      Woombye,
-            'Nambour':      Nambour,
-            'Gympie North': GympieNth,
-            'Banyo':        Banyo,
-            'Clapham':      Clapham,
-            'Ormeau':       Ormeau,
-            'Beerwah South': BeerwahSouth,
-        }
-        
+        yard_to_ws = dict(yard_sheets)  # yard_name -> worksheet
         
         for i,(k,v) in enumerate(stables_dict.items()):
             srow = i*(ndays+3) + 2
@@ -816,18 +421,17 @@ def TTS_SB(path, mypath = None):
             # Write totals total        
             writecell_unbalanced(erow, 2+n, total_total, topleftborderredbg, topleftborder)
             
-        
-            
+    
             if any(weekly_totals_list):
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc_unbalanced_r)
-                sheet_dict.get(k).set_tab_color('#CC194C')
+                yard_to_ws[k].set_tab_color('#CC194C')
             elif day_out_of_balance:
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc_unbalanced_b)
-                sheet_dict.get(k).set_tab_color('#CCB233')
+                yard_to_ws[k].set_tab_color('#CCB233')
             else:
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc)
-        
-        
+                    
+            
         
         # Info
         #########################################################################################
@@ -844,6 +448,7 @@ def TTS_SB(path, mypath = None):
             '4. Find where start and finish counts do not match over the week.'
             ]
         
+        
         #Initialise single trip lists for info sheet
         mon_st = []; tue_st = []; wed_st = []; thu_st = []
         mth_st = []; fri_st = []; sat_st = []; sun_st = []
@@ -855,8 +460,6 @@ def TTS_SB(path, mypath = None):
                 
                 runID   = key[0]
                 DoO     = key[1]
-                
-                
                 trips   = run[2]
                 run_oID = run[3]
                 run_dID = run[4]
@@ -886,8 +489,6 @@ def TTS_SB(path, mypath = None):
         if '1' in d_list:
             singletrip_col.append(f'{len(set(sun_st))} Runs with only a single trip on Sunday: {csl(sun_st)}')
 
-
-            
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
         Info.write_column('A7',steps_col,boldleft)
@@ -907,8 +508,6 @@ def TTS_SB(path, mypath = None):
         
         Summary.activate()
         
-        
-        
         if CreateWorkbook:
             workbook.close()
             print('Creating workbook')  
@@ -918,8 +517,6 @@ def TTS_SB(path, mypath = None):
                 if OpenWorkbook:
                     os.startfile(rf'{filename_xlsx}')
                     print('\nOpening workbook') 
-        
-        
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
