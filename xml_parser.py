@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 import re
 import MTP_constants
 import typing
+
+
 class TrainInfo:
 
     def __init__(self, train):
@@ -146,12 +148,10 @@ def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days =
 
 
 def sort_days(days):
-    ORDER = ['64','32','16','8','120','4','2','1']
-    return sorted(days, key=ORDER.index)
+    return sorted(days, key=MTP_constants.SORT_ORDER_WEEK.index)
 
 def sort_units(units):
-    ORDER = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID','ICE','DEPT']
-    return sorted(units, key=ORDER.index)
+    return sorted(units, key=MTP_constants.SORT_ORDER_UNIT.index)
 
 
 def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True) -> typing.List[str]:

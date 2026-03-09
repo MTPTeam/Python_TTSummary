@@ -12,10 +12,7 @@
 #weekdaykey_dict2 = {'120':'M-Th', '4':'Fri', '2':'Sat', '1':'Sun'}
 
 
-
-# add variants of names here - to reference - WEEKDAY_KEYS_MASTER.get('120')[0]
-
-
+### day stuff
 
 WEEKDAY_KEYS_MASTER = {
     '120': {'short': 'Mon-Thu', 'long': 'Monday-Thursday', 'alias': 'M-Th'},
@@ -28,6 +25,9 @@ WEEKDAY_KEYS_MASTER = {
     '1':   {'short': 'Sun',     'long': 'Sunday',          'alias': 'U'},
 }
 
+DAY_PRIORITY = ['64','32','16','8','4','2','1','120']
+SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1']
+SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID','ICE','DEPT']
 ID_TO_SHORT = {k: v['short'] for k, v in WEEKDAY_KEYS_MASTER.items()}
 ID_TO_LONG  = {k: v['long'] for k, v in WEEKDAY_KEYS_MASTER.items()}
 ID_TO_ALIAS = {k: v['alias'] for k, v in WEEKDAY_KEYS_MASTER.items()}
@@ -37,6 +37,15 @@ NAME_TO_ID = {}
 for uid, info in WEEKDAY_KEYS_MASTER.items():
     for val in info.values():
         NAME_TO_ID[val.lower()] = uid
+
+
+SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
+SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
+
+### location stuff 
+# if new location found, update locations , flag it 
+
+# print new location in excel file for easy debugging 
 
 
 

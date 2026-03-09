@@ -13,30 +13,15 @@ from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 import MTP_constants
+from tkinter import messagebox
 
-from xml_parser import parse_rsx, TrainInfo
-from utils import timetrim, csl  
+from xml_parser import parse_rsx, TrainInfo, resolve_DoO, sort_days, sort_units, normalise_days
+from utils import timetrim, csl
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
-
-
-
-
-DAY_PRIORITY = ['64','32','16','8','4','2','1','120']
-
-def resolve_DoO(wkdk):
-    # wkdk is a tuple of strings like ('120','64')
-    for day in DAY_PRIORITY:
-        if day in wkdk:
-            print("DEBUG:", day, type(MTP_constants.WEEKDAY_KEYS_MASTER[day]))
-            return MTP_constants.WEEKDAY_KEYS_MASTER[day]['short']   # or long/alias
-    return None
-
-
-
 
 # To be displayed in red font if a run starts or finishes at one of these non-stable locations
 nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
@@ -67,7 +52,6 @@ def TTS_SB(path, mypath = None):
 
         if duplicates:
             print("Error - duplicate train numbers")
-
             for tn, day in duplicates:
                 print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
             time.sleep(15)
@@ -81,25 +65,16 @@ def TTS_SB(path, mypath = None):
         filename_xlsx = f'StablingBalance-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
 
-
-        SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1']
-        SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID','ICE','DEPT']
-
-        d_list.sort(key=SORT_ORDER_WEEK.index)
-        u_list.sort(key=SORT_ORDER_UNIT.index)
-
-        # Remove Mon–Thu (120) if individual Mon/Tue/Wed/Thu exist
-        weekdays = set(d_list).intersection({'8','16','32','64'})
-        if weekdays and '120' in d_list:
-            d_list.remove('120')
+        d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
+        u_list = sort_units(u_list)
 
         ndays = len(d_list)
         n = len(u_list)
 
-        
+
+        print(d_list)
         
         start_time = time.time()
-        
         runs_without_stable = []
         
             
@@ -190,27 +165,29 @@ def TTS_SB(path, mypath = None):
                         
             daylist_out.sort(key=lambda val: val[7])
             daylist_in.sort(key=lambda val: val[7])
-            daylist_out.sort(key=lambda val: {x:SORT_ORDER_UNIT.index(x) for x in SORT_ORDER_UNIT}[val[2]])
-            daylist_in.sort(key=lambda val: {x:SORT_ORDER_UNIT.index(x) for x in SORT_ORDER_UNIT}[val[2]])
+            daylist_out.sort(key=lambda val: {x:MTP_constants.SORT_ORDER_UNIT.index(x) for x in MTP_constants.SORT_ORDER_UNIT}[val[2]])
+            daylist_in.sort(key=lambda val: {x:MTP_constants.SORT_ORDER_UNIT.index(x) for x in MTP_constants.SORT_ORDER_UNIT}[val[2]])
             
             for x in daylist_out: x[7] = timetrim(x[7])
             for x in daylist_in: x[7] = timetrim(x[7])
             
             
-        def build_weeklists(mon_out,tue_out,wed_out,thu_out,mth_out,fri_out,sat_out,sun_out,   mon_in,tue_in,wed_in,thu_in,mth_in,fri_in,sat_in,sun_in,    stableoptions):
+        def build_weeklists(mon_out,tue_out,wed_out,thu_out,mth_out,fri_out,sat_out,sun_out,   mon_in,tue_in,wed_in,thu_in,mth_in,fri_in,sat_in,sun_in,    stableoptions, d_list):
             """ Runs the build_daylists function for a full week """
+
+            # mon - thurs block
+            if '120' in d_list:
+                build_daylists(mth_out, mth_in, ('120',), stableoptions)
+
+            # Weekends
+            if '4' in d_list:
+                build_daylists(fri_out, fri_in, ('4',), stableoptions)
+            if '2' in d_list:
+                build_daylists(sat_out, sat_in, ('2',), stableoptions)
+            if '1' in d_list:
+                build_daylists(sun_out, sun_in, ('1',), stableoptions)
+                    
             
-            if weekdays:
-                build_daylists(mon_out, mon_in, ('120','64'),stableoptions) 
-                build_daylists(tue_out, tue_in, ('120','32'),stableoptions) 
-                build_daylists(wed_out, wed_in, ('120','16'),stableoptions) 
-                build_daylists(thu_out, thu_in, ('120','8'),stableoptions) 
-            else: build_daylists(mth_out, mth_in, ('120',),stableoptions)  
-            build_daylists(fri_out, fri_in, ('4',),stableoptions)
-            build_daylists(sat_out, sat_in, ('2',),stableoptions)
-            build_daylists(sun_out, sun_in, ('1',),stableoptions)    
-            
-        
         def write_day(sheet, daylist_out, daylist_in, row):
             """ 
             Separated by runs starting at or ending at the stable,
@@ -652,26 +629,26 @@ def TTS_SB(path, mypath = None):
         
         
         # Fill the empty lists with runs given it starts or finishes at one of the options
-        build_weeklists(wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in,            wfeoptions)
-        build_weeklists(ipss_mon_out,ipss_tue_out,ipss_wed_out,ipss_thu_out,ipss_mth_out,ipss_fri_out,ipss_sat_out,ipss_sun_out,   ipss_mon_in,ipss_tue_in,ipss_wed_in,ipss_thu_in,ipss_mth_in,ipss_fri_in,ipss_sat_in,ipss_sun_in,    ipssoptions)
-        build_weeklists(rdks_mon_out,rdks_tue_out,rdks_wed_out,rdks_thu_out,rdks_mth_out,rdks_fri_out,rdks_sat_out,rdks_sun_out,   rdks_mon_in,rdks_tue_in,rdks_wed_in,rdks_thu_in,rdks_mth_in,rdks_fri_in,rdks_sat_in,rdks_sun_in,    rdksoptions)
-        build_weeklists(robs_mon_out,robs_tue_out,robs_wed_out,robs_thu_out,robs_mth_out,robs_fri_out,robs_sat_out,robs_sun_out,   robs_mon_in,robs_tue_in,robs_wed_in,robs_thu_in,robs_mth_in,robs_fri_in,robs_sat_in,robs_sun_in,    robsoptions)
-        build_weeklists(mny_mon_out,mny_tue_out,mny_wed_out,mny_thu_out,mny_mth_out,mny_fri_out,mny_sat_out,mny_sun_out,           mny_mon_in,mny_tue_in,mny_wed_in,mny_thu_in,mny_mth_in,mny_fri_in,mny_sat_in,mny_sun_in,            mnyoptions)
-        build_weeklists(bnhs_mon_out,bnhs_tue_out,bnhs_wed_out,bnhs_thu_out,bnhs_mth_out,bnhs_fri_out,bnhs_sat_out,bnhs_sun_out,   bnhs_mon_in,bnhs_tue_in,bnhs_wed_in,bnhs_thu_in,bnhs_mth_in,bnhs_fri_in,bnhs_sat_in,bnhs_sun_in,    bnhsoptions)
-        build_weeklists(ets_mon_out,ets_tue_out,ets_wed_out,ets_thu_out,ets_mth_out,ets_fri_out,ets_sat_out,ets_sun_out,           ets_mon_in,ets_tue_in,ets_wed_in,ets_thu_in,ets_mth_in,ets_fri_in,ets_sat_in,ets_sun_in,            etsoptions)
-        build_weeklists(yn_mon_out,yn_tue_out,yn_wed_out,yn_thu_out,yn_mth_out,yn_fri_out,yn_sat_out,yn_sun_out,                   yn_mon_in,yn_tue_in,yn_wed_in,yn_thu_in,yn_mth_in,yn_fri_in,yn_sat_in,yn_sun_in,                    ynoptions)
-        build_weeklists(mes_mon_out,mes_tue_out,mes_wed_out,mes_thu_out,mes_mth_out,mes_fri_out,mes_sat_out,mes_sun_out,           mes_mon_in,mes_tue_in,mes_wed_in,mes_thu_in,mes_mth_in,mes_fri_in,mes_sat_in,mes_sun_in,            mesoptions)
-        build_weeklists(pets_mon_out,pets_tue_out,pets_wed_out,pets_thu_out,pets_mth_out,pets_fri_out,pets_sat_out,pets_sun_out,   pets_mon_in,pets_tue_in,pets_wed_in,pets_thu_in,pets_mth_in,pets_fri_in,pets_sat_in,pets_sun_in,    petsoptions)
-        build_weeklists(kprs_mon_out,kprs_tue_out,kprs_wed_out,kprs_thu_out,kprs_mth_out,kprs_fri_out,kprs_sat_out,kprs_sun_out,   kprs_mon_in,kprs_tue_in,kprs_wed_in,kprs_thu_in,kprs_mth_in,kprs_fri_in,kprs_sat_in,kprs_sun_in,    kprsoptions)
-        build_weeklists(caew_mon_out,caew_tue_out,caew_wed_out,caew_thu_out,caew_mth_out,caew_fri_out,caew_sat_out,caew_sun_out,   caew_mon_in,caew_tue_in,caew_wed_in,caew_thu_in,caew_mth_in,caew_fri_in,caew_sat_in,caew_sun_in,    caewoptions)
-        build_weeklists(emhs_mon_out,emhs_tue_out,emhs_wed_out,emhs_thu_out,emhs_mth_out,emhs_fri_out,emhs_sat_out,emhs_sun_out,   emhs_mon_in,emhs_tue_in,emhs_wed_in,emhs_thu_in,emhs_mth_in,emhs_fri_in,emhs_sat_in,emhs_sun_in,    emhsoptions)
-        build_weeklists(wobs_mon_out,wobs_tue_out,wobs_wed_out,wobs_thu_out,wobs_mth_out,wobs_fri_out,wobs_sat_out,wobs_sun_out,   wobs_mon_in,wobs_tue_in,wobs_wed_in,wobs_thu_in,wobs_mth_in,wobs_fri_in,wobs_sat_in,wobs_sun_in,    wobsoptions)
-        build_weeklists(nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,           nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in,            nbroptions)
-        build_weeklists(gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in,            gynoptions)
-        build_weeklists(bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in,    bqysoptions)
-        build_weeklists(cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in,            cpmoptions)
-        build_weeklists(orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in,    ormsoptions)
-        build_weeklists(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in,    bwhsoptions)
+        build_weeklists(wfe_mon_out,wfe_tue_out,wfe_wed_out,wfe_thu_out,wfe_mth_out,wfe_fri_out,wfe_sat_out,wfe_sun_out,           wfe_mon_in,wfe_tue_in,wfe_wed_in,wfe_thu_in,wfe_mth_in,wfe_fri_in,wfe_sat_in,wfe_sun_in,            wfeoptions, d_list)
+        build_weeklists(ipss_mon_out,ipss_tue_out,ipss_wed_out,ipss_thu_out,ipss_mth_out,ipss_fri_out,ipss_sat_out,ipss_sun_out,   ipss_mon_in,ipss_tue_in,ipss_wed_in,ipss_thu_in,ipss_mth_in,ipss_fri_in,ipss_sat_in,ipss_sun_in,    ipssoptions, d_list)
+        build_weeklists(rdks_mon_out,rdks_tue_out,rdks_wed_out,rdks_thu_out,rdks_mth_out,rdks_fri_out,rdks_sat_out,rdks_sun_out,   rdks_mon_in,rdks_tue_in,rdks_wed_in,rdks_thu_in,rdks_mth_in,rdks_fri_in,rdks_sat_in,rdks_sun_in,    rdksoptions, d_list)
+        build_weeklists(robs_mon_out,robs_tue_out,robs_wed_out,robs_thu_out,robs_mth_out,robs_fri_out,robs_sat_out,robs_sun_out,   robs_mon_in,robs_tue_in,robs_wed_in,robs_thu_in,robs_mth_in,robs_fri_in,robs_sat_in,robs_sun_in,    robsoptions, d_list)
+        build_weeklists(mny_mon_out,mny_tue_out,mny_wed_out,mny_thu_out,mny_mth_out,mny_fri_out,mny_sat_out,mny_sun_out,           mny_mon_in,mny_tue_in,mny_wed_in,mny_thu_in,mny_mth_in,mny_fri_in,mny_sat_in,mny_sun_in,            mnyoptions, d_list)
+        build_weeklists(bnhs_mon_out,bnhs_tue_out,bnhs_wed_out,bnhs_thu_out,bnhs_mth_out,bnhs_fri_out,bnhs_sat_out,bnhs_sun_out,   bnhs_mon_in,bnhs_tue_in,bnhs_wed_in,bnhs_thu_in,bnhs_mth_in,bnhs_fri_in,bnhs_sat_in,bnhs_sun_in,    bnhsoptions, d_list)
+        build_weeklists(ets_mon_out,ets_tue_out,ets_wed_out,ets_thu_out,ets_mth_out,ets_fri_out,ets_sat_out,ets_sun_out,           ets_mon_in,ets_tue_in,ets_wed_in,ets_thu_in,ets_mth_in,ets_fri_in,ets_sat_in,ets_sun_in,            etsoptions, d_list)
+        build_weeklists(yn_mon_out,yn_tue_out,yn_wed_out,yn_thu_out,yn_mth_out,yn_fri_out,yn_sat_out,yn_sun_out,                   yn_mon_in,yn_tue_in,yn_wed_in,yn_thu_in,yn_mth_in,yn_fri_in,yn_sat_in,yn_sun_in,                    ynoptions, d_list)
+        build_weeklists(mes_mon_out,mes_tue_out,mes_wed_out,mes_thu_out,mes_mth_out,mes_fri_out,mes_sat_out,mes_sun_out,           mes_mon_in,mes_tue_in,mes_wed_in,mes_thu_in,mes_mth_in,mes_fri_in,mes_sat_in,mes_sun_in,            mesoptions, d_list)
+        build_weeklists(pets_mon_out,pets_tue_out,pets_wed_out,pets_thu_out,pets_mth_out,pets_fri_out,pets_sat_out,pets_sun_out,   pets_mon_in,pets_tue_in,pets_wed_in,pets_thu_in,pets_mth_in,pets_fri_in,pets_sat_in,pets_sun_in,    petsoptions, d_list)
+        build_weeklists(kprs_mon_out,kprs_tue_out,kprs_wed_out,kprs_thu_out,kprs_mth_out,kprs_fri_out,kprs_sat_out,kprs_sun_out,   kprs_mon_in,kprs_tue_in,kprs_wed_in,kprs_thu_in,kprs_mth_in,kprs_fri_in,kprs_sat_in,kprs_sun_in,    kprsoptions, d_list)
+        build_weeklists(caew_mon_out,caew_tue_out,caew_wed_out,caew_thu_out,caew_mth_out,caew_fri_out,caew_sat_out,caew_sun_out,   caew_mon_in,caew_tue_in,caew_wed_in,caew_thu_in,caew_mth_in,caew_fri_in,caew_sat_in,caew_sun_in,    caewoptions, d_list)
+        build_weeklists(emhs_mon_out,emhs_tue_out,emhs_wed_out,emhs_thu_out,emhs_mth_out,emhs_fri_out,emhs_sat_out,emhs_sun_out,   emhs_mon_in,emhs_tue_in,emhs_wed_in,emhs_thu_in,emhs_mth_in,emhs_fri_in,emhs_sat_in,emhs_sun_in,    emhsoptions, d_list)
+        build_weeklists(wobs_mon_out,wobs_tue_out,wobs_wed_out,wobs_thu_out,wobs_mth_out,wobs_fri_out,wobs_sat_out,wobs_sun_out,   wobs_mon_in,wobs_tue_in,wobs_wed_in,wobs_thu_in,wobs_mth_in,wobs_fri_in,wobs_sat_in,wobs_sun_in,    wobsoptions, d_list)
+        build_weeklists(nbr_mon_out,nbr_tue_out,nbr_wed_out,nbr_thu_out,nbr_mth_out,nbr_fri_out,nbr_sat_out,nbr_sun_out,           nbr_mon_in,nbr_tue_in,nbr_wed_in,nbr_thu_in,nbr_mth_in,nbr_fri_in,nbr_sat_in,nbr_sun_in,            nbroptions, d_list)
+        build_weeklists(gyn_mon_out,gyn_tue_out,gyn_wed_out,gyn_thu_out,gyn_mth_out,gyn_fri_out,gyn_sat_out,gyn_sun_out,           gyn_mon_in,gyn_tue_in,gyn_wed_in,gyn_thu_in,gyn_mth_in,gyn_fri_in,gyn_sat_in,gyn_sun_in,            gynoptions, d_list)
+        build_weeklists(bqys_mon_out,bqys_tue_out,bqys_wed_out,bqys_thu_out,bqys_mth_out,bqys_fri_out,bqys_sat_out,bqys_sun_out,   bqys_mon_in,bqys_tue_in,bqys_wed_in,bqys_thu_in,bqys_mth_in,bqys_fri_in,bqys_sat_in,bqys_sun_in,    bqysoptions, d_list)
+        build_weeklists(cpm_mon_out,cpm_tue_out,cpm_wed_out,cpm_thu_out,cpm_mth_out,cpm_fri_out,cpm_sat_out,cpm_sun_out,           cpm_mon_in,cpm_tue_in,cpm_wed_in,cpm_thu_in,cpm_mth_in,cpm_fri_in,cpm_sat_in,cpm_sun_in,            cpmoptions, d_list)
+        build_weeklists(orms_mon_out,orms_tue_out,orms_wed_out,orms_thu_out,orms_mth_out,orms_fri_out,orms_sat_out,orms_sun_out,   orms_mon_in,orms_tue_in,orms_wed_in,orms_thu_in,orms_mth_in,orms_fri_in,orms_sat_in,orms_sun_in,    ormsoptions, d_list)
+        build_weeklists(bwhs_mon_out,bwhs_tue_out,bwhs_wed_out,bwhs_thu_out,bwhs_mth_out,bwhs_fri_out,bwhs_sat_out,bwhs_sun_out,   bwhs_mon_in,bwhs_tue_in,bwhs_wed_in,bwhs_thu_in,bwhs_mth_in,bwhs_fri_in,bwhs_sat_in,bwhs_sun_in,    bwhsoptions, d_list)
         
         # Create blank worksheets for each stabling yard
         Info = workbook.add_worksheet('Info')
@@ -851,11 +828,6 @@ def TTS_SB(path, mypath = None):
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc)
         
         
-            
-        
-        
-        
-        
         
         # Info
         #########################################################################################
@@ -871,9 +843,6 @@ def TTS_SB(path, mypath = None):
             '3. Find where start and finish counts do not match over the day.',
             '4. Find where start and finish counts do not match over the week.'
             ]
-        
-        
-        
         
         #Initialise single trip lists for info sheet
         mon_st = []; tue_st = []; wed_st = []; thu_st = []
@@ -916,7 +885,8 @@ def TTS_SB(path, mypath = None):
             singletrip_col.append(f'{len(set(sat_st))} Runs with only a single trip on Saturday: {csl(sat_st)}')
         if '1' in d_list:
             singletrip_col.append(f'{len(set(sun_st))} Runs with only a single trip on Sunday: {csl(sun_st)}')
-            
+
+
             
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
@@ -929,7 +899,7 @@ def TTS_SB(path, mypath = None):
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = MTP_constants.WEEKDAYKEY.get(run[1])
+                DoO       = MTP_constants.ID_TO_SHORT[run[1]]
                 start_sID = run[2]
                 end_sID   = run[3]
                 
@@ -953,7 +923,6 @@ def TTS_SB(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
             messagebox.showinfo('Public Timetable','Process Done')
             
     
