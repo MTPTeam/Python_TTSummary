@@ -14,7 +14,8 @@ from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 import MTP_constants
-
+from utils import timetrim, csl
+from xml_parser import TrainInfo, normalise_days, parse_rsx, resolve_DoO, sort_days, sort_units
 
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -23,121 +24,58 @@ CreateWorkbook = True
 OpenWorkbook = True
 
 
-
-
-
-
-
-
-wkdk_rename = {
-    ('120','64'):'Mon',
-    ('120','32'):'Tue',
-    ('120','16'):'Wed',
-    ('120','8'): 'Thu',
-    ('120',):'Mon-Thu', 
-    ('4',):'Fri',
-    ('2',):'Sat',
-    ('1',):'Sun'
-    }   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def TTS_SC(path, mypath = None):
 
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
 
     try:
         
+        
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]    
-        
+        filename_wo_ext = filename[:-4]
+        filename_xlsx = f'StablingCount-{filename_wo_ext}.xlsx'
+        workbook = xlsxwriter.Workbook(filename_xlsx)
+
+                
         if __name__ == "__main__":
             print(filename,'\n')
         
-        tree = ET.parse(filename)
-        root = tree.getroot()
         
-        filename = filename[:-4]
-        filename_xlsx = f'StablingCount-{filename}.xlsx'
-        workbook = xlsxwriter.Workbook(filename_xlsx)
-        
-        
-        
-        ### Check for duplicate train numbers before executing the script
-        ### Print warning for user if duplicates exist
-        ### Print out all duplicates
-        tn_list = []
-        tn_doubles = []
-        for train in root.iter('train'):
-            tn  = train.attrib['number']; day = train[0][0][0].attrib['weekdayKey']
-            if (tn,day) in tn_list: tn_doubles.append((tn,day))
-            tn_list.append((tn,day))
-                
-        if tn_doubles:
-            print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
-            time.sleep(15)
-            sys.exit() 
-        
-        
-        
-        
-        
+        root, trains, d_list, u_list, run_dict, duplicates = parse_rsx(
+            path,
+            want_trains=True,
+            want_duplicates=True,
+            want_days=True,
+            want_units=True,
+            want_runs=True
+        )
+
         
         start_time = time.time()
-        
         runs_without_stable = []
+
+        # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
         
-        
-         
-        
-        
-        # Run an initial loop through the rsx to find:
-        # - a list of days
-        # - a list of units
-        u_list = []
-        d_list = []
-        for train in root.iter('train'):
-            tn  = train.attrib['number']
-            WeekdayKey = train[0][0][0].attrib['weekdayKey']
-            entries = [x for x in train.iter('entry')]
-            origin = entries[0].attrib
-            destin = entries[-1].attrib
-            unit   = origin['trainTypeId'].split('-',1)[1]
-            # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
-            if unit not in u_list:
-                u_list.append(unit)
-            if WeekdayKey not in d_list:
-                d_list.append(WeekdayKey)
+        run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
+        d_list   = [str(d) for d in d_list]
+
+
+        if duplicates:
+            print("Error - duplicate train numbers")
+            for tn, day in duplicates:
+                print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
+            time.sleep(15)
+            sys.exit()
         
             
-        # Sort the day and unit lists
-        # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
-        SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
-        d_list.sort(key=SORT_ORDER_WEEK.index)
-        u_list.sort(key=SORT_ORDER_UNIT.index)
-        weekdays = set(d_list).intersection({'8','16','32','64'})
-        if weekdays and '120' in d_list:
-            d_list.remove('120')
+        d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
+        u_list = sort_units(u_list)
+
         ndays = len(d_list)
         n     = len(u_list)
-        # print('days: ',d_list)
-        # print('units:',u_list,'\n')
-        
-        
+
         # Create an identity matrix using unit types
         # This will be used to update the row representing the number of units in a stabling location, using element-wise addition
         # A ones column is appended for the total
@@ -145,66 +83,6 @@ def TTS_SC(path, mypath = None):
         for i,unittype in enumerate(u_list):
             change_matrix[unittype] = [1] + list(np.zeros((n,)))
             change_matrix[unittype][i+1] = 1
-            
-          
-            
-          
-        # Run a second loop through the rsx to create:
-        # - a dictionary using (run,weekdaykey) as a unique key, build the run infomation
-        run_dict = {}
-        for train in root.iter('train'):
-            tn         = train.attrib['number']
-            WeekdayKey = train[0][0][0].attrib['weekdayKey']
-            entries    = [x for x in train.iter('entry')]
-            origin     = entries[0].attrib
-            destin     = entries[-1].attrib
-            traintype  = origin['trainTypeId']
-            unit       = origin['trainTypeId'].split('-',1)[1]
-            lineID     = train.attrib['lineID']
-            run        = lineID.split('~',1)[1][1:] if '~' in lineID else lineID
-            oID        = origin['stationID']
-            dID        = destin['stationID']
-            odep       = origin['departure']
-            ddep       = destin['departure']
-            
-            
-            cars = int(re.findall(r'\d+', traintype)[0])
-            
-            if not run_dict.get((run,WeekdayKey)):
-                trips = 1
-                run_dict[(run,WeekdayKey)] = [unit,cars,trips,oID,dID,odep,ddep,[tn]]
-            else:
-                run_dict[(run,WeekdayKey)][2] += 1
-                run_dict[(run,WeekdayKey)][4] = dID
-                run_dict[(run,WeekdayKey)][6] = ddep
-                run_dict[(run,WeekdayKey)][-1].append(tn)      
-        
-        
-        
-        
-        def timetrim(timestring):
-            """ Format converter from hh:mm:ss to [h]:mm """
-            
-            if type(timestring) == list:
-                timestring = timestring[0]
-            if timestring is None or timestring.isalpha() or ':' not in timestring:
-                pass
-                
-            
-            elif timestring[0] == '0':
-                timestring = timestring[1:-3]
-            else: timestring = timestring[:-3]
-            return timestring
-        
-        def csl(string):
-            """ Returns all unique elements separated by commas """
-            
-            output = []
-            for x in string:
-                if x not in output:
-                    output.append(x)
-            return ','.join(output)
-        
         
         def summary_writerow(r,c,data):
             """ Writes a list of data into a row, with zero values appearing in a grey font """
@@ -220,7 +98,7 @@ def TTS_SC(path, mypath = None):
             
             nonlocal row
             i = d_list.index(day)
-            Summary.write(      row+1, 4+n,   MTP_constants.WEEKDAYKEY.get(day))
+            Summary.write(      row+1, 4+n,   MTP_constants.ID_TO_SHORT[day])
             Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
             Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
             row += 1
@@ -419,7 +297,7 @@ def TTS_SC(path, mypath = None):
             and appends that run to the associated list
             """
             
-            DoO = wkdk_rename.get(wkdk)
+            DoO = resolve_DoO(wkdk)
             for k,v in run_dict.items():
                 
                 run       = k[0]
@@ -1073,8 +951,8 @@ def TTS_SC(path, mypath = None):
                 Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
                 
             # Write days
-            Summary.write_column(firstrow,1,  [MTP_constants.WEEKDAYKEY.get(d) for d in d_list])
-           
+            Summary.write_column(firstrow, 1, [MTP_constants.ID_TO_SHORT[d] for d in d_list])
+
             
             summary_dict = {
                 '64':  (monday,    mon_total,mon_bkdwn,mon_os_total,mon_os_bkdwn,mon_ip_total,mon_ip_bkdwn),
@@ -1272,6 +1150,7 @@ def TTS_SC(path, mypath = None):
         for unit in u_list:
             summary_totalheaders(unit)     
         for day in d_list:
+            pass
             summary_writetotals(day)
         
         

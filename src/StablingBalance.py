@@ -6,6 +6,9 @@ import time
 import shutil
 from datetime import datetime
 import xml.etree.ElementTree as ET
+import gui
+import time
+
 
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
@@ -15,8 +18,9 @@ import MTP_constants
 from tkinter import messagebox
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
-from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store
+from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
 from utils import timetrim, csl
+from ExcelWriter import writecell_unbalanced, write_unit_totals
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
@@ -29,7 +33,9 @@ headers2 = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Finish Time', '# 
 
 def TTS_SB(path, mypath = None):
 
-    copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
+    
+    src_dir = os.path.dirname(path)
+    copyfile = (mypath is not None) and (os.path.normpath(src_dir) != os.path.normpath(os.path.dirname(mypath)))
 
     try:
         
@@ -40,8 +46,6 @@ def TTS_SB(path, mypath = None):
         want_units=True,
         want_runs=True,
         want_duplicates=True)
-
-                
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
 
@@ -49,23 +53,20 @@ def TTS_SB(path, mypath = None):
             print("Error - duplicate train numbers")
             for tn, day in duplicates:
                 print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
-            time.sleep(15)
-            sys.exit()
 
-
-
-        directory = '\\'.join(path.split('/')[0:-1])
+        
+        directory = os.path.dirname(path)
         os.chdir(directory)
-        filename = path.split('/')[-1][:-4]
+        filename = os.path.splitext(os.path.basename(path))[0]
         filename_xlsx = f'StablingBalance-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
+
 
         d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
         u_list = sort_units(u_list)
 
         ndays = len(d_list)
         n = len(u_list)
-
 
         print(d_list)
         
@@ -75,15 +76,6 @@ def TTS_SB(path, mypath = None):
         print(store)
         
         
-        def writecell_unbalanced(r,c,value,unbalancedfont,balancedfont):
-            """ If cell does not equal zero, assign a cell format to highlight inbalance """
-            
-            if value != 0:
-                Summary.write(r,c,value,unbalancedfont)
-            else:
-                Summary.write(r,c,value,balancedfont)
-                
-                
         def write_runs(sheet,daylist,r,c):
             """ 
             Writes either the runs coming out of or the runs coming in to the stabling yard
@@ -101,17 +93,6 @@ def TTS_SB(path, mypath = None):
                         sheet.write(idx,c+5,line[5],font_dict.get(line[2])[4])
                     if line[6] in MTP_constants.NON_STABLE_LOCATIONS:
                         sheet.write(idx,c+6,line[6],font_dict.get(line[2])[4])
-             
-        
-        def write_unit_totals(sheet, sum_of_units, n_units, r, c, font):
-            """ 
-            Used in write_day function, writes the last column in both in and out blocks,
-            If only one entry of a unit type, will skip the merge-range step as this will error
-            """
-            if n_units == 1:
-                sheet.write(r, c, sum_of_units, font)
-            else:
-                sheet.merge_range(r, c, r+n_units-1, c, sum_of_units, font)    
             
 
         def write_day(sheet, daylist_out, daylist_in, row):
@@ -146,9 +127,10 @@ def TTS_SB(path, mypath = None):
                     BD_in[ttype]  = count, total
             
             
-            
             in_row = out_row = row
             for ttype in u_list:
+
+                print(ttype)
                 
                 n_unit_out   = BD_out[ttype][0] if BD_out.get(ttype) else 1
                 sum_unit_out = BD_out[ttype][1] if BD_out.get(ttype) else 0
@@ -213,8 +195,6 @@ def TTS_SB(path, mypath = None):
                 write_day(sheet, a,b, firstrow)
                 firstrow += max(len(a),len(b)) + 2*bool(a or b)
             
-        
-        
         # Formatting
         qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
         ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
@@ -223,6 +203,7 @@ def TTS_SB(path, mypath = None):
         emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
         smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
         dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
+        qmu = workbook.add_format({'align':'center','bg_color':"#B7FFDB"})
         
         # qtmpred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C'})
         # ngrred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C'})
@@ -238,6 +219,7 @@ def TTS_SB(path, mypath = None):
         emubold  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','bold':True,'bottom':1})
         smubold  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','bold':True,'bottom':1})
         deptbold = workbook.add_format({'align':'center','bg_color':'#EBF1DE','bold':True,'bottom':1})
+        qmubold = workbook.add_format({'align':'center','bg_color':'#B7FFDB','bold':True,'bottom':1})
         
         qtmpbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_size':16})
         ngrbig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_size':16})
@@ -246,6 +228,7 @@ def TTS_SB(path, mypath = None):
         emubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_size':16})
         smubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_size':16})
         deptbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_size':16})
+        qmubig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#B7FFDB','font_size':16})
         
         qtmpbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_color':'#CC194C','font_size':16})
         ngrbigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_color':'#CC194C','font_size':16})
@@ -254,6 +237,7 @@ def TTS_SB(path, mypath = None):
         emubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_color':'#CC194C','font_size':16})
         smubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_color':'#CC194C','font_size':16})
         deptbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
+        qmubigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
         
         qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
         ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
@@ -262,10 +246,9 @@ def TTS_SB(path, mypath = None):
         emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
         smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
         deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        
+        qmuboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
         # size16vc = workbook.add_format({'font_size':16,'align':'center','valign':'vcenter'})
-        
         
         font_dict = {
             'REP':    [qtmp,qtmpbold,qtmpbig,qtmpbigred,qtmpboldred],
@@ -275,8 +258,9 @@ def TTS_SB(path, mypath = None):
             'EMU':    [emu,emubold,emubig,emubigred,emuboldred],
             'HYBRID': [emu,emubold,emubig,emubigred,emuboldred],
             'SMU':    [smu,smubold,smubig,smubigred,smuboldred],
-            'DEPT':   [dept,deptbold,deptbig,deptbigred,deptboldred]
-            }
+            'DEPT':   [dept,deptbold,deptbig,deptbigred,deptboldred],
+            'QMU':    [qmu, qmubold, qmubig, qmubigred, qmuboldred]
+            }   
         
         title                   = workbook.add_format({'bold':True,'align':'center'})
         header                  = workbook.add_format({'bold':True,'align':'center','bg_color':'#CCCCCC'})
@@ -320,11 +304,8 @@ def TTS_SB(path, mypath = None):
         # boldborder              = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True})
         # boldborderred           = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True,'font_color':'#FF0000'})
         
-        
         top                     = workbook.add_format({'top':1})
         bottom                  = workbook.add_format({'bottom':1})
-        
-        
         
         # Create Info & Summary before writing to them
         Info    = workbook.add_worksheet('Info')
@@ -339,7 +320,7 @@ def TTS_SB(path, mypath = None):
         # Build store for each yard (unchanged)
         for yard_name, options in MTP_constants.YARDS.items():
             build_weeklists_into_store(store, yard_name, options,
-                                    MTP_constants.SORT_ORDER_WEEK, d_list, run_dict)
+                                    MTP_constants.SORT_ORDER_WEEK, d_list, run_dict, count = False)
 
         # Create yard worksheets ONCE (no sheet_dict)
         yard_sheets = [(yard, workbook.add_worksheet(yard)) for yard in MTP_constants.YARDS.keys()]
@@ -358,13 +339,6 @@ def TTS_SB(path, mypath = None):
         Summary.set_tab_color('#7FE57F')
         Summary.set_column(0,0,15)
         
-            
-        # monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
-        # monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
-        # monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
-        # mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
-        # monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
-        # monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0 
         
         yard_to_ws = dict(yard_sheets)  # yard_name -> worksheet
         
@@ -410,16 +384,16 @@ def TTS_SB(path, mypath = None):
                     
                 
                 weekly_balance = sum( daily_balance )
-                writecell_unbalanced(erow,col,weekly_balance,topborder_unbalanced,topborder)
+                writecell_unbalanced(Summary, erow,col,weekly_balance,topborder_unbalanced,topborder)
                 weekly_totals_list.append(weekly_balance)
             
             # Write totals column
             for r,day in enumerate(d_list,srow):
                 daily_total = sum([x[8] for x in d_dict.get(day)[1]]) - sum([x[8] for x in d_dict.get(day)[0]])
-                writecell_unbalanced(r, 2+n, daily_total, leftborder_unbalanced, leftborder)
+                writecell_unbalanced(Summary, r, 2+n, daily_total, leftborder_unbalanced, leftborder)
         
             # Write totals total        
-            writecell_unbalanced(erow, 2+n, total_total, topleftborderredbg, topleftborder)
+            writecell_unbalanced(Summary, erow, 2+n, total_total, topleftborderredbg, topleftborder)
             
     
             if any(weekly_totals_list):
@@ -430,13 +404,8 @@ def TTS_SB(path, mypath = None):
                 yard_to_ws[k].set_tab_color('#CCB233')
             else:
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc)
-                    
-            
         
         # Info
-        #########################################################################################
-        #########################################################################################
-        
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling balance by run']
         Info.set_column(0,0,15)
@@ -449,51 +418,13 @@ def TTS_SB(path, mypath = None):
             ]
         
         
-        #Initialise single trip lists for info sheet
-        mon_st = []; tue_st = []; wed_st = []; thu_st = []
-        mth_st = []; fri_st = []; sat_st = []; sun_st = []
-        singletrip_dict = {('64','120'):mon_st, ('32','120'):tue_st, ('16','120'):wed_st, ('8','120'):thu_st, ('120',):mth_st, '4':fri_st, '2':sat_st, '1':sun_st}
-        runs_without_stable = []
-        
-        for i,(k,v) in enumerate(singletrip_dict.items()):
-            for key,run in run_dict.items():
-                
-                runID   = key[0]
-                DoO     = key[1]
-                trips   = run[2]
-                run_oID = run[3]
-                run_dID = run[4]
-                
-                if DoO in k:
-                    if trips == 1:
-                        v.append(runID)
-                    if run_oID not in acceptable_stables or run_dID not in acceptable_stables:
-                        runs_without_stable.append([runID,DoO,run_oID,run_dID])         
-             
-        singletrip_col = []
-        
-        if '64' in d_list:
-            singletrip_col.append(f'{len(set(mon_st))} Runs with only a single trip on Monday: {csl(mon_st)}')
-        if '32' in d_list:
-            singletrip_col.append(f'{len(set(tue_st))} Runs with only a single trip on Tuesday: {csl(tue_st)}')
-        if '16' in d_list:
-            singletrip_col.append(f'{len(set(wed_st))} Runs with only a single trip on Wednesday: {csl(wed_st)}')
-        if '8' in d_list:
-            singletrip_col.append(f'{len(set(thu_st))} Runs with only a single trip on Thursday: {csl(thu_st)}')
-        if '120' in d_list:
-            singletrip_col.append(f'{len(set(mth_st))} Runs with only a single trip on school nights: {csl(mth_st)}')
-        if '4' in d_list:
-            singletrip_col.append(f'{len(set(fri_st))} Runs with only a single trip on Friday: {csl(fri_st)}')
-        if '2' in d_list:
-            singletrip_col.append(f'{len(set(sat_st))} Runs with only a single trip on Saturday: {csl(sat_st)}')
-        if '1' in d_list:
-            singletrip_col.append(f'{len(set(sun_st))} Runs with only a single trip on Sunday: {csl(sun_st)}')
+        singletrip_col = build_singletrip_col(d_list, run_dict)
+        runs_without_stable = find_runs_without_stable(run_dict, acceptable_stables)
 
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
         Info.write_column('A7',steps_col,boldleft)
         Info.write_column('A13',singletrip_col,boldleft)
-        
         
         if runs_without_stable:
             Info.write(13+ndays,0,f'{len(runs_without_stable)} Runs not starting or ending at an adequate stabling location:',  redboldleft)
@@ -515,13 +446,13 @@ def TTS_SB(path, mypath = None):
                 shutil.copy(filename_xlsx, mypath) 
             else:
                 if OpenWorkbook:
-                    os.startfile(rf'{filename_xlsx}')
-                    print('\nOpening workbook') 
+                    gui.open_file_crossplatform(filename_xlsx)
+                    print('\nOpening workbook')
+
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            messagebox.showinfo('Public Timetable','Process Done')
-            
+            gui.show_info('Public Timetable', 'Process Done')
     
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -529,6 +460,18 @@ def TTS_SB(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
-    TTS_SB(path)           
+    
+    start_time = time.perf_counter()
+    path = gui.select_file(
+
+    caption="Select RSX file",
+    directory="",
+    filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
+    end_time = time.perf_counter()
+
+    # Calculate the elapsed time - checking if pyqt is consistently faster than tk (should be)
+    elapsed_time = end_time - start_time
+    print(f"Elapsed time: {elapsed_time:.4f} seconds")
+
+    TTS_SB(path)  

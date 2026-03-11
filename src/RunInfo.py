@@ -22,7 +22,6 @@ OpenWorkbook = True
 
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 WEEK_ORDER = {
     'MTWT___':0,
     'M______':1,
@@ -140,7 +139,7 @@ def TTS_RI(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
                 

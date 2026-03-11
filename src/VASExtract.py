@@ -12,6 +12,7 @@ from tkinter.filedialog import askopenfilename
  
 import traceback
 import logging
+import MTP_constants
 
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -22,7 +23,6 @@ OpenWorkbook = True
 
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 vas_daycode_dict = {'4':'M-F', '2':'SAT', '1':'SUN'}
 
 
@@ -341,14 +341,14 @@ def TTS_VAS(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit()  
         
         if originpass or destinpass:
             print('           Error: First station pass or last station pass through a revenue location')
-            for tn,day in originpass: print(f' - First pass: {tn} on {weekdaykey_dict.get(day)} - ')
-            for tn,day in destinpass: print(f' - Last pass:  {tn} on {weekdaykey_dict.get(day)} - ')
+            for tn,day in originpass: print(f' - First pass: {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
+            for tn,day in destinpass: print(f' - Last pass:  {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -728,67 +728,71 @@ def TTS_VAS(path, mypath = None):
             WeekdayKey = train[0][0][0].attrib['weekdayKey']
             entries = [x for x in train.iter('entry') if x.attrib['stationID'] not in non_revenue_stations]
             newentries = [x for x in train.iter('entry')]
-            origin = entries[0].attrib
-            destin = entries[-1].attrib
-            
-            oID = origin['stationName']
-            dID = destin['stationName']
-            
-            oID = 'Domestic' if oID == 'Domestic Airport' else oID
-            dID = 'Domestic' if dID == 'Domestic Airport' else dID
-            
-            
-            
-            if 'Empty' in origin['trainTypeId']:
-                service = 'empty'
-                pattern = 'EDI = SPECIAL'
+
+
+            # handle empty OD
+            if entries:
+                origin = entries[0].attrib
+                destin = entries[-1].attrib
                 
-            else:
-                service = 'revnu'
+                oID = origin['stationName']
+                dID = destin['stationName']
                 
-                stoplist = [(x.attrib['stationID'],x.attrib['type']) for x in entries]
-                stations = [x.attrib['stationID'] for x in entries]
-    
-                counter = []
-                express = []
-        
-    
-                if True:
-        
-                    for i,x in enumerate(entries):
-                        if x.attrib['type'] == 'pass' and x.attrib['stationID'] not in non_revenue_stations:
-                            counter.append(i)
-        
-                    if counter:
-                        counter_grouped = [[]]
-                        group = 0
-        
-                        
-                        for idx,i in enumerate(counter):
-                            if idx == 0:
-                                counter_grouped[0] = [i]
-                            
-                            elif int(i) - int(counter[idx-1])  == 1:
-                                counter_grouped[group].append(i)
-                                
-                            else:
-                                group += 1
-                                counter_grouped.append([i])
-                        
-                        x = [(stations[i[0]-1], stations[i[-1]+1]) for i in counter_grouped]
-                        pattern = ','.join(['-'.join(p) for p in x])
-                        
-        
-                    else:
-                        pattern = 'All Stations'
-    
-            if pattern not in sp_list:
-                sp_list.append(pattern)
+                oID = 'Domestic' if oID == 'Domestic Airport' else oID
+                dID = 'Domestic' if dID == 'Domestic Airport' else dID
+            
+            
+            
+                if 'Empty' in origin['trainTypeId']:
+                    service = 'empty'
+                    pattern = 'EDI = SPECIAL'
                     
-            rscodekey = (pattern,oID, dID) if service == 'revnu' else (pattern, '','')
-                
-            if rscodekey not in rscode_list:
-                rscode_list.append(rscodekey)
+                else:
+                    service = 'revnu'
+                    
+                    stoplist = [(x.attrib['stationID'],x.attrib['type']) for x in entries]
+                    stations = [x.attrib['stationID'] for x in entries]
+        
+                    counter = []
+                    express = []
+        
+    
+                    if True:
+            
+                        for i,x in enumerate(entries):
+                            if x.attrib['type'] == 'pass' and x.attrib['stationID'] not in non_revenue_stations:
+                                counter.append(i)
+            
+                        if counter:
+                            counter_grouped = [[]]
+                            group = 0
+            
+                            
+                            for idx,i in enumerate(counter):
+                                if idx == 0:
+                                    counter_grouped[0] = [i]
+                                
+                                elif int(i) - int(counter[idx-1])  == 1:
+                                    counter_grouped[group].append(i)
+                                    
+                                else:
+                                    group += 1
+                                    counter_grouped.append([i])
+                            
+                            x = [(stations[i[0]-1], stations[i[-1]+1]) for i in counter_grouped]
+                            pattern = ','.join(['-'.join(p) for p in x])
+                            
+            
+                        else:
+                            pattern = 'All Stations'
+        
+                if pattern not in sp_list:
+                    sp_list.append(pattern)
+                        
+                rscodekey = (pattern,oID, dID) if service == 'revnu' else (pattern, '','')
+                    
+                if rscodekey not in rscode_list:
+                    rscode_list.append(rscodekey)
                 
                 
     # # =============================================================================
@@ -807,9 +811,9 @@ def TTS_VAS(path, mypath = None):
         
                 
             
-            pattern_len = len(pattern) if len(pattern) > pattern_len else pattern_len
-            origin_len  = len(oID) if len(oID) > origin_len else origin_len
-            destin_len  = len(dID) if len(dID) > destin_len else destin_len
+                pattern_len = len(pattern) if len(pattern) > pattern_len else pattern_len
+                origin_len  = len(oID) if len(oID) > origin_len else origin_len
+                destin_len  = len(dID) if len(dID) > destin_len else destin_len
             # sIDs = {x.attrib['stationID'] for x in train[1].findall('entry')}    
             # count = 0
             # for line,vrt in network_vrt_dict.items():
@@ -873,33 +877,33 @@ def TTS_VAS(path, mypath = None):
                 
             
             
-            keyinfo = (tn3,WeekdayKey,service)
-            valinfo = (oID,dID,pattern)
-            
-            if keyinfo not in rsx_info:
-                rsx_info[keyinfo] = [valinfo]
-                test[keyinfo] = [tn]
-            else:
-                if valinfo != rsx_info[keyinfo][-1]:
-                    rsx_info[keyinfo].append(valinfo)
-                    test[keyinfo].append(tn)
-    
-            
-            
-            
-            
-            
-            
-            tn3_pair = (tn3,WeekdayKey,service)
-            
-            if tn3_pair not in oIDdID_dict:
-                oIDdID_dict[tn3_pair] = [(oID,dID,pattern)]
-                tn3_tn_dict[tn3_pair] = [tn]
-            else:
-                ###
-                oIDdID_dict[tn3_pair].append((oID,dID,pattern))
-                tn3_tn_dict[tn3_pair].append(tn)
+                keyinfo = (tn3,WeekdayKey,service)
+                valinfo = (oID,dID,pattern)
+                
+                if keyinfo not in rsx_info:
+                    rsx_info[keyinfo] = [valinfo]
+                    test[keyinfo] = [tn]
+                else:
+                    if valinfo != rsx_info[keyinfo][-1]:
+                        rsx_info[keyinfo].append(valinfo)
+                        test[keyinfo].append(tn)
         
+                
+                
+                
+                
+                
+                
+                tn3_pair = (tn3,WeekdayKey,service)
+                
+                if tn3_pair not in oIDdID_dict:
+                    oIDdID_dict[tn3_pair] = [(oID,dID,pattern)]
+                    tn3_tn_dict[tn3_pair] = [tn]
+                else:
+                    ###
+                    oIDdID_dict[tn3_pair].append((oID,dID,pattern))
+                    tn3_tn_dict[tn3_pair].append(tn)
+            
         errortrains = []
         
         
@@ -943,7 +947,7 @@ def TTS_VAS(path, mypath = None):
                 duptrains = ', '.join([y[1] for y in x])
                 wl([day,l,duptrains,nl])
                 for y in x:
-                    y[0] = weekdaykey_dict.get(y[0])
+                    y[0] = MTP_constants.WEEKDAYKEY.get(y[0])
                     y[3] = f'{y[3][0]} → {y[3][1]}'
                     
                     print(f'{y[0]}_{y[1]} ({y[2]}) - {y[3]}')

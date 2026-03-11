@@ -14,6 +14,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
+import MTP_constants
 
 
 
@@ -29,9 +30,6 @@ OpenWorkbook = True
 
 
 
-
-
-weekdaykey_dict  = {'120':'Mon-Thu','64':'Mon','32':'Tue','16':'Wed','8':'Thu','4':'Fri','2':'Sat','1':'Sun'}
 daylist = ['120','4','2','1']
 headers = ['Station','Line','Direction']
 blanks  = ['']
@@ -520,7 +518,7 @@ def TTS_FL(path, mypath = None):
             
             # daylist = 2*['120','4','2','1']
             for c,day in enumerate(2*daylist,1):
-                DoO = weekdaykey_dict.get(day)
+                DoO = MTP_constants.WEEKDAYKEY.get(day)
                 col = 3*c
                 
                 sheet.write(1,col,  filename1,bold)

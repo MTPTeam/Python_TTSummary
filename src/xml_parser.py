@@ -6,6 +6,86 @@ import MTP_constants
 import typing
 
 
+def rep_to_qmu_tokenwise(text):
+    # replace standalone REP tokens with QMU (preserve delimiters)
+    # token = [A-Za-z0-9]+ delimited by non-alnum (or start/end)
+    out = []
+    i = 0
+    while i < len(text):
+        m = re.search(r'[A-Za-z0-9]+', text[i:])
+        if not m:
+            out.append(text[i:])
+            break
+        start = i + m.start()
+        end   = i + m.end()
+        out.append(text[i:start])
+        token = text[start:end]
+        if token.upper() == 'REP':
+            out.append('QMU')
+        else:
+            out.append(token)
+        i = end
+    return ''.join(out)
+
+
+def normalise_train_type(raw):
+    """
+      - Apply TRAIN_TYPE_MASK if exact (case-insensitive) key exists.
+      - Replace standalone 'REP' tokens with 'QMU'.
+      - If '(AW0)' present -> ensure 'Empty_' prefix.
+      - If '(AW3)' present -> ensure NO 'Empty_' prefix.
+      - Strip trailing '_S' and '_Surface'.
+      - Keep everything else unchanged.
+    """
+    if not raw:
+        return ''
+
+    s = raw.strip()
+
+    # mask (case insensitive exact key)
+    low = s.lower()
+    if hasattr(MTP_constants, 'TRAIN_TYPE_MASK') and low in MTP_constants.TRAIN_TYPE_MASK:
+        s = MTP_constants.TRAIN_TYPE_MASK[low]
+        # fall back - still allow AW enforcement + suffix strip in case mask value carries them
+    # else: keep s as-is
+
+    
+
+    s = rep_to_qmu_tokenwise(s)
+
+    # detect AW state (without removing it yet)
+    aw0 = bool(re.search(r'\(AW0\)', s, flags=re.IGNORECASE))
+    aw3 = bool(re.search(r'\(AW3\)', s, flags=re.IGNORECASE))
+
+    # enforce empty from AW states
+    has_empty = s.lower().startswith('empty_')
+    core = s[6:] if has_empty else s  # remove existing Empty_ to re-apply cleanly
+
+    if aw0:
+        # must be Empty_
+        if not has_empty:
+            s = 'Empty_' + core
+        else:
+            s = 'Empty_' + core  # already had it
+    elif aw3:
+        # must NOT be Empty_
+        s = core
+    else:
+        # keep whatever was there originally
+        s = ('Empty_' + core) if has_empty else core
+
+    # Strip trailing '_S' and '_Surface' (case-insensitive)
+    s = re.sub(r'(_S|_Surface)$', '', s, flags=re.IGNORECASE)
+
+    # Also remove any remaining '(AWx)' tags from the tail 
+    s = re.sub(r'\(AW\d\)', '', s, flags=re.IGNORECASE)
+
+    # collapse accidental double underscores produced by removals
+    s = re.sub(r'__+', '_', s).strip('_')
+
+    return s
+
+
 class TrainInfo:
 
     def __init__(self, train):
@@ -26,9 +106,15 @@ class TrainInfo:
         self.origin = self.entries[0].attrib 
         self.destin = self.entries[-1].attrib
 
-        # train type ID + cars 
-        self.unit = self.origin['trainTypeId'].split('-', 1)[1] 
-        self.cars = int(re.findall(r'\d+', self.origin['trainTypeId'])[0])
+        # train type ID + cars (NORMALISED)
+        
+        self.train_type_raw = self.origin.get('trainTypeId', '')
+        self.train_type = normalise_train_type(self.train_type_raw)   # raw variant
+        self.train_type_revenue = self.train_type.replace('Empty_', '') # revenue only train 
+
+        self.unit = self._extract_unit_from_normalised(self.train_type)
+        self.cars = self._extract_cars_from_normalised(self.train_type)
+
 
         # stationlist
         self.stations = [e.attrib['stationID'] for e in self.entries]
@@ -54,6 +140,37 @@ class TrainInfo:
         if unit in ('NGR', 'NGRE'):
             return 1
         return 2 if cars == 6 else 1
+    
+
+        
+    @staticmethod
+    def _extract_unit_from_normalised(train_type):
+        """
+        From normalised type like:
+        "Empty_6-QMU" -> "QMU"
+        "6-NGR"       -> "NGR"
+        "3-IMU100"    -> "IMU100"
+        """
+        t = train_type
+        if t.startswith('Empty_'):
+            t = t[len('Empty_'):]
+        if '-' in t:
+            return t.split('-', 1)[1]
+        return t
+
+    @staticmethod
+    def _extract_cars_from_normalised(train_type):
+        """
+        Extract 3/6 from normalised label. Defaults to 0 if not found.
+        """
+        t = train_type
+        if t.startswith('Empty_'):
+            t = t[len('Empty_'):]
+        m = re.match(r'(\d+)-', t)
+        return int(m.group(1)) if m else 0
+
+
+
 
 def load_rsx(path):
     # loads rsx from user specified directory (using absolute path)
@@ -171,3 +288,38 @@ def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True)
 
 
 
+
+#### DEBUGGING ####
+def test():
+    cases = [
+        ("Empty_6-NGR",             "Empty_6-NGR"),
+        ("6-NGR",                   "6-NGR"),
+        ("Empty_6-REP",             "Empty_6-QMU"),
+        ("6-REP",                   "6-QMU"),
+        ("6-QMU_(AW0)_Surface",     "Empty_6-QMU"),
+        ("6-QMU_(AW3)_Surface",     "6-QMU"),
+        ("6-NGR_(AW0)_Surface",     "Empty_6-NGR"),
+        ("6-NGR_(AW3)_Surface",     "6-NGR"),
+        ("Empty_3-IMU100",          "Empty_3-IMU100"),
+        ("3-IMU100",                "3-IMU100"),
+        ("Empty_3-EMU",             "Empty_3-EMU"),
+        ("3-EMU",                   "3-EMU"),
+        ("Empty_6-IMU100",          "Empty_6-IMU100"),
+        ("6-IMU100",                "6-IMU100"),
+        ("Empty_6-EMU",             "Empty_6-EMU"),
+        ("6-EMU",                   "6-EMU"),
+    ]
+    ok = 0
+    fail = 0
+    for raw, expected in cases:
+        got = normalise_train_type(raw)
+        if got == expected:
+            print(f"{raw:28} -> {got}")
+            ok += 1
+        else:
+            print(f"{raw:28} -> {got} (expected {expected})")
+            fail += 1
+    print(f"\nSummary: {ok} passed, {fail} failed")
+
+if __name__ == "__main__":
+    test()
