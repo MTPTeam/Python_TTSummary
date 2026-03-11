@@ -7,8 +7,22 @@ from utils import csl
 
 
 def init_store(yards: Dict[str, List[str]], day_codes: List[str]):
-    # initialise the long stabling dictionary dynamically
+    # initialise the long stabling BALANCE dictionary dynamically
     return {yard: {code: {'out': [], 'in': []} for code in day_codes} for yard in yards.keys()}
+
+
+
+def init_store_simple(yards: Dict[str, List[str]], day_codes: List[str]):
+    # init stabling count dictionary manually
+    return {yard: {code: [] for code in day_codes} for yard in yards}
+
+def write_sheet_simple(ws, store, yard_name, day_order, write_sheet_legacy_like):
+    """If your writer takes just the day lists (no in/out)."""
+    lists = [store[yard_name][c] for c in day_order]
+    write_sheet_legacy_like(ws, *lists)
+
+
+#print(init_store_simple(MTP_constants.YARDS, MTP_constants.DAY_PRIORITY))
 
 
 def build_daylists(daylist_out, daylist_in, wkdk, stable, run_dict, count):
@@ -61,6 +75,8 @@ def build_weeklists_into_store(store, yard_name, options, day_order, d_list, run
     outs = [store[yard_name][c]['out'] for c in day_order]
     ins  = [store[yard_name][c]['in']  for c in day_order]
     build_weeklists(*outs, *ins, options, d_list, run_dict, count)
+
+
 
 def make_legacy_stables_dict_from_store(store, day_order):
     legacy = {}
@@ -149,3 +165,5 @@ def build_singletrip_col(d_list, run_dict):
 
     return singletrip_col
 
+
+##### stabling count specific code 

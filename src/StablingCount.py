@@ -10,18 +10,35 @@ import xml.etree.ElementTree as ET
 
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+import gui 
+from utils import timetrim, csl
+from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
+from xml_processor import build_singletrip_col, find_runs_without_stable
 
 import traceback
 import logging
-import MTP_constants
-from utils import timetrim, csl
-from xml_parser import TrainInfo, normalise_days, parse_rsx, resolve_DoO, sort_days, sort_units
+
+
 
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 CreateWorkbook = True 
 OpenWorkbook = True
+
+weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
+
+wkdk_rename = {
+    ('120','64'):'Mon',
+    ('120','32'):'Tue',
+    ('120','16'):'Wed',
+    ('120','8'): 'Thu',
+    ('120',):'Mon-Thu', 
+    ('4',):'Fri',
+    ('2',):'Sat',
+    ('1',):'Sun'
+    }   
+
 
 
 def TTS_SC(path, mypath = None):
@@ -30,52 +47,79 @@ def TTS_SC(path, mypath = None):
 
     try:
         
-        
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]    
-        filename_wo_ext = filename[:-4]
-        filename_xlsx = f'StablingCount-{filename_wo_ext}.xlsx'
-        workbook = xlsxwriter.Workbook(filename_xlsx)
-
-                
-        if __name__ == "__main__":
-            print(filename,'\n')
         
         
         root, trains, d_list, u_list, run_dict, duplicates = parse_rsx(
-            path,
-            want_trains=True,
-            want_duplicates=True,
-            want_days=True,
-            want_units=True,
-            want_runs=True
-        )
-
-        
-        start_time = time.time()
-        runs_without_stable = []
-
-        # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
-        
+        path,
+        want_trains=True,
+        want_days=True,
+        want_units=True,
+        want_runs=True,
+        want_duplicates=True)
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
-
-
+        
+        filename = filename[:-4]
+        filename_xlsx = f'StablingCount-{filename}.xlsx'
+        workbook = xlsxwriter.Workbook(filename_xlsx)
+        
+        
+        
+        ### Check for duplicate train numbers before executing the script
+        ### Print warning for user if duplicates exist
+        ### Print out all duplicates
         if duplicates:
             print("Error - duplicate train numbers")
             for tn, day in duplicates:
                 print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
-            time.sleep(15)
-            sys.exit()
+        
+
+        
+        start_time = time.time()
+        
+        runs_without_stable = []
+        
+
+        
+        # Run an initial loop through the rsx to find:
+        # - a list of days
+        # - a list of units
+        u_list = []
+        d_list = []
+        for train in root.iter('train'):
+            tn  = train.attrib['number']
+            WeekdayKey = train[0][0][0].attrib['weekdayKey']
+            entries = [x for x in train.iter('entry')]
+            origin = entries[0].attrib
+            destin = entries[-1].attrib
+            unit   = origin['trainTypeId'].split('-',1)[1]
+            # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
+            if unit not in u_list:
+                u_list.append(unit)
+            if WeekdayKey not in d_list:
+                d_list.append(WeekdayKey)
         
             
-        d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
-        u_list = sort_units(u_list)
-
+        # Sort the day and unit lists
+        # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
+        SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
+        SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
+        d_list.sort(key=SORT_ORDER_WEEK.index)
+        u_list.sort(key=SORT_ORDER_UNIT.index)
+        weekdays = set(d_list).intersection({'8','16','32','64'})
+        if weekdays and '120' in d_list:
+            d_list.remove('120')
         ndays = len(d_list)
         n     = len(u_list)
 
+        print(weekdays)
+        # print('days: ',d_list)
+        print('units:',u_list,'\n')
+        
+        
         # Create an identity matrix using unit types
         # This will be used to update the row representing the number of units in a stabling location, using element-wise addition
         # A ones column is appended for the total
@@ -83,6 +127,16 @@ def TTS_SC(path, mypath = None):
         for i,unittype in enumerate(u_list):
             change_matrix[unittype] = [1] + list(np.zeros((n,)))
             change_matrix[unittype][i+1] = 1
+            
+          
+            
+          
+        # Run a second loop through the rsx to create:
+        # - a dictionary using (run,weekdaykey) as a unique key, build the run infomation
+        
+        
+        
+        
         
         def summary_writerow(r,c,data):
             """ Writes a list of data into a row, with zero values appearing in a grey font """
@@ -98,7 +152,7 @@ def TTS_SC(path, mypath = None):
             
             nonlocal row
             i = d_list.index(day)
-            Summary.write(      row+1, 4+n,   MTP_constants.ID_TO_SHORT[day])
+            Summary.write(      row+1, 4+n,   weekdaykey_dict.get(day))
             Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
             Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
             row += 1
@@ -183,6 +237,7 @@ def TTS_SC(path, mypath = None):
             startcount = startofdayunitcount(daylist)
             stablechange = np.array(startcount)
             
+            
             for entry in daylist:
                 if entry[2] == 'NGR' or entry[2] == 'NGRE':
                     threecarscalar = 1
@@ -191,8 +246,10 @@ def TTS_SC(path, mypath = None):
         
                 if entry[8] < 0:
                     stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
+                    
                 else:
                     stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
+                 
                     
                     
                     
@@ -297,7 +354,7 @@ def TTS_SC(path, mypath = None):
             and appends that run to the associated list
             """
             
-            DoO = resolve_DoO(wkdk)
+            DoO = wkdk_rename.get(wkdk)
             for k,v in run_dict.items():
                 
                 run       = k[0]
@@ -492,8 +549,6 @@ def TTS_SC(path, mypath = None):
         
         headers = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Dep/Arr',
                    'Δ (6car)','Count'] + u_list
-        
-        
         
         # Outline stabling locations
         wfeoptions  = ['WFE','WFW','FEE']
@@ -857,7 +912,7 @@ def TTS_SC(path, mypath = None):
             'Clapham':      (cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun),
             'Ormeau':       (orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun),
             'Beerwah South':(bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
-                }
+            }
         
         
         
@@ -951,8 +1006,8 @@ def TTS_SC(path, mypath = None):
                 Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
                 
             # Write days
-            Summary.write_column(firstrow, 1, [MTP_constants.ID_TO_SHORT[d] for d in d_list])
-
+            Summary.write_column(firstrow,1,  [weekdaykey_dict.get(d) for d in d_list])
+           
             
             summary_dict = {
                 '64':  (monday,    mon_total,mon_bkdwn,mon_os_total,mon_os_bkdwn,mon_ip_total,mon_ip_bkdwn),
@@ -1150,23 +1205,7 @@ def TTS_SC(path, mypath = None):
         for unit in u_list:
             summary_totalheaders(unit)     
         for day in d_list:
-            pass
             summary_writetotals(day)
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         
@@ -1183,8 +1222,6 @@ def TTS_SC(path, mypath = None):
             '3. Find where start and finish counts do not match over the day.',
             '4. Find where start and finish counts do not match over the week.'
             ]
-        
-        
         
         
         
@@ -1235,13 +1272,12 @@ def TTS_SC(path, mypath = None):
         Info.write_column('A13',singletrip_col,boldleft)
         
         
-        
         if runs_without_stable:
             Info.write(13+ndays,0,f'{len(runs_without_stable)} Runs not starting or ending at an adequate stabling location:',  redboldleft)
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = MTP_constants.WEEKDAYKEY.get(run[1])
+                DoO       = weekdaykey_dict.get(run[1])
                 start_sID = run[2]
                 end_sID   = run[3]
                 
@@ -1252,7 +1288,6 @@ def TTS_SC(path, mypath = None):
         Summary.activate()
         
         
-        
         if CreateWorkbook:
             workbook.close()
             print('Creating workbook')  
@@ -1260,27 +1295,14 @@ def TTS_SC(path, mypath = None):
                 shutil.copy(filename_xlsx, mypath) 
             else:
                 if OpenWorkbook:
-                    os.startfile(rf'{filename_xlsx}')
-                    print('\nOpening workbook')  
-        
-        
-        
-        # if CreateWorkbook:
-        #     workbook.close()
-        #     print('Creating workbook')  
-        #     if OpenWorkbook and __name__ == "__main__":
-        #         os.startfile(rf'{filename_xlsx}')
-        #         print('\nOpening workbook')   
-        #     else:
-        #         if copyfile:
-        #             shutil.copy(filename_xlsx, mypath) 
-                 
+                    gui.open_file_crossplatform(filename_xlsx)
+                    print('\nOpening workbook')
+    
         
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('Stabling Count Report','Process Done')
+            gui.show_info('Stabling Count Report','Process Done')
             
     
     except Exception as e:

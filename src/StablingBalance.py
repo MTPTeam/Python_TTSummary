@@ -10,12 +10,9 @@ import gui
 import time
 
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 import MTP_constants
-from tkinter import messagebox
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
@@ -334,6 +331,8 @@ def TTS_SB(path, mypath = None):
         
         stables_dict = make_legacy_stables_dict_from_store(store, MTP_constants.SORT_ORDER_WEEK)
 
+        print(stables_dict)
+
         # Summary
         Summary.write('A1','Daily Difference',boldleft)
         Summary.set_tab_color('#7FE57F')
@@ -450,7 +449,7 @@ def TTS_SB(path, mypath = None):
                     print('\nOpening workbook')
 
         
-        if ProcessDoneMessagebox and __name__ == "__main__":
+        if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             gui.show_info('Public Timetable', 'Process Done')
     

@@ -23,7 +23,7 @@ import MTP_constants
 ### "= False" line can be left on permanently to facilitate easy toggling
 ### "= True" lines must be turned on when uploading files to the taipan script library
 # --------------------------------------------------------------------------------------------------- #
-CreateFile = ProcessDoneMessagebox = hastuscopyfile = False
+CreateFile = ProcessDoneMessagebox = hastuscopyfile = True
 ProcessDoneMessagebox = True
 CreateFile = True 
 
@@ -1015,7 +1015,7 @@ def TTS_H(path, mypath = None):
                             
                     
                 o.close()
-                print(f'All trains on {MTP_constants.WEEKDAYKEY.get(weekdaykey)} have been processed')
+                #print(f'All trains on {MTP_constants.WEEKDAYKEY.get(weekdaykey)} have been processed')
                 # print('—————————————————————————————————————————————————————')
                 print('\n\n')
                 if hastuscopyfile:
@@ -1031,7 +1031,7 @@ def TTS_H(path, mypath = None):
         ### Run the create_textfile function for every day present in the rsx
         for day in d_list:
             # print('—————————————————————————————————————————————————————')
-            print(f'Processing trains on {MTP_constants.WEEKDAYKEY.get(day)}...', end='\r')
+            print(f'Processing trains on {MTP_constants.WEEKDAY_KEYS_MASTER[day]["short"]}...', end='\r')
             create_textfile(day)
             
         
