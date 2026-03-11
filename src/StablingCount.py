@@ -13,8 +13,8 @@ from tkinter.filedialog import askopenfilename
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable
-
+from xml_processor import build_singletrip_col, find_runs_without_stable, init_store_simple
+from MTP_constants import YARDS, SORT_ORDER_WEEK
 import traceback
 import logging
 
@@ -79,36 +79,14 @@ def TTS_SC(path, mypath = None):
 
         
         start_time = time.time()
-        
         runs_without_stable = []
         
-
-        
-        # Run an initial loop through the rsx to find:
-        # - a list of days
-        # - a list of units
-        u_list = []
-        d_list = []
-        for train in root.iter('train'):
-            tn  = train.attrib['number']
-            WeekdayKey = train[0][0][0].attrib['weekdayKey']
-            entries = [x for x in train.iter('entry')]
-            origin = entries[0].attrib
-            destin = entries[-1].attrib
-            unit   = origin['trainTypeId'].split('-',1)[1]
-            # unit   = 'NGRE' if unit == 'HYBRID' else unit # This was added as Arne was using HYBRID to represent NGRE's for a moment. We may need something similar for hybrid trains in The Games TT
-            if unit not in u_list:
-                u_list.append(unit)
-            if WeekdayKey not in d_list:
-                d_list.append(WeekdayKey)
-        
-            
         # Sort the day and unit lists
         # Remove mon-thu (120) if individual mon,tue,wed,thu days exist within the rsx
-        SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
-        SORT_ORDER_UNIT = ['REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
-        d_list.sort(key=SORT_ORDER_WEEK.index)
-        u_list.sort(key=SORT_ORDER_UNIT.index)
+        d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
+        u_list = sort_units(u_list)
+
+        # keeping this for now as building fails without it 
         weekdays = set(d_list).intersection({'8','16','32','64'})
         if weekdays and '120' in d_list:
             d_list.remove('120')
@@ -133,10 +111,8 @@ def TTS_SC(path, mypath = None):
           
         # Run a second loop through the rsx to create:
         # - a dictionary using (run,weekdaykey) as a unique key, build the run infomation
-        
-        
-        
-        
+
+        store = init_store_simple(YARDS, SORT_ORDER_WEEK)
         
         def summary_writerow(r,c,data):
             """ Writes a list of data into a row, with zero values appearing in a grey font """
@@ -178,6 +154,7 @@ def TTS_SC(path, mypath = None):
             deptest = [100]
             hybtest = [100]
             smutest = [100]
+            qmutest = [100]
             
             qtmpcount = 0
             ngrcount = 0
@@ -187,6 +164,7 @@ def TTS_SC(path, mypath = None):
             depcount = 0
             hybcount = 0
             smucount = 0
+            qmucount = 0
             
             for x in daylist:
                 if x[2] == 'REP':
@@ -213,6 +191,9 @@ def TTS_SC(path, mypath = None):
                 if x[2] == 'SMU':
                     smutest.append(smutest[smucount] + x[8])
                     smucount += 1
+                if x[2] == 'QMU':
+                    qmutest.append(qmutest[qmucount] + x[8])
+                    qmucount += 1
             
             t_qtmp = float(100-min(qtmptest))
             t_ngr = float(100-min(ngrtest))
@@ -222,9 +203,10 @@ def TTS_SC(path, mypath = None):
             t_dep = float(100-min(deptest))
             t_hyb = float(100-min(hybtest))
             t_smu = float(100-min(smutest))
+            t_qmu = float(100-min(qmutest))
             
-            t_all =  t_qtmp + t_ngr + t_ngre + t_imu + t_emu + t_dep + t_hyb + t_smu
-            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'NGRE':t_ngre, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu}
+            t_all =  t_qtmp + t_ngr + t_ngre + t_imu + t_emu + t_dep + t_hyb + t_smu + t_qmu
+            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'NGRE':t_ngre, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu, 'QMU': t_qmu}
             
             return [t_all]+[type_dict.get(uu) for uu in u_list]
         
@@ -420,11 +402,18 @@ def TTS_SC(path, mypath = None):
                         threecarscalar = 1
                     else:
                         threecarscalar = 2 if cars == 6 else 1
+
+                    if unit == "QMU":
+                        print("that is why")
                     
     
                     if entry[8] < 0:
+
+                        print(change_matrix.get(entry[2]))
                         stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
+                        
                     else:
+                        print(change_matrix.get(entry[2]))
                         stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
                     
                     stablechange = list(stablechange)
@@ -482,6 +471,7 @@ def TTS_SC(path, mypath = None):
         ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
         smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
         dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
+        qmu = workbook.add_format({'align':'center','bg_color':"#B7FFDB"})
         
         qtmpbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFB7B7','bottom':1})
         imubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FDE9D9','bottom':1})
@@ -490,6 +480,7 @@ def TTS_SC(path, mypath = None):
         ngrebold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFFF93','bottom':1})
         smubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#F2DCDB','bottom':1})
         deptbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#EBF1DE','bottom':1})
+        qmubold = workbook.add_format({'align':'center','bg_color':'#B7FFDB','bold':True,'bottom':1})
         
         qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
         imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
@@ -498,6 +489,7 @@ def TTS_SC(path, mypath = None):
         ngreboldred = workbook.add_format({'align':'center','bg_color':'#FFFF93','font_color':'#CC194C', 'bold':True})
         smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
         deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
+        qmuboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
         qtmpborder = workbook.add_format({'align':'center','bg_color':'#FFB7B7','left':1,'right':1})
         imuborder  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','left':1,'right':1})
@@ -506,8 +498,11 @@ def TTS_SC(path, mypath = None):
         ngreborder = workbook.add_format({'align':'center','bg_color':'#FFFF93','left':1,'right':1})
         smuborder  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','left':1,'right':1})
         deptborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
+        qmuborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
+
         
         font_dict = {
+            'QMU':    [qmu, qmubold, qmuboldred, qmuborder],
             'REP':    [qtmp,qtmpbold,qtmpboldred,qtmpborder],
             'NGR':    [ngr,ngrbold,ngrboldred,ngrborder],
             'NGRE':   [ngre,ngrebold,ngreboldred,ngreborder],
@@ -928,6 +923,7 @@ def TTS_SC(path, mypath = None):
         mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
         monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
         monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0       
+        monqmu = tueqmu = wedqmu = thuqmu = mthqmu = friqmu = satqmu = sunqmu = 0  
         
         
         # Loop through all stabling locations and write totals and unit subtotals to worksheet
@@ -1130,7 +1126,18 @@ def TTS_SC(path, mypath = None):
                 frismu += fri_os_bkdwn[smuidx]
                 satsmu += sat_os_bkdwn[smuidx]
                 sunsmu += sun_os_bkdwn[smuidx]
-        
+
+            if 'QMU' in u_list:
+                qmuidx = u_list.index('QMU')
+                monqmu += mon_os_bkdwn[qmuidx]
+                tueqmu += tue_os_bkdwn[qmuidx]
+                wedqmu += wed_os_bkdwn[qmuidx]
+                thuqmu += thu_os_bkdwn[qmuidx]
+                mthqmu += mth_os_bkdwn[qmuidx]
+                friqmu += fri_os_bkdwn[qmuidx]
+                satqmu += sat_os_bkdwn[qmuidx]
+                sunqmu += sun_os_bkdwn[qmuidx]
+
         
         # Improve this method of summation for total overnight stabling
         ##########################################################################################
@@ -1138,14 +1145,14 @@ def TTS_SC(path, mypath = None):
         ##########################################################################################
         
         dailytotals_dict = {
-            '120':sum([mthqtmp,mthngr,mthngre,mthimu,mthemu,mthdep,mthhyb,mthsmu]),
-            '64': sum([monqtmp,monngr,monngre,monimu,monemu,mondep,monhyb,monsmu]),
-            '32': sum([tueqtmp,tuengr,tuengre,tueimu,tueemu,tuedep,tuehyb,tuesmu]),
-            '16': sum([wedqtmp,wedngr,wedngre,wedimu,wedemu,weddep,wedhyb,wedsmu]),
-            '8':  sum([thuqtmp,thungr,thungre,thuimu,thuemu,thudep,thuhyb,thusmu]),
-            '4':  sum([friqtmp,fringr,fringre,friimu,friemu,fridep,frihyb,frismu]),
-            '2':  sum([satqtmp,satngr,satngre,satimu,satemu,satdep,sathyb,satsmu]),
-            '1':  sum([sunqtmp,sunngr,sunngre,sunimu,sunemu,sundep,sunhyb,sunsmu]) 
+            '120':sum([mthqtmp,mthngr,mthngre,mthimu,mthemu,mthdep,mthhyb,mthsmu, mthqmu]),
+            '64': sum([monqtmp,monngr,monngre,monimu,monemu,mondep,monhyb,monsmu, monqmu]),
+            '32': sum([tueqtmp,tuengr,tuengre,tueimu,tueemu,tuedep,tuehyb,tuesmu, tueqmu]),
+            '16': sum([wedqtmp,wedngr,wedngre,wedimu,wedemu,weddep,wedhyb,wedsmu, wedqmu]),
+            '8':  sum([thuqtmp,thungr,thungre,thuimu,thuemu,thudep,thuhyb,thusmu, thuqmu]),
+            '4':  sum([friqtmp,fringr,fringre,friimu,friemu,fridep,frihyb,frismu, friqmu]),
+            '2':  sum([satqtmp,satngr,satngre,satimu,satemu,satdep,sathyb,satsmu, satqmu]),
+            '1':  sum([sunqtmp,sunngr,sunngre,sunimu,sunemu,sundep,sunhyb,sunsmu, sunqmu]) 
             }
         
         type_dict = {
@@ -1156,7 +1163,8 @@ def TTS_SC(path, mypath = None):
             'EMU':      [monemu,tueemu,wedemu,thuemu,mthemu,friemu,satemu,sunemu],
             'DEPT':     [mondep,tuedep,weddep,thudep,mthdep,fridep,satdep,sundep],
             'HYBRID':   [monhyb,tuehyb,wedhyb,thuhyb,mthhyb,frihyb,sathyb,sunhyb],
-            'SMU':      [monsmu,tuesmu,wedsmu,thusmu,mthsmu,frismu,satsmu,sunsmu]
+            'SMU':      [monsmu,tuesmu,wedsmu,thusmu,mthsmu,frismu,satsmu,sunsmu],
+            'QMU':      [monqmu,tueqmu,wedqmu,thuqmu,mthqmu,friqmu,satqmu,sunqmu]
             }
         
         
@@ -1223,48 +1231,9 @@ def TTS_SC(path, mypath = None):
             '4. Find where start and finish counts do not match over the week.'
             ]
         
-        
-        
-        #Initialise single trip lists for info sheet
-        mon_st = []; tue_st = []; wed_st = []; thu_st = []
-        mth_st = []; fri_st = []; sat_st = []; sun_st = []
-        singletrip_dict = {'64':mon_st, '32':tue_st, '16':wed_st, '8':thu_st, '120':mth_st, '4':fri_st, '2':sat_st, '1':sun_st}
-        runs_without_stable = []
-        
-        for i,(k,v) in enumerate(singletrip_dict.items()):
-            for key,run in run_dict.items():
-            
-                runID   = key[0]
-                DoO     = key[1]
-                
-                trips   = run[2]
-                run_oID = run[3]
-                run_dID = run[4]
-                
-                if DoO ==  k:
-                    if trips == 1:
-                        v.append(runID)
-                    if run_oID not in acceptable_stables or run_dID not in acceptable_stables:
-                        runs_without_stable.append([runID,DoO,run_oID,run_dID])
-        
-        singletrip_col = []
-        
-        if '64' in d_list:
-            singletrip_col.append(f'{len(set(mon_st))} Runs with only a single trip on Monday: {csl(mon_st)}')
-        if '32' in d_list:
-            singletrip_col.append(f'{len(set(tue_st))} Runs with only a single trip on Tuesday: {csl(tue_st)}')
-        if '16' in d_list:
-            singletrip_col.append(f'{len(set(wed_st))} Runs with only a single trip on Wednesday: {csl(wed_st)}')
-        if '8' in d_list:
-            singletrip_col.append(f'{len(set(thu_st))} Runs with only a single trip on Thursday: {csl(thu_st)}')
-        if '120' in d_list:
-            singletrip_col.append(f'{len(set(mth_st))} Runs with only a single trip on school nights: {csl(mth_st)}')
-        if '4' in d_list:
-            singletrip_col.append(f'{len(set(fri_st))} Runs with only a single trip on Friday: {csl(fri_st)}')
-        if '2' in d_list:
-            singletrip_col.append(f'{len(set(sat_st))} Runs with only a single trip on Saturday: {csl(sat_st)}')
-        if '1' in d_list:
-            singletrip_col.append(f'{len(set(sun_st))} Runs with only a single trip on Sunday: {csl(sun_st)}')
+
+        singletrip_col = build_singletrip_col(d_list, run_dict)
+        runs_without_stable = find_runs_without_stable(run_dict, acceptable_stables)
         
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
