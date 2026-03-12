@@ -13,7 +13,7 @@ from tkinter.filedialog import askopenfilename
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable, init_store_simple
+from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test, write_sheet_from_store_merged_test
 from MTP_constants import YARDS, SORT_ORDER_WEEK
 import traceback
 import logging
@@ -93,9 +93,7 @@ def TTS_SC(path, mypath = None):
         ndays = len(d_list)
         n     = len(u_list)
 
-        print(weekdays)
         # print('days: ',d_list)
-        print('units:',u_list,'\n')
         
         
         # Create an identity matrix using unit types
@@ -105,6 +103,8 @@ def TTS_SC(path, mypath = None):
         for i,unittype in enumerate(u_list):
             change_matrix[unittype] = [1] + list(np.zeros((n,)))
             change_matrix[unittype][i+1] = 1
+
+        store = init_store(YARDS, SORT_ORDER_WEEK)
             
           
             
@@ -112,7 +112,6 @@ def TTS_SC(path, mypath = None):
         # Run a second loop through the rsx to create:
         # - a dictionary using (run,weekdaykey) as a unique key, build the run infomation
 
-        store = init_store_simple(YARDS, SORT_ORDER_WEEK)
         
         def summary_writerow(r,c,data):
             """ Writes a list of data into a row, with zero values appearing in a grey font """
@@ -232,8 +231,6 @@ def TTS_SC(path, mypath = None):
                 else:
                     stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
                  
-                    
-                    
                     
             total = stablechange[0]-startcount[0]
             breakdown  = list(stablechange[1:]-np.array(startcount[1:]))
@@ -366,7 +363,7 @@ def TTS_SC(path, mypath = None):
         
             
             daylist.sort(key=lambda val: val[7])
-            for x in daylist: x[7] = timetrim(x[7])
+            #for x in daylist: x[7] = timetrim(x[7])
             
         
         
@@ -409,11 +406,9 @@ def TTS_SC(path, mypath = None):
     
                     if entry[8] < 0:
 
-                        print(change_matrix.get(entry[2]))
                         stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
                         
                     else:
-                        print(change_matrix.get(entry[2]))
                         stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
                     
                     stablechange = list(stablechange)
@@ -546,7 +541,7 @@ def TTS_SC(path, mypath = None):
                    'Δ (6car)','Count'] + u_list
         
         # Outline stabling locations
-        wfeoptions  = ['WFE','WFW','FEE']
+        wfeoptions = YARDS['Wulkuraka']
         ipssoptions = ['IPSS','IPS']
         rdksoptions = ['RDKS']
         robsoptions = ['ROBS']
@@ -566,28 +561,23 @@ def TTS_SC(path, mypath = None):
         cpmoptions  = ['CPM']
         ormsoptions = ['ORMS']
         bwhsoptions = ['BWHS']
+
+
+
+        print(wfeoptions)
+        print(ipssoptions)
         
         # To be displayed in red font if a run starts or finishes at one of these non-stable locations
         nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
         
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
-        acceptable_stables = []
-        s_yards = [wfeoptions,ipssoptions,rdksoptions,robsoptions,mnyoptions,bnhsoptions,etsoptions,ynoptions,mesoptions,petsoptions,kprsoptions,caewoptions,emhsoptions,wobsoptions,nbroptions,gynoptions,bqysoptions,cpmoptions,ormsoptions,bwhsoptions]
-        for x in s_yards:
-                for y in x: acceptable_stables.append(y)
-        acceptable_stables.remove('RS')
-        acceptable_stables.remove('BHI')
-        
-        # Initialise a list for each day, for each stabling yard
-        # Will be filled with runs on that particular day, starting or ending at that particular stabling location
-        wfe_mon = []
-        wfe_tue = []
-        wfe_wed = []
-        wfe_thu = []
-        wfe_mth = []
-        wfe_fri = []
-        wfe_sat = []
-        wfe_sun = []
+        acceptable_stables = [code for codes in YARDS.values() for code in codes]
+        for bad in ('RS', 'BHI'):
+            if bad in acceptable_stables:
+                acceptable_stables.remove(bad)
+
+        print(store)
+
         
         ipss_mon = []
         ipss_tue = []
@@ -760,13 +750,19 @@ def TTS_SC(path, mypath = None):
         bwhs_sat = []
         bwhs_sun = []
         
-        
-        
-        
-        
-        
         # Fill the empty lists with runs given it starts or finishes at one of the options
-        build_weeklists(wfe_mon,wfe_tue,wfe_wed,wfe_thu,wfe_mth,wfe_fri,wfe_sat,wfe_sun,           wfeoptions)
+
+        
+        build_weeklists_into_store(
+            store=store,
+            yard_name='Wulkuraka',
+            options=wfeoptions,
+            day_order=SORT_ORDER_WEEK,
+            d_list=d_list,          # your selected day IDs (e.g., all 8, or a subset)
+            run_dict=run_dict,
+            count=True,              # OUT negative, IN positive (balance-style; keep this True)
+        )
+
         build_weeklists(ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun,   ipssoptions)
         build_weeklists(rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun,   rdksoptions)
         build_weeklists(robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun,   robsoptions)
@@ -813,7 +809,14 @@ def TTS_SC(path, mypath = None):
         
         
         # Use the lists we've just filled to populate the blank worksheets we've just created
-        write_sheet(Wulkuraka,    wfe_mon,wfe_tue,wfe_wed,wfe_thu,wfe_mth,wfe_fri,wfe_sat,wfe_sun) 
+        
+        
+        wfe_merged = [
+            merge_out_in_per_day_test(store['Wulkuraka'][code]['out'], store['Wulkuraka'][code]['in'])
+            for code in SORT_ORDER_WEEK
+        ]
+
+        write_sheet(Wulkuraka, *wfe_merged)
         write_sheet(Ipswich,      ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun) 
         write_sheet(Redbank,      rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun) 
         write_sheet(Robina,       robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun) 
@@ -833,7 +836,6 @@ def TTS_SC(path, mypath = None):
         write_sheet(Clapham,      cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun) 
         write_sheet(Ormeau,       orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun)
         write_sheet(BeerwahSouth, bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
-        
         
         
         # Summary
@@ -887,7 +889,7 @@ def TTS_SC(path, mypath = None):
                 }
         
         stables_dict = {
-            'Wulkuraka':    (wfe_mon,wfe_tue,wfe_wed,wfe_thu,wfe_mth,wfe_fri,wfe_sat,wfe_sun),
+            'Wulkuraka':    (),
             'Ipswich':      (ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun),
             'Redbank':      (rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun),
             'Robina':       (robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun),
@@ -910,7 +912,9 @@ def TTS_SC(path, mypath = None):
             }
         
         
-        
+        stables_dict['Wulkuraka'] = tuple(wfe_merged)
+
+        print("wulkara dict ", stables_dict['Wulkuraka'])
         
         
         
@@ -952,6 +956,8 @@ def TTS_SC(path, mypath = None):
             friday    = v[5]
             saturday  = v[6]
             sunday    = v[7]
+
+            print(monday)
             
             # Use our functions to assign a day total and a day subtotal vector to variables
         
@@ -1193,9 +1199,6 @@ def TTS_SC(path, mypath = None):
         
         daylist_dict = {'120':monthu_list,'64':monday_list,'32':tuesday_list,'16':wednesday_list,
                         '8':thursday_list,'4':friday_list,'2':saturday_list ,'1':sunday_list}
-        
-        
-        
         
         row = len(stables_dict)*(ndays+2)+2
         endrow = row + ndays
