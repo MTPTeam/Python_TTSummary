@@ -50,31 +50,32 @@ SORT_ORDER_UNIT = ['QMU', 'REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEP
     
 # update stabling yard locations here 
 YARDS = {
-    'Wulkuraka':    ['WFE','WFW','FEE'],
-    'Ipswich':      ['IPSS','IPS'],
-    'Redbank':      ['RDKS'],
-    'Robina':       ['ROBS'],
-    'Manly':        ['MNY'],
-    'Beenleigh':    ['BNHS'],
-    'Mayne West':   ['ETB','ETF','ETS','MWS','RS','BHI'],
-    'Mayne North':  ['YN','MNS'],
-    'Mayne East':   ['MES'],
-    'Petrie':       ['PETS'],
-    'Kippa-Ring':   ['KPRS'],
-    'Caboolture':   ['CAE','CAW','CAB'],
-    'Elimbah':      ['EMHS'],
-    'Woombye':      ['WOBS'],
-    'Nambour':      ['NBR'],
-    'Gympie North': ['GYN'],
-    'Banyo':        ['BQYS'],
-    'Clapham':      ['CPM'],
-    'Ormeau':       ['ORMS'],
-    'Beerwah South':['BWHS'],
+    'Wulkuraka':    {'capacity': 11,  'yards': ['WFE', 'WFW', 'FEE']},
+    'Ipswich':      {'capacity': 7,   'yards': ['IPSS', 'IPS']},
+    'Redbank':      {'capacity': 6,   'yards': ['RDKS']},
+    'Robina':       {'capacity': 11,  'yards': ['ROBS']},
+    'Manly':        {'capacity': 3,   'yards': ['MNY']},
+    'Beenleigh':    {'capacity': 8,   'yards': ['BNHS']},
+    'Mayne West':   {'capacity': '/',  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI']},
+    'Mayne North':  {'capacity': '/',  'yards': ['YN', 'MNS']},
+    'Mayne East':   {'capacity': '/',  'yards': ['MES']},
+    'Petrie':       {'capacity': 1,   'yards': ['PETS']},
+    'Kippa-Ring':   {'capacity': 10,  'yards': ['KPRS']},
+    'Caboolture':   {'capacity': 9,   'yards': ['CAE', 'CAW', 'CAB']},
+    'Elimbah':      {'capacity': 8,   'yards': ['EMHS']},
+    'Woombye':      {'capacity': 4,   'yards': ['WOBS']},
+    'Nambour':      {'capacity': 3,   'yards': ['NBR']},
+    'Gympie North': {'capacity': 1,   'yards': ['GYN']},
+    'Banyo':        {'capacity': 4,   'yards': ['BQYS']},
+    'Clapham':      {'capacity': '/',  'yards': ['CPM']},
+    'Ormeau':       {'capacity': '/',  'yards': ['ORMS']},
+    'Beerwah South':{'capacity': 8,   'yards': ['BWHS']},
 }
 
 
 # update internal list of non stable yards 
 NON_STABLE_LOCATIONS = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
+
 
 
 

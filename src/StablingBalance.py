@@ -16,7 +16,6 @@ import MTP_constants
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
-from utils import timetrim, csl
 from ExcelWriter import writecell_unbalanced, write_unit_totals
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -308,25 +307,29 @@ def TTS_SB(path, mypath = None):
         Info    = workbook.add_worksheet('Info')
         Summary = workbook.add_worksheet('Summary')
 
-        # Build acceptable stables (unchanged)
-        acceptable_stables = [code for codes in MTP_constants.YARDS.values() for code in codes]
+        acceptable_stables = [code for loc in MTP_constants.YARDS.values() for code in loc['yards']]
         for bad in ('RS', 'BHI'):
             if bad in acceptable_stables:
                 acceptable_stables.remove(bad)
 
         # Build store for each yard (unchanged)
-        for yard_name, options in MTP_constants.YARDS.items():
-            build_weeklists_into_store(store, yard_name, options,
-                                    MTP_constants.SORT_ORDER_WEEK, d_list, run_dict, count = False)
+        for yard_name, info in MTP_constants.YARDS.items():
+            build_weeklists_into_store(
+                store, yard_name, info['yards'], # Access 'yards' here
+                MTP_constants.SORT_ORDER_WEEK, d_list, run_dict, count=False
+        )
 
         # Create yard worksheets ONCE (no sheet_dict)
-        yard_sheets = [(yard, workbook.add_worksheet(yard)) for yard in MTP_constants.YARDS.keys()]
+        yard_sheets = [(name, workbook.add_worksheet(name)) for name in MTP_constants.YARDS.keys()]
+
 
         # Write each yard sheet using your legacy write_sheet via the adapter
         for yard_name, ws in yard_sheets:
-            write_sheet_from_store(ws, store, yard_name,
-                                MTP_constants.SORT_ORDER_WEEK,
-                                write_sheet_legacy=write_sheet)
+            write_sheet_from_store(
+                ws, store, yard_name,
+                MTP_constants.SORT_ORDER_WEEK,
+                write_sheet_legacy=write_sheet
+            )
 
         
         stables_dict = make_legacy_stables_dict_from_store(store, MTP_constants.SORT_ORDER_WEEK)
@@ -474,3 +477,4 @@ if __name__ == "__main__":
     print(f"Elapsed time: {elapsed_time:.4f} seconds")
 
     TTS_SB(path)  
+
