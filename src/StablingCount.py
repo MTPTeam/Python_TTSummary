@@ -541,7 +541,7 @@ def TTS_SC(path, mypath = None):
                    'Δ (6car)','Count'] + u_list
         
         # Outline stabling locations
-        wfeoptions = YARDS['Wulkuraka']
+        wfeoptions = YARDS['Wulkuraka']['yards']
         ipssoptions = ['IPSS','IPS']
         rdksoptions = ['RDKS']
         robsoptions = ['ROBS']
@@ -571,10 +571,16 @@ def TTS_SC(path, mypath = None):
         nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
         
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
-        acceptable_stables = [code for codes in YARDS.values() for code in codes]
+        
+        acceptable_stables = [code 
+                            for v in YARDS.values() 
+                            for code in v['yards']]
+
+                
         for bad in ('RS', 'BHI'):
-            if bad in acceptable_stables:
+            if bad in acceptable_stables:   # works for list or set
                 acceptable_stables.remove(bad)
+
 
         print(store)
 
@@ -753,15 +759,17 @@ def TTS_SC(path, mypath = None):
         # Fill the empty lists with runs given it starts or finishes at one of the options
 
         
+        
         build_weeklists_into_store(
             store=store,
             yard_name='Wulkuraka',
             options=wfeoptions,
             day_order=SORT_ORDER_WEEK,
-            d_list=d_list,          # your selected day IDs (e.g., all 8, or a subset)
+            d_list=d_list,
             run_dict=run_dict,
-            count=True,              # OUT negative, IN positive (balance-style; keep this True)
+            count=True
         )
+
 
         build_weeklists(ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun,   ipssoptions)
         build_weeklists(rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun,   rdksoptions)
@@ -865,29 +873,9 @@ def TTS_SC(path, mypath = None):
             row += 2 + n
             Summary.write(1,row,uu,font)
         
-        stable_capacities = {
-            'Wulkuraka':    11,
-            'Ipswich':      7,
-            'Redbank':      6,
-            'Robina':       11,
-            'Manly':        3,
-            'Beenleigh':    8,
-            'Mayne West':   '/',
-            'Mayne North':  '/',
-            'Mayne East':   '/',
-            'Petrie':       1,
-            'Kippa-Ring':   10,
-            'Caboolture':   9,
-            'Elimbah':      8,
-            'Woombye':      4,
-            'Nambour':      3,
-            'Gympie North': 1,
-            'Banyo':        4,
-            'Clapham':      '/',
-            'Ormeau':      '/',
-            'Beerwah South': 8,
-                }
-        
+        stable_capacities = {yard: meta['capacity'] for yard, meta in YARDS.items()}
+
+
         stables_dict = {
             'Wulkuraka':    (),
             'Ipswich':      (ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun),
@@ -1283,6 +1271,10 @@ def TTS_SC(path, mypath = None):
             time.sleep(15)
     
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    path = gui.select_file(
+
+    caption="Select RSX file",
+    directory="",
+    filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
     TTS_SC(path)
