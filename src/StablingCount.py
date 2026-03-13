@@ -14,7 +14,7 @@ import gui
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
 from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test, write_sheet_from_store_merged_test
-from MTP_constants import YARDS, SORT_ORDER_WEEK
+from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS
 import traceback
 import logging
 
@@ -418,9 +418,9 @@ def TTS_SC(path, mypath = None):
                         else:
                             sheet.write(idx,j,cell,font_dict.get(entry[2])[0])
                     # sheet.write_row(idx,0,entry+stablechange,font_dict.get(entry[2])[0])
-                    if entry[5] in nonstables:
+                    if entry[5] in NON_STABLE_LOCATIONS:
                         sheet.write(idx,5,entry[5],font_dict.get(entry[2])[2])
-                    if entry[6] in nonstables:
+                    if entry[6] in NON_STABLE_LOCATIONS:
                         sheet.write(idx,6,entry[6],font_dict.get(entry[2])[2])
                         
                 sheet.write(        row-1,9,  stablechange[0],      tborder)
@@ -540,35 +540,7 @@ def TTS_SC(path, mypath = None):
         headers = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Dep/Arr',
                    'Δ (6car)','Count'] + u_list
         
-        # Outline stabling locations
-        wfeoptions = YARDS['Wulkuraka']['yards']
-        ipssoptions = ['IPSS','IPS']
-        rdksoptions = ['RDKS']
-        robsoptions = ['ROBS']
-        mnyoptions  = ['MNY']
-        bnhsoptions = ['BNHS']
-        etsoptions  = ['ETB','ETF','ETS','MWS','RS','BHI']
-        ynoptions   = ['YN','MNS']
-        mesoptions  = ['MES']
-        petsoptions = ['PETS']
-        kprsoptions = ['KPRS']
-        caewoptions = ['CAE','CAW','CAB']
-        emhsoptions = ['EMHS']
-        wobsoptions = ['WOBS']
-        nbroptions  = ['NBR']
-        gynoptions  = ['GYN']
-        bqysoptions = ['BQYS']
-        cpmoptions  = ['CPM']
-        ormsoptions = ['ORMS']
-        bwhsoptions = ['BWHS']
-
-
-
-        print(wfeoptions)
-        print(ipssoptions)
-        
-        # To be displayed in red font if a run starts or finishes at one of these non-stable locations
-        nonstables = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
+    
         
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
         
@@ -585,266 +557,25 @@ def TTS_SC(path, mypath = None):
         print(store)
 
         
-        ipss_mon = []
-        ipss_tue = []
-        ipss_wed = []
-        ipss_thu = []
-        ipss_mth = []
-        ipss_fri = []
-        ipss_sat = []
-        ipss_sun = []
-        
-        rdks_mon = []
-        rdks_tue = []
-        rdks_wed = []
-        rdks_thu = []
-        rdks_mth = []
-        rdks_fri = []
-        rdks_sat = []
-        rdks_sun = []
-        
-        robs_mon = []
-        robs_tue = []
-        robs_wed = []
-        robs_thu = []
-        robs_mth = []
-        robs_fri = []
-        robs_sat = []
-        robs_sun = []
-        
-        mny_mon = []
-        mny_tue = []
-        mny_wed = []
-        mny_thu = []
-        mny_mth = []
-        mny_fri = []
-        mny_sat = []
-        mny_sun = []
-        
-        bnhs_mon = []
-        bnhs_tue = []
-        bnhs_wed = []
-        bnhs_thu = []
-        bnhs_mth = []
-        bnhs_fri = []
-        bnhs_sat = []
-        bnhs_sun = []
-        
-        ets_mon = []
-        ets_tue = []
-        ets_wed = []
-        ets_thu = []
-        ets_mth = []
-        ets_fri = []
-        ets_sat = []
-        ets_sun = []
-        
-        yn_mon = []
-        yn_tue = []
-        yn_wed = []
-        yn_thu = []
-        yn_mth = []
-        yn_fri = []
-        yn_sat = []
-        yn_sun = []
-        
-        mes_mon = []
-        mes_tue = []
-        mes_wed = []
-        mes_thu = []
-        mes_mth = []
-        mes_fri = []
-        mes_sat = []
-        mes_sun = []
-        
-        pets_mon = []
-        pets_tue = []
-        pets_wed = []
-        pets_thu = []
-        pets_mth = []
-        pets_fri = []
-        pets_sat = []
-        pets_sun = []
-        
-        kprs_mon = []
-        kprs_tue = []
-        kprs_wed = []
-        kprs_thu = []
-        kprs_mth = []
-        kprs_fri = []
-        kprs_sat = []
-        kprs_sun = []
-        
-        caew_mon = []
-        caew_tue = []
-        caew_wed = []
-        caew_thu = []
-        caew_mth = []
-        caew_fri = []
-        caew_sat = []
-        caew_sun = []
-        
-        emhs_mon = []
-        emhs_tue = []
-        emhs_wed = []
-        emhs_thu = []
-        emhs_mth = []
-        emhs_fri = []
-        emhs_sat = []
-        emhs_sun = []
-        
-        wobs_mon = []
-        wobs_tue = []
-        wobs_wed = []
-        wobs_thu = []
-        wobs_mth = []
-        wobs_fri = []
-        wobs_sat = []
-        wobs_sun = []
-        
-        nbr_mon = []
-        nbr_tue = []
-        nbr_wed = []
-        nbr_thu = []
-        nbr_mth = []
-        nbr_fri = []
-        nbr_sat = []
-        nbr_sun = []
-        
-        gyn_mon = []
-        gyn_tue = []
-        gyn_wed = []
-        gyn_thu = []
-        gyn_mth = []
-        gyn_fri = []
-        gyn_sat = []
-        gyn_sun = []
-        
-        bqys_mon = []
-        bqys_tue = []
-        bqys_wed = []
-        bqys_thu = []
-        bqys_mth = []
-        bqys_fri = []
-        bqys_sat = []
-        bqys_sun = []
-        
-        cpm_mon = []
-        cpm_tue = []
-        cpm_wed = []
-        cpm_thu = []
-        cpm_mth = []
-        cpm_fri = []
-        cpm_sat = []
-        cpm_sun = []
-        
-        orms_mon = []
-        orms_tue = []
-        orms_wed = []
-        orms_thu = []
-        orms_mth = []
-        orms_fri = []
-        orms_sat = []
-        orms_sun = []
-		
-        bwhs_mon = []
-        bwhs_tue = []
-        bwhs_wed = []
-        bwhs_thu = []
-        bwhs_mth = []
-        bwhs_fri = []
-        bwhs_sat = []
-        bwhs_sun = []
-        
         # Fill the empty lists with runs given it starts or finishes at one of the options
 
         
-        
-        build_weeklists_into_store(
-            store=store,
-            yard_name='Wulkuraka',
-            options=wfeoptions,
-            day_order=SORT_ORDER_WEEK,
-            d_list=d_list,
-            run_dict=run_dict,
-            count=True
-        )
-
-
-        build_weeklists(ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun,   ipssoptions)
-        build_weeklists(rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun,   rdksoptions)
-        build_weeklists(robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun,   robsoptions)
-        build_weeklists(mny_mon,mny_tue,mny_wed,mny_thu,mny_mth,mny_fri,mny_sat,mny_sun,           mnyoptions)
-        build_weeklists(bnhs_mon,bnhs_tue,bnhs_wed,bnhs_thu,bnhs_mth,bnhs_fri,bnhs_sat,bnhs_sun,   bnhsoptions)
-        build_weeklists(ets_mon,ets_tue,ets_wed,ets_thu,ets_mth,ets_fri,ets_sat,ets_sun,           etsoptions)
-        build_weeklists(yn_mon,yn_tue,yn_wed,yn_thu,yn_mth,yn_fri,yn_sat,yn_sun,                   ynoptions)
-        build_weeklists(mes_mon,mes_tue,mes_wed,mes_thu,mes_mth,mes_fri,mes_sat,mes_sun,           mesoptions)
-        build_weeklists(pets_mon,pets_tue,pets_wed,pets_thu,pets_mth,pets_fri,pets_sat,pets_sun,   petsoptions)
-        build_weeklists(kprs_mon,kprs_tue,kprs_wed,kprs_thu,kprs_mth,kprs_fri,kprs_sat,kprs_sun,   kprsoptions)
-        build_weeklists(caew_mon,caew_tue,caew_wed,caew_thu,caew_mth,caew_fri,caew_sat,caew_sun,   caewoptions)
-        build_weeklists(emhs_mon,emhs_tue,emhs_wed,emhs_thu,emhs_mth,emhs_fri,emhs_sat,emhs_sun,   emhsoptions)
-        build_weeklists(wobs_mon,wobs_tue,wobs_wed,wobs_thu,wobs_mth,wobs_fri,wobs_sat,wobs_sun,   wobsoptions)
-        build_weeklists(nbr_mon,nbr_tue,nbr_wed,nbr_thu,nbr_mth,nbr_fri,nbr_sat,nbr_sun,           nbroptions)
-        build_weeklists(gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun,           gynoptions)
-        build_weeklists(bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun,   bqysoptions)
-        build_weeklists(cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun,           cpmoptions)
-        build_weeklists(orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun,   ormsoptions)
-        build_weeklists(bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun,   bwhsoptions)
+        for yard_name, meta in YARDS.items():
+            build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True)
         
         # Create blank worksheets for each stabling yard
         Info = workbook.add_worksheet('Info')
         Summary = workbook.add_worksheet('Summary')
-        Wulkuraka = workbook.add_worksheet('Wulkuraka')
-        Ipswich = workbook.add_worksheet('Ipswich')
-        Redbank = workbook.add_worksheet('Redbank')
-        Robina = workbook.add_worksheet('Robina')
-        Manly = workbook.add_worksheet('Manly')
-        Beenleigh = workbook.add_worksheet('Beenleigh')
-        MayneWest = workbook.add_worksheet('Mayne West')
-        MayneNorth = workbook.add_worksheet('Mayne North')
-        MayneEast = workbook.add_worksheet('Mayne East')
-        Petrie = workbook.add_worksheet('Petrie')
-        KippaRing = workbook.add_worksheet('Kippa-Ring')
-        Caboolture = workbook.add_worksheet('Caboolture')
-        Elimbah = workbook.add_worksheet('Elimbah')
-        Woombye = workbook.add_worksheet('Woombye')
-        Nambour = workbook.add_worksheet('Nambour')
-        GympieNth = workbook.add_worksheet('Gympie North')
-        Banyo = workbook.add_worksheet('Banyo')
-        Clapham = workbook.add_worksheet('Clapham')
-        Ormeau = workbook.add_worksheet('Ormeau')
-        BeerwahSouth = workbook.add_worksheet('Beerwah South')
-        
         
         # Use the lists we've just filled to populate the blank worksheets we've just created
         
         
-        wfe_merged = [
-            merge_out_in_per_day_test(store['Wulkuraka'][code]['out'], store['Wulkuraka'][code]['in'])
-            for code in SORT_ORDER_WEEK
-        ]
 
-        write_sheet(Wulkuraka, *wfe_merged)
-        write_sheet(Ipswich,      ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun) 
-        write_sheet(Redbank,      rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun) 
-        write_sheet(Robina,       robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun) 
-        write_sheet(Manly,        mny_mon,mny_tue,mny_wed,mny_thu,mny_mth,mny_fri,mny_sat,mny_sun) 
-        write_sheet(Beenleigh,    bnhs_mon,bnhs_tue,bnhs_wed,bnhs_thu,bnhs_mth,bnhs_fri,bnhs_sat,bnhs_sun) 
-        write_sheet(MayneWest,    ets_mon,ets_tue,ets_wed,ets_thu,ets_mth,ets_fri,ets_sat,ets_sun) 
-        write_sheet(MayneNorth,   yn_mon,yn_tue,yn_wed,yn_thu,yn_mth,yn_fri,yn_sat,yn_sun) 
-        write_sheet(MayneEast,    mes_mon,mes_tue,mes_wed,mes_thu,mes_mth,mes_fri,mes_sat,mes_sun) 
-        write_sheet(Petrie,       pets_mon,pets_tue,pets_wed,pets_thu,pets_mth,pets_fri,pets_sat,pets_sun) 
-        write_sheet(KippaRing,    kprs_mon,kprs_tue,kprs_wed,kprs_thu,kprs_mth,kprs_fri,kprs_sat,kprs_sun) 
-        write_sheet(Caboolture,   caew_mon,caew_tue,caew_wed,caew_thu,caew_mth,caew_fri,caew_sat,caew_sun) 
-        write_sheet(Elimbah,      emhs_mon,emhs_tue,emhs_wed,emhs_thu,emhs_mth,emhs_fri,emhs_sat,emhs_sun) 
-        write_sheet(Woombye,      wobs_mon,wobs_tue,wobs_wed,wobs_thu,wobs_mth,wobs_fri,wobs_sat,wobs_sun) 
-        write_sheet(Nambour,      nbr_mon,nbr_tue,nbr_wed,nbr_thu,nbr_mth,nbr_fri,nbr_sat,nbr_sun) 
-        write_sheet(GympieNth,    gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun) 
-        write_sheet(Banyo,        bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun) 
-        write_sheet(Clapham,      cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun) 
-        write_sheet(Ormeau,       orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun)
-        write_sheet(BeerwahSouth, bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
-        
+
+        sheets = {}
+
+        for yard_name in YARDS:
+            sheets[yard_name] = workbook.add_worksheet(yard_name)
         
         # Summary
         #########################################################################################
@@ -876,33 +607,20 @@ def TTS_SC(path, mypath = None):
         stable_capacities = {yard: meta['capacity'] for yard, meta in YARDS.items()}
 
 
-        stables_dict = {
-            'Wulkuraka':    (),
-            'Ipswich':      (ipss_mon,ipss_tue,ipss_wed,ipss_thu,ipss_mth,ipss_fri,ipss_sat,ipss_sun),
-            'Redbank':      (rdks_mon,rdks_tue,rdks_wed,rdks_thu,rdks_mth,rdks_fri,rdks_sat,rdks_sun),
-            'Robina':       (robs_mon,robs_tue,robs_wed,robs_thu,robs_mth,robs_fri,robs_sat,robs_sun),
-            'Manly':        (mny_mon,mny_tue,mny_wed,mny_thu,mny_mth,mny_fri,mny_sat,mny_sun),
-            'Beenleigh':    (bnhs_mon,bnhs_tue,bnhs_wed,bnhs_thu,bnhs_mth,bnhs_fri,bnhs_sat,bnhs_sun),
-            'Mayne West':   (ets_mon,ets_tue,ets_wed,ets_thu,ets_mth,ets_fri,ets_sat,ets_sun),
-            'Mayne North':  (yn_mon,yn_tue,yn_wed,yn_thu,yn_mth,yn_fri,yn_sat,yn_sun),
-            'Mayne East':   (mes_mon,mes_tue,mes_wed,mes_thu,mes_mth,mes_fri,mes_sat,mes_sun),
-            'Petrie':       (pets_mon,pets_tue,pets_wed,pets_thu,pets_mth,pets_fri,pets_sat,pets_sun),
-            'Kippa-Ring':   (kprs_mon,kprs_tue,kprs_wed,kprs_thu,kprs_mth,kprs_fri,kprs_sat,kprs_sun),
-            'Caboolture':   (caew_mon,caew_tue,caew_wed,caew_thu,caew_mth,caew_fri,caew_sat,caew_sun),
-            'Elimbah':      (emhs_mon,emhs_tue,emhs_wed,emhs_thu,emhs_mth,emhs_fri,emhs_sat,emhs_sun),
-            'Woombye':      (wobs_mon,wobs_tue,wobs_wed,wobs_thu,wobs_mth,wobs_fri,wobs_sat,wobs_sun),
-            'Nambour':      (nbr_mon,nbr_tue,nbr_wed,nbr_thu,nbr_mth,nbr_fri,nbr_sat,nbr_sun),
-            'Gympie North': (gyn_mon,gyn_tue,gyn_wed,gyn_thu,gyn_mth,gyn_fri,gyn_sat,gyn_sun),
-            'Banyo':        (bqys_mon,bqys_tue,bqys_wed,bqys_thu,bqys_mth,bqys_fri,bqys_sat,bqys_sun),
-            'Clapham':      (cpm_mon,cpm_tue,cpm_wed,cpm_thu,cpm_mth,cpm_fri,cpm_sat,cpm_sun),
-            'Ormeau':       (orms_mon,orms_tue,orms_wed,orms_thu,orms_mth,orms_fri,orms_sat,orms_sun),
-            'Beerwah South':(bwhs_mon,bwhs_tue,bwhs_wed,bwhs_thu,bwhs_mth,bwhs_fri,bwhs_sat,bwhs_sun)
-            }
-        
-        
-        stables_dict['Wulkuraka'] = tuple(wfe_merged)
+        stables_dict = {}
 
-        print("wulkara dict ", stables_dict['Wulkuraka'])
+        for yard_name in YARDS:
+            merged = [merge_out_in_per_day_test(store[yard_name][code]['out'], store[yard_name][code]['in']) for code in SORT_ORDER_WEEK]
+            stables_dict[yard_name] = tuple(merged)
+
+
+        for yard_name, ws in sheets.items():
+            write_sheet(ws, *stables_dict[yard_name])
+        
+        
+        #stables_dict['Wulkuraka'] = tuple(wfe_merged)
+
+        #print("wulkara dict ", stables_dict['Wulkuraka'])
         
         
         
