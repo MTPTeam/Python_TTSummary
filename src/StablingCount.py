@@ -1,4 +1,3 @@
-from prometheus_client import Summary
 import xlsxwriter
 import re
 import os
@@ -15,7 +14,7 @@ import gui
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
 from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test
-from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER
+from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT
 import traceback
 import logging
 from collections import defaultdict
@@ -108,71 +107,41 @@ def TTS_SC(path, mypath = None):
             """ 
             Finds the minimum number of units stabled at each location at the start of the day
             Could be other, unused units
+            If SORT_ORDER_UNIT is updated then this function will update automatically and calculate new unit types if needed 
             """
             
-            qtmptest = [100]
-            ngrtest = [100]
-            ngretest = [100]
-            imutest = [100]
-            emutest = [100]
-            deptest = [100]
-            hybtest = [100]
-            smutest = [100]
-            qmutest = [100]
-            
-            qtmpcount = 0
-            ngrcount = 0
-            ngrecount = 0
-            imucount = 0
-            emucount = 0
-            depcount = 0
-            hybcount = 0
-            smucount = 0
-            qmucount = 0
-            
-            for x in daylist:
-                if x[2] == 'REP':
-                    qtmptest.append(qtmptest[qtmpcount] + x[8])
-                    qtmpcount += 1
-                if x[2] == 'NGR':
-                    ngrtest.append(ngrtest[ngrcount] + x[8])
-                    ngrcount += 1
-                if x[2] == 'NGRE':
-                    ngretest.append(ngretest[ngrecount] + x[8])
-                    ngrecount += 1
-                if x[2] == 'IMU100':
-                    imutest.append(imutest[imucount] + x[8])
-                    imucount += 1
-                if x[2] == 'EMU':
-                    emutest.append(emutest[emucount] + x[8])
-                    emucount += 1
-                if x[2] == 'DEPT':
-                    deptest.append(deptest[depcount] + x[8])
-                    depcount += 1
-                if x[2] == 'HYBRID':
-                    hybtest.append(hybtest[hybcount] + x[8])
-                    hybcount += 1
-                if x[2] == 'SMU':
-                    smutest.append(smutest[smucount] + x[8])
-                    smucount += 1
-                if x[2] == 'QMU':
-                    qmutest.append(qmutest[qmucount] + x[8])
-                    qmucount += 1
-            
-            t_qtmp = float(100-min(qtmptest))
-            t_ngr = float(100-min(ngrtest))
-            t_ngre = float(100-min(ngretest))
-            t_imu = float(100-min(imutest))
-            t_emu = float(100-min(emutest))
-            t_dep = float(100-min(deptest))
-            t_hyb = float(100-min(hybtest))
-            t_smu = float(100-min(smutest))
-            t_qmu = float(100-min(qmutest))
-            
-            t_all =  t_qtmp + t_ngr + t_ngre + t_imu + t_emu + t_dep + t_hyb + t_smu + t_qmu
-            type_dict = {'REP':t_qtmp, 'NGR':t_ngr, 'NGRE':t_ngre, 'IMU100':t_imu, 'EMU':t_emu, 'DEPT':t_dep, 'HYBRID':t_hyb, 'SMU':t_smu, 'QMU': t_qmu}
-            
-            return [t_all]+[type_dict.get(uu) for uu in u_list]
+            # adjust these if the row layout changes
+            UNIT_IDX = 2   # where the unit type string lives, e.g NGR, EMU
+            DELTA_IDX = 8  # where the +1/-1 (or other delta) lives
+
+            # init running totals and min prefix per unit from the list,
+            # so everything is present even if a unit never appears in the daylist.
+            running = {u: 0 for u in SORT_ORDER_UNIT}
+            min_prefix = {u: 0 for u in SORT_ORDER_UNIT}
+
+            # Walk the day's events and track its running sum and its minimum per unit
+            for row in (daylist or []):
+                unit = row[UNIT_IDX]
+                delta = row[DELTA_IDX]
+
+                # If a unit appears that's not in SORT_ORDER_UNIT, init on the fly (so if new traintypes are added to SORT_ORDER_UNIT this will propagate through to this function)
+                if unit not in running:
+                    running[unit] = 0
+                    min_prefix[unit] = 0
+
+                running[unit] += float(delta)
+                if running[unit] < min_prefix[unit]:
+                    min_prefix[unit] = running[unit]
+
+            # The number required at start of day for each unit is -min_prefix (never negative)
+            per_unit_dict = {u: float(max(0.0, -min_prefix.get(u, 0.0))) for u in SORT_ORDER_UNIT}
+
+            # Produce output aligned to u_list (matches Summary writing order)
+            per_unit_aligned = [per_unit_dict.get(u, 0.0) for u in u_list]
+
+            total_required = float(sum(per_unit_aligned))
+            return [total_required] + per_unit_aligned
+
         
         def endofdayunitcount(daylist):
             """ 
@@ -599,10 +568,15 @@ def TTS_SC(path, mypath = None):
 
 
             row_ptr = firstrow # local pointer so we don't clobber firstrow used above
-            yard_days_present = [d for d, info in summary_dict.items() if info[0] is not None]
+            #yard_days_present = [d for d, info in summary_dict.items() if info[0] is not None]
+            d_list_s = [str(d) for d in d_list]
 
             for DoW, summary_info in summary_dict.items():
                 day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_info
+
+                if DoW not in d_list_s:
+                        continue
+                
 
                 # Render row if the day exists (unchanged)
                 if day_obj is not None:
