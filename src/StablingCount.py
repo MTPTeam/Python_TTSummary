@@ -1,3 +1,4 @@
+from prometheus_client import Summary
 import xlsxwriter
 import re
 import os
@@ -13,33 +14,16 @@ from tkinter.filedialog import askopenfilename
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test, write_sheet_from_store_merged_test
-from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS
+from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test
+from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER
 import traceback
 import logging
-
-
-
+from collections import defaultdict
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 CreateWorkbook = True 
 OpenWorkbook = True
-
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
-
-wkdk_rename = {
-    ('120','64'):'Mon',
-    ('120','32'):'Tue',
-    ('120','16'):'Wed',
-    ('120','8'): 'Thu',
-    ('120',):'Mon-Thu', 
-    ('4',):'Fri',
-    ('2',):'Sat',
-    ('1',):'Sun'
-    }   
-
-
 
 def TTS_SC(path, mypath = None):
 
@@ -50,7 +34,6 @@ def TTS_SC(path, mypath = None):
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]    
-        
         
         root, trains, d_list, u_list, run_dict, duplicates = parse_rsx(
         path,
@@ -66,18 +49,13 @@ def TTS_SC(path, mypath = None):
         filename_xlsx = f'StablingCount-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         
-        
-        
         ### Check for duplicate train numbers before executing the script
-        ### Print warning for user if duplicates exist
-        ### Print out all duplicates
         if duplicates:
             print("Error - duplicate train numbers")
             for tn, day in duplicates:
                 print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
         
 
-        
         start_time = time.time()
         runs_without_stable = []
         
@@ -86,15 +64,8 @@ def TTS_SC(path, mypath = None):
         d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
         u_list = sort_units(u_list)
 
-        # keeping this for now as building fails without it 
-        weekdays = set(d_list).intersection({'8','16','32','64'})
-        if weekdays and '120' in d_list:
-            d_list.remove('120')
         ndays = len(d_list)
-        n     = len(u_list)
-
-        # print('days: ',d_list)
-        
+        n     = len(u_list)        
         
         # Create an identity matrix using unit types
         # This will be used to update the row representing the number of units in a stabling location, using element-wise addition
@@ -106,12 +77,6 @@ def TTS_SC(path, mypath = None):
 
         store = init_store(YARDS, SORT_ORDER_WEEK)
             
-          
-            
-          
-        # Run a second loop through the rsx to create:
-        # - a dictionary using (run,weekdaykey) as a unique key, build the run infomation
-
         
         def summary_writerow(r,c,data):
             """ Writes a list of data into a row, with zero values appearing in a grey font """
@@ -127,7 +92,7 @@ def TTS_SC(path, mypath = None):
             
             nonlocal row
             i = d_list.index(day)
-            Summary.write(      row+1, 4+n,   weekdaykey_dict.get(day))
+            Summary.write(row+1, 4+n, WEEKDAY_KEYS_MASTER.get(day, {}).get('short'))
             Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
             Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
             row += 1
@@ -272,7 +237,6 @@ def TTS_SC(path, mypath = None):
             Returns the total and the unit breakdown at that point in time
             """
             
-            
             ip_tracker = []
             prepeak = True
             ip = startofdayunitcount(daylist)[0]
@@ -292,9 +256,6 @@ def TTS_SC(path, mypath = None):
                         prepeak = False
                     
                     ip_tracker.append((x[7],ip))
-        
-                
-            
             
             if ip_tracker:
                 traincount = [x[1] for x in ip_tracker]
@@ -323,64 +284,8 @@ def TTS_SC(path, mypath = None):
 
             return output_total,unit_subtotals
         
+    
         
-        
-        def build_daylist(daylist, wkdk, stable):
-            """ 
-            From the list of all runs, 
-            narrows down runs that either start or end at a particular stabling location, 
-            for that particular day of operation,
-            and appends that run to the associated list
-            """
-            
-            DoO = wkdk_rename.get(wkdk)
-            for k,v in run_dict.items():
-                
-                run       = k[0]
-                D_o_run   = k[1]
-                
-                unit      = v[0]
-                cars      = v[1]
-                trips     = v[2]
-                start_sID = v[3]
-                end_sID   = v[4]
-                start_t   = v[5]
-                finish_t  = v[6]
-                
-                if unit == 'NGR' or unit == 'NGRE':
-                    delta = 1
-                else:
-                    delta = 2 if cars == 6 else 1
-                
-                
-                # delta = 1 if v[1] == 6 else 0.5
-                if D_o_run in wkdk:
-                    if start_sID in stable:
-                        daylist.append([ run, DoO, unit, cars, trips, start_sID, end_sID, start_t, -delta])
-             
-                    if end_sID in stable:
-                        daylist.append([ run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, delta])
-        
-            
-            daylist.sort(key=lambda val: val[7])
-            #for x in daylist: x[7] = timetrim(x[7])
-            
-        
-        
-        def build_weeklists(mon,tue,wed,thu,mth,fri,sat,sun,stableoptions):
-            """ Runs the build_daylist function for a full week """
-            
-            if weekdays:
-                build_daylist(mon, ('120','64'),  stableoptions) 
-                build_daylist(tue, ('120','32'),  stableoptions) 
-                build_daylist(wed, ('120','16'),  stableoptions) 
-                build_daylist(thu, ('120','8'),   stableoptions) 
-            else:
-                build_daylist(mth, ('120',),       stableoptions)  
-            build_daylist(fri, ('4',),         stableoptions)
-            build_daylist(sat, ('2',),         stableoptions)
-            build_daylist(sun, ('1',),         stableoptions)
-            
         def write_day(sheet,daylist,row):
             """ Prints each run to the workbook and updates the unit count, printing the subsequent balance of all units """
             
@@ -452,13 +357,7 @@ def TTS_SC(path, mypath = None):
                 write_day(sheet,d,firstrow)
                 firstrow += len(d) + 5*bool(d)
         
-        
-        
-        
-        
         # Formatting
-        #########################################################################################
-        #########################################################################################
         qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
         imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
         emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
@@ -558,8 +457,6 @@ def TTS_SC(path, mypath = None):
 
         
         # Fill the empty lists with runs given it starts or finishes at one of the options
-
-        
         for yard_name, meta in YARDS.items():
             build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True)
         
@@ -568,10 +465,6 @@ def TTS_SC(path, mypath = None):
         Summary = workbook.add_worksheet('Summary')
         
         # Use the lists we've just filled to populate the blank worksheets we've just created
-        
-        
-
-
         sheets = {}
 
         for yard_name in YARDS:
@@ -617,24 +510,12 @@ def TTS_SC(path, mypath = None):
         for yard_name, ws in sheets.items():
             write_sheet(ws, *stables_dict[yard_name])
         
-        
-        #stables_dict['Wulkuraka'] = tuple(wfe_merged)
 
-        #print("wulkara dict ", stables_dict['Wulkuraka'])
-        
-        
-        
-        # Initialise overnight stabling variables to calculate totals for each unit type for each day
-        monqtmp = tueqtmp = wedqtmp = thuqtmp = mthqtmp = friqtmp = satqtmp = sunqtmp = 0
-        monngr = tuengr = wedngr = thungr = mthngr = fringr = satngr = sunngr = 0
-        monngre = tuengre = wedngre = thungre = mthngre = fringre = satngre = sunngre = 0
-        monimu = tueimu = wedimu = thuimu = mthimu = friimu = satimu = sunimu = 0
-        monemu = tueemu = wedemu = thuemu = mthemu = friemu = satemu = sunemu = 0
-        mondep = tuedep = weddep = thudep = mthdep = fridep = satdep = sundep = 0     
-        monhyb = tuehyb = wedhyb = thuhyb = mthhyb = frihyb = sathyb = sunhyb = 0  
-        monsmu = tuesmu = wedsmu = thusmu = mthsmu = frismu = satsmu = sunsmu = 0       
-        monqmu = tueqmu = wedqmu = thuqmu = mthqmu = friqmu = satqmu = sunqmu = 0  
-        
+        # an accumulator for overnight totals 
+        overnight_totals = defaultdict(lambda: defaultdict(int))
+
+        day_index = {d: i for i, d in enumerate(SORT_ORDER_WEEK)}
+
         
         # Loop through all stabling locations and write totals and unit subtotals to worksheet
         # Add unit subtotals for all days and write under 'total overnight stabling'
@@ -644,29 +525,9 @@ def TTS_SC(path, mypath = None):
             if i != 0:
                 Summary.write_row(firstrow-1,0, list((3*n+8)*' '),bottom)
             Summary.write_row(    lastrow+1, 0, list((3*n+8)*' '),top)
-            
-            if ndays == 1:
-                Summary.write(firstrow,3+n,None)
-                Summary.write(firstrow,6+2*n,None)
-            else:
-                Summary.merge_range(firstrow,3+n,lastrow,3+n,None)
-                Summary.merge_range(firstrow,6+2*n,lastrow,6+2*n,None)
-        
-            
-            # Assign the daylists to variables for each stabling yard
-            monday    = v[0]
-            tuesday   = v[1]
-            wednesday = v[2]
-            thursday  = v[3]
-            monthu    = v[4]
-            friday    = v[5]
-            saturday  = v[6]
-            sunday    = v[7]
 
-            print(monday)
-            
-            # Use our functions to assign a day total and a day subtotal vector to variables
-        
+            monday, tuesday, wednesday, thursday, monthu, friday, saturday, sunday = v
+
             mon_total, mon_bkdwn = endofdayunitcount(monday)
             tue_total, tue_bkdwn = endofdayunitcount(tuesday)
             wed_total, wed_bkdwn = endofdayunitcount(wednesday)
@@ -694,8 +555,7 @@ def TTS_SC(path, mypath = None):
             fri_ip_total, fri_ip_bkdwn = interpeakstabling(friday)
             sat_ip_total, sat_ip_bkdwn = interpeakstabling(saturday)
             sun_ip_total, sun_ip_bkdwn = interpeakstabling(sunday)
-            
-            
+
             #Use a red font if the total is unbalanced at a stabling location at any point during the week
             unbalanced_totals = any([mon_total,tue_total,wed_total,thu_total,mth_total,fri_total,sat_total,sun_total])
             totals_font = boldborderred if unbalanced_totals else boldborder
@@ -704,8 +564,16 @@ def TTS_SC(path, mypath = None):
             breakdown_list = [mon_bkdwn,tue_bkdwn,wed_bkdwn,thu_bkdwn,mth_bkdwn,fri_bkdwn,sat_bkdwn,sun_bkdwn]
             unbalanced_subtotals = any([any(x) for x in breakdown_list]                 )
             stablefont = boldleftvc_unbalanced if unbalanced_subtotals else boldleftvc
-        
-            # Write the name and capacity for each stabling location
+
+
+            if ndays == 1:
+                Summary.write(firstrow,3+n,None)
+                Summary.write(firstrow,6+2*n,None)
+            else:
+                Summary.merge_range(firstrow,3+n,lastrow,3+n,None)
+                Summary.merge_range(firstrow,6+2*n,lastrow,6+2*n,None)
+
+
             if ndays == 1:
                 Summary.write(firstrow, 0,   k,                        stablefont)
                 Summary.write(firstrow, 4+n, stable_capacities.get(k), boldcentervc14  )
@@ -714,9 +582,10 @@ def TTS_SC(path, mypath = None):
                 Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
                 
             # Write days
-            Summary.write_column(firstrow,1,  [weekdaykey_dict.get(d) for d in d_list])
-           
-            
+            # Old: [weekdaykey_dict.get(d) for d in d_list]
+            Summary.write_column(firstrow, 1, [WEEKDAY_KEYS_MASTER.get(d, {}).get('short') for d in d_list])
+
+
             summary_dict = {
                 '64':  (monday,    mon_total,mon_bkdwn,mon_os_total,mon_os_bkdwn,mon_ip_total,mon_ip_bkdwn),
                 '32':  (tuesday,   tue_total,tue_bkdwn,tue_os_total,tue_os_bkdwn,tue_ip_total,tue_ip_bkdwn),
@@ -727,184 +596,46 @@ def TTS_SC(path, mypath = None):
                 '2':   (saturday,  sat_total,sat_bkdwn,sat_os_total,sat_os_bkdwn,sat_ip_total,sat_ip_bkdwn),
                 '1':   (sunday,    sun_total,sun_bkdwn,sun_os_total,sun_os_bkdwn,sun_ip_total,sun_ip_bkdwn)
                }
-            
-           
-            for DoW,summary_info in summary_dict.items():
-                day,total,breakdown,os_total,os_breakdown,ip_total,ip_breakdown = summary_info
-                if summary_info[0]:
-                    # print(k,firstrow,DoW)
-                    Summary.write(   firstrow,2,        total,          totals_font )
-                    summary_writerow(firstrow,3,        breakdown                   )
-                    Summary.write(   firstrow,5+n,      os_total,       boldborder  )
-                    summary_writerow(firstrow,6+n,      os_breakdown                )
-                    Summary.write(   firstrow,7+2*n,    ip_total,       boldborder  )
-                    summary_writerow(firstrow,8+2*n,    ip_breakdown                )
-                    
+
+
+            row_ptr = firstrow # local pointer so we don't clobber firstrow used above
+            yard_days_present = [d for d, info in summary_dict.items() if info[0] is not None]
+
+            for DoW, summary_info in summary_dict.items():
+                day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_info
+
+                # Render row if the day exists (unchanged)
+                if day_obj is not None:
+                    Summary.write(row_ptr, 2, total, totals_font)
+                    summary_writerow(row_ptr, 3, breakdown)
+                    Summary.write(row_ptr, 5 + n, os_total, boldborder)
+                    summary_writerow(row_ptr, 6 + n, os_breakdown)
+                    Summary.write(row_ptr, 7 + 2 * n, ip_total, boldborder)
+                    summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown)
+
                     if ip_total > os_total:
-                        Summary.write(   firstrow,7+2*n,    ip_total,       interpeak_flag  )
-                
-                
-                if DoW in d_list:  
-                    firstrow += 1
-        
-            # Improve this method of summation for total overnight stabling
-            ##########################################################################################
-            ##########################################################################################
-            ##########################################################################################
-            if 'REP' in u_list:
-                qtmpidx = u_list.index('REP')
-                monqtmp += mon_os_bkdwn[qtmpidx]
-                tueqtmp += tue_os_bkdwn[qtmpidx]
-                wedqtmp += wed_os_bkdwn[qtmpidx]
-                thuqtmp += thu_os_bkdwn[qtmpidx]
-                mthqtmp += mth_os_bkdwn[qtmpidx]
-                friqtmp += fri_os_bkdwn[qtmpidx]
-                satqtmp += sat_os_bkdwn[qtmpidx]
-                sunqtmp += sun_os_bkdwn[qtmpidx]
-            
-            if 'NGR' in u_list:
-                ngridx = u_list.index('NGR')
-                monngr += mon_os_bkdwn[ngridx]
-                tuengr += tue_os_bkdwn[ngridx]
-                wedngr += wed_os_bkdwn[ngridx]
-                thungr += thu_os_bkdwn[ngridx]
-                mthngr += mth_os_bkdwn[ngridx]
-                fringr += fri_os_bkdwn[ngridx]
-                satngr += sat_os_bkdwn[ngridx]
-                sunngr += sun_os_bkdwn[ngridx]
-            
-            if 'NGRE' in u_list:
-                ngreidx = u_list.index('NGRE')
-                monngre += mon_os_bkdwn[ngreidx]
-                tuengre += tue_os_bkdwn[ngreidx]
-                wedngre += wed_os_bkdwn[ngreidx]
-                thungre += thu_os_bkdwn[ngreidx]
-                mthngre += mth_os_bkdwn[ngreidx]
-                fringre += fri_os_bkdwn[ngreidx]
-                satngre += sat_os_bkdwn[ngreidx]
-                sunngre += sun_os_bkdwn[ngreidx]
-            
-            if 'IMU100' in u_list:
-                imuidx = u_list.index('IMU100')
-                monimu += mon_os_bkdwn[imuidx]
-                tueimu += tue_os_bkdwn[imuidx]
-                wedimu += wed_os_bkdwn[imuidx]
-                thuimu += thu_os_bkdwn[imuidx]
-                mthimu += mth_os_bkdwn[imuidx]
-                friimu += fri_os_bkdwn[imuidx]
-                satimu += sat_os_bkdwn[imuidx]
-                sunimu += sun_os_bkdwn[imuidx]
-            
-            if 'EMU' in u_list:
-                emuidx = u_list.index('EMU')
-                monemu += mon_os_bkdwn[emuidx]
-                tueemu += tue_os_bkdwn[emuidx]
-                wedemu += wed_os_bkdwn[emuidx]
-                thuemu += thu_os_bkdwn[emuidx]
-                mthemu += mth_os_bkdwn[emuidx]
-                friemu += fri_os_bkdwn[emuidx]
-                satemu += sat_os_bkdwn[emuidx]
-                sunemu += sun_os_bkdwn[emuidx]
-            
-            if 'DEPT' in u_list:
-                depidx = u_list.index('DEPT')
-                mondep += mon_os_bkdwn[depidx]
-                tuedep += tue_os_bkdwn[depidx]
-                weddep += wed_os_bkdwn[depidx]
-                thudep += thu_os_bkdwn[depidx]
-                mthdep += mth_os_bkdwn[depidx]
-                fridep += fri_os_bkdwn[depidx]
-                satdep += sat_os_bkdwn[depidx]
-                sundep += sun_os_bkdwn[depidx]
-            
-            if 'HYBRID' in u_list:
-                hybidx = u_list.index('HYBRID')
-                monhyb += mon_os_bkdwn[hybidx]
-                tuehyb += tue_os_bkdwn[hybidx]
-                wedhyb += wed_os_bkdwn[hybidx]
-                thuhyb += thu_os_bkdwn[hybidx]
-                mthhyb += mth_os_bkdwn[hybidx]
-                frihyb += fri_os_bkdwn[hybidx]
-                sathyb += sat_os_bkdwn[hybidx]
-                sunhyb += sun_os_bkdwn[hybidx]
-            
-            if 'SMU' in u_list:
-                smuidx = u_list.index('SMU')
-                monsmu += mon_os_bkdwn[smuidx]
-                tuesmu += tue_os_bkdwn[smuidx]
-                wedsmu += wed_os_bkdwn[smuidx]
-                thusmu += thu_os_bkdwn[smuidx]
-                mthsmu += mth_os_bkdwn[smuidx]
-                frismu += fri_os_bkdwn[smuidx]
-                satsmu += sat_os_bkdwn[smuidx]
-                sunsmu += sun_os_bkdwn[smuidx]
+                        Summary.write(row_ptr, 7 + 2 * n, ip_total, interpeak_flag)
 
-            if 'QMU' in u_list:
-                qmuidx = u_list.index('QMU')
-                monqmu += mon_os_bkdwn[qmuidx]
-                tueqmu += tue_os_bkdwn[qmuidx]
-                wedqmu += wed_os_bkdwn[qmuidx]
-                thuqmu += thu_os_bkdwn[qmuidx]
-                mthqmu += mth_os_bkdwn[qmuidx]
-                friqmu += fri_os_bkdwn[qmuidx]
-                satqmu += sat_os_bkdwn[qmuidx]
-                sunqmu += sun_os_bkdwn[qmuidx]
+                # Accumulate only if day exists AND breakdown has elements
+                has_day = day_obj is not None
+                has_os = (
+                    os_breakdown is not None and
+                    ((os_breakdown.size > 0) if isinstance(os_breakdown, np.ndarray) else len(os_breakdown) > 0)
+                )
+                if has_day and has_os:
+                    for unit, cnt in zip(u_list, os_breakdown):
+                        overnight_totals[unit][DoW] += int(cnt)  # int() in case cnt is a numpy scalar
 
-        
-        # Improve this method of summation for total overnight stabling
-        ##########################################################################################
-        ##########################################################################################
-        ##########################################################################################
-        
-        dailytotals_dict = {
-            '120':sum([mthqtmp,mthngr,mthngre,mthimu,mthemu,mthdep,mthhyb,mthsmu, mthqmu]),
-            '64': sum([monqtmp,monngr,monngre,monimu,monemu,mondep,monhyb,monsmu, monqmu]),
-            '32': sum([tueqtmp,tuengr,tuengre,tueimu,tueemu,tuedep,tuehyb,tuesmu, tueqmu]),
-            '16': sum([wedqtmp,wedngr,wedngre,wedimu,wedemu,weddep,wedhyb,wedsmu, wedqmu]),
-            '8':  sum([thuqtmp,thungr,thungre,thuimu,thuemu,thudep,thuhyb,thusmu, thuqmu]),
-            '4':  sum([friqtmp,fringr,fringre,friimu,friemu,fridep,frihyb,frismu, friqmu]),
-            '2':  sum([satqtmp,satngr,satngre,satimu,satemu,satdep,sathyb,satsmu, satqmu]),
-            '1':  sum([sunqtmp,sunngr,sunngre,sunimu,sunemu,sundep,sunhyb,sunsmu, sunqmu]) 
-            }
-        
-        type_dict = {
-            'REP':      [monqtmp,tueqtmp,wedqtmp,thuqtmp,mthqtmp,friqtmp,satqtmp,sunqtmp],
-            'NGR':      [monngr,tuengr,wedngr,thungr,mthngr,fringr,satngr,sunngr],
-            'NGRE':     [monngre,tuengre,wedngre,thungre,mthngre,fringre,satngre,sunngre],
-            'IMU100':   [monimu,tueimu,wedimu,thuimu,mthimu,friimu,satimu,sunimu],
-            'EMU':      [monemu,tueemu,wedemu,thuemu,mthemu,friemu,satemu,sunemu],
-            'DEPT':     [mondep,tuedep,weddep,thudep,mthdep,fridep,satdep,sundep],
-            'HYBRID':   [monhyb,tuehyb,wedhyb,thuhyb,mthhyb,frihyb,sathyb,sunhyb],
-            'SMU':      [monsmu,tuesmu,wedsmu,thusmu,mthsmu,frismu,satsmu,sunsmu],
-            'QMU':      [monqmu,tueqmu,wedqmu,thuqmu,mthqmu,friqmu,satqmu,sunqmu]
-            }
-        
-        
-        totals_col = []
-        for d in d_list:
-            totals_col.append(dailytotals_dict.get(d))
-        
-        monday_list     = []
-        tuesday_list    = []
-        wednesday_list  = []
-        thursday_list   = []
-        monthu_list     = []
-        friday_list     = []
-        saturday_list   = []
-        sunday_list     = []
-        
-        for u in u_list:
-            monday_list.append(     type_dict.get(u)[0])
-            tuesday_list.append(    type_dict.get(u)[1])
-            wednesday_list.append(  type_dict.get(u)[2])
-            thursday_list.append(   type_dict.get(u)[3])
-            monthu_list.append(     type_dict.get(u)[4])
-            friday_list.append(     type_dict.get(u)[5])
-            saturday_list.append(   type_dict.get(u)[6])
-            sunday_list.append(     type_dict.get(u)[7])
-        
-        daylist_dict = {'120':monthu_list,'64':monday_list,'32':tuesday_list,'16':wednesday_list,
-                        '8':thursday_list,'4':friday_list,'2':saturday_list ,'1':sunday_list}
+                if DoW in d_list and day_obj is not None:
+                    row_ptr += 1
+
+
+        dailytotals_dict = {d: sum(overnight_totals[u].get(d, 0) for u in u_list) for d in SORT_ORDER_WEEK}
+        type_dict = {u: [overnight_totals[u].get(d, 0) for d in SORT_ORDER_WEEK] for u in u_list}
+        totals_col = [dailytotals_dict.get(d, 0) for d in d_list]
+        daylist_dict_all = {d: [type_dict[u][day_index[d]] for u in u_list] for d in SORT_ORDER_WEEK}
+        daylist_dict = {d: daylist_dict_all[d] for d in d_list}
+    
         
         row = len(stables_dict)*(ndays+2)+2
         endrow = row + ndays
@@ -924,11 +655,6 @@ def TTS_SC(path, mypath = None):
         for day in d_list:
             summary_writetotals(day)
         
-        
-        
-        # Info
-        #########################################################################################
-        #########################################################################################
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling count by run']
         Info.set_column(0,0,15)
@@ -955,7 +681,7 @@ def TTS_SC(path, mypath = None):
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = weekdaykey_dict.get(run[1])
+                DoO = WEEKDAY_KEYS_MASTER.get(run[1], {}).get('short')
                 start_sID = run[2]
                 end_sID   = run[3]
                 
@@ -975,8 +701,7 @@ def TTS_SC(path, mypath = None):
                 if OpenWorkbook:
                     gui.open_file_crossplatform(filename_xlsx)
                     print('\nOpening workbook')
-    
-        
+
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
