@@ -12,7 +12,7 @@ import time
 
 import traceback
 import logging
-import MTP_constants
+from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, STEPS_COL, ID_TO_SHORT
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
@@ -68,7 +68,7 @@ def TTS_SB(path, mypath = None):
         
         start_time = time.time()
         runs_without_stable = []
-        store = init_store(MTP_constants.YARDS, MTP_constants.SORT_ORDER_WEEK)
+        store = init_store(YARDS, SORT_ORDER_WEEK)
         print(store)
         
         
@@ -85,9 +85,9 @@ def TTS_SB(path, mypath = None):
                     sheet.write_row(idx,c,line,font_dict.get(line[2])[0])
                     
                     # Use red font if run ends at a station not a stabling yard
-                    if line[5] in MTP_constants.NON_STABLE_LOCATIONS:
+                    if line[5] in NON_STABLE_LOCATIONS:
                         sheet.write(idx,c+5,line[5],font_dict.get(line[2])[4])
-                    if line[6] in MTP_constants.NON_STABLE_LOCATIONS:
+                    if line[6] in NON_STABLE_LOCATIONS:
                         sheet.write(idx,c+6,line[6],font_dict.get(line[2])[4])
             
 
@@ -307,32 +307,32 @@ def TTS_SB(path, mypath = None):
         Info    = workbook.add_worksheet('Info')
         Summary = workbook.add_worksheet('Summary')
 
-        acceptable_stables = [code for loc in MTP_constants.YARDS.values() for code in loc['yards']]
+        acceptable_stables = [code for loc in YARDS.values() for code in loc['yards']]
         for bad in ('RS', 'BHI'):
             if bad in acceptable_stables:
                 acceptable_stables.remove(bad)
 
         # Build store for each yard (unchanged)
-        for yard_name, info in MTP_constants.YARDS.items():
+        for yard_name, info in YARDS.items():
             build_weeklists_into_store(
                 store, yard_name, info['yards'], # Access 'yards' here
-                MTP_constants.SORT_ORDER_WEEK, d_list, run_dict, count=False
+                SORT_ORDER_WEEK, d_list, run_dict, count=False
         )
 
         # Create yard worksheets ONCE (no sheet_dict)
-        yard_sheets = [(name, workbook.add_worksheet(name)) for name in MTP_constants.YARDS.keys()]
+        yard_sheets = [(name, workbook.add_worksheet(name)) for name in YARDS.keys()]
 
 
         # Write each yard sheet using your legacy write_sheet via the adapter
         for yard_name, ws in yard_sheets:
             write_sheet_from_store(
                 ws, store, yard_name,
-                MTP_constants.SORT_ORDER_WEEK,
+                SORT_ORDER_WEEK,
                 write_sheet_legacy=write_sheet
             )
 
         
-        stables_dict = make_legacy_stables_dict_from_store(store, MTP_constants.SORT_ORDER_WEEK)
+        stables_dict = make_legacy_stables_dict_from_store(store, SORT_ORDER_WEEK)
 
         print(stables_dict)
 
@@ -353,7 +353,7 @@ def TTS_SB(path, mypath = None):
             Summary.write_row(erow+1,0,list((n+3)*' '),top)
             Summary.write(1,2+n,'Total',boldbottomleftborder)
             
-            Summary.write_column(srow,1,[MTP_constants.WEEKDAY_KEYS_MASTER[d]['short'] for d in d_list],centered)
+            Summary.write_column(srow,1,[WEEKDAY_KEYS_MASTER[d]['short'] for d in d_list],centered)
             Summary.write(erow,1,'Total',boldtopborder)
             
             monday      = (stables_dict.get(k)[0], stables_dict.get(k)[8])
@@ -411,21 +411,13 @@ def TTS_SB(path, mypath = None):
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling balance by run']
         Info.set_column(0,0,15)
-        
-        steps_col = [
-            '1. Determine the location where each Run starts and finishes.',
-            '2. By Unit type by Day, count the number of Runs that start or finish at each location.',
-            '3. Find where start and finish counts do not match over the day.',
-            '4. Find where start and finish counts do not match over the week.'
-            ]
-        
-        
+    
         singletrip_col = build_singletrip_col(d_list, run_dict)
         runs_without_stable = find_runs_without_stable(run_dict, acceptable_stables)
 
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
-        Info.write_column('A7',steps_col,boldleft)
+        Info.write_column('A7',STEPS_COL,boldleft)
         Info.write_column('A13',singletrip_col,boldleft)
         
         if runs_without_stable:
@@ -433,7 +425,7 @@ def TTS_SB(path, mypath = None):
             Info.set_tab_color('#CC194C')
             for row,run in enumerate(runs_without_stable,14+ndays):
                 runID     = run[0]
-                DoO       = MTP_constants.ID_TO_SHORT[run[1]]
+                DoO       = ID_TO_SHORT[run[1]]
                 start_sID = run[2]
                 end_sID   = run[3]
                 
@@ -464,14 +456,8 @@ def TTS_SB(path, mypath = None):
 if __name__ == "__main__":
     
     start_time = time.perf_counter()
-    path = gui.select_file(
-
-    caption="Select RSX file",
-    directory="",
-    filter_str="RSX Files (*.rsx);;All Files (*.*)")
-
+    path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     end_time = time.perf_counter()
-
     # Calculate the elapsed time - checking if pyqt is consistently faster than tk (should be)
     elapsed_time = end_time - start_time
     print(f"Elapsed time: {elapsed_time:.4f} seconds")

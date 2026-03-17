@@ -1,18 +1,5 @@
 
-
-# All constants live here
-
-
-
-#WEEKDAYKEY  = {'120':'Mon-Thu','64':'Mon','32':'Tue','16':'Wed','8':'Thu','4':'Fri','2':'Sat','1':'Sun'}
-
-#WEEKDAYKEY_NON_ABBR = {'120': 'Monday-Thursday','64': 'Monday','32': 'Tuesday','16': 'Wednesday','8': 'Thursday','4': 'Friday','2': 'Saturday','1': 'Sunday'}
-
-
-#weekdaykey_dict2 = {'120':'M-Th', '4':'Fri', '2':'Sat', '1':'Sun'}
-
-
-### day stuff
+###### DAYS 
 
 WEEKDAY_KEYS_MASTER = {
     '120': {'short': 'Mon-Thu', 'long': 'Monday-Thursday', 'alias': 'M-Th'},
@@ -40,14 +27,14 @@ for uid, info in WEEKDAY_KEYS_MASTER.items():
 
 
 SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1'] 
+
+
+##### UNITS / TRAINTYPES 
 SORT_ORDER_UNIT = ['QMU', 'REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
 
-### location stuff 
+### LOCATIONS (YARDS/STATIONS)
 # if new location found, update locations , flag it 
-
 # print new location in excel file for easy debugging 
-
-    
 # update stabling yard locations here 
 YARDS = {
     'Wulkuraka':    {'capacity': 11,  'yards': ['WFE', 'WFW', 'FEE']},
@@ -126,3 +113,13 @@ TRAIN_TYPE_MASK = {
     'empty_6-ngr_s': 'Empty_6-NGR',
     'ngr_s': '6-NGR',
 }
+
+
+##### comments
+
+STEPS_COL = [
+            '1. Determine the location where each Run starts and finishes.',
+            '2. By Unit type by Day, count the number of Runs that start or finish at each location.',
+            '3. Find where start and finish counts do not match over the day.',
+            '4. Find where start and finish counts do not match over the week.'
+            ]

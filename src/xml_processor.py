@@ -4,49 +4,76 @@ import MTP_constants
 from utils import timetrim
 from xml_parser import resolve_DoO
 from utils import csl
+from utils import _time_key
 
 
-def init_store(yards: Dict[str, List[str]], day_codes: List[str]):
-    # initialise the long stabling BALANCE dictionary dynamically
-    return {yard: {code: {'out': [], 'in': []} for code in day_codes} for yard in yards.keys()}
+def init_store(locations_dict, day_codes):
+    # Change 'yard' to 'loc_data['yards']' to handle the new nested structure
+    return {
+        name: {code: {'out': [], 'in': []} for code in day_codes} 
+        for name in locations_dict.keys()
+    }
 
 
 
-def init_store_simple(yards: Dict[str, List[str]], day_codes: List[str]):
-    # init stabling count dictionary manually
-    return {yard: {code: [] for code in day_codes} for yard in yards}
-
-def write_sheet_simple(ws, store, yard_name, day_order, write_sheet_legacy_like):
-    """If your writer takes just the day lists (no in/out)."""
-    lists = [store[yard_name][c] for c in day_order]
-    write_sheet_legacy_like(ws, *lists)
-
-
-#print(init_store_simple(MTP_constants.YARDS, MTP_constants.DAY_PRIORITY))
-
-
-def build_daylists(daylist_out, daylist_in, wkdk, stable, run_dict, count):
-    # specify count = true for stabling count 
+def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge_for_count=False):
     DoO = resolve_DoO(wkdk)
+
+    # We preserve historical delta rules for each mode:
+    # - balance: unit == 'NGR' -> 1; else 2 if cars==6 else 1
+    # - count:   unit in ('NGR','NGRE') -> 1; else 2 if cars==6 else 1
+
     for k, v in run_dict.items():
         run, D_o_run = k
         unit, cars, trips, start_sID, end_sID, start_t, finish_t, *_ = v
-        delta = 1 if unit in ('NGR', 'NGRE') else (2 if cars == 6 else 1)
-        if D_o_run in wkdk:
-            if start_sID in stable:
-                if count:
-                    daylist_out.append([run, DoO, unit, cars, trips, start_sID, end_sID, start_t, -delta])
-                else:
-                    daylist_out.append([run, DoO, unit, cars, trips, start_sID, end_sID, start_t, delta])
-            if end_sID in stable:
-                daylist_in.append([run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, delta])
 
-    daylist_out.sort(key=lambda v: v[7]); daylist_in.sort(key=lambda v: v[7])
+        if count:
+            delta = 1 if unit in ('NGR', 'NGRE') else (2 if cars == 6 else 1)
+        else:
+            delta = 1 if unit == 'NGR' else (2 if cars == 6 else 1)
+
+        if D_o_run in wkdk:
+            # STARTS at a stable location
+            if start_sID in stable:
+                signed_delta = -delta if count else delta
+                daylist_out.append([
+                    run, DoO, unit, cars, trips, start_sID, end_sID, start_t, signed_delta
+                ])
+
+            # ENDS at a stable location
+            if end_sID in stable:
+                daylist_in.append([
+                    run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, +delta
+                ])
+
+    # Sort by time first
+    daylist_out.sort(key=lambda v: v[7])
+    daylist_in.sort(key=lambda v: v[7])
+
+    # Then by unit order (stable sort retains time order within unit)
     order = {u: i for i, u in enumerate(MTP_constants.SORT_ORDER_UNIT)}
     daylist_out.sort(key=lambda v: order.get(v[2], 999))
     daylist_in.sort(key=lambda v: order.get(v[2], 999))
-    for x in daylist_out: x[7] = timetrim(x[7])
-    for x in daylist_in:  x[7] = timetrim(x[7])
+
+    # Final: trim times
+    for x in daylist_out:
+        x[7] = timetrim(x[7])
+    for x in daylist_in:
+        x[7] = timetrim(x[7])
+
+    # If the caller wants the legacy 'single list' output in count mode, return it
+    if count and merge_for_count:
+        combined = daylist_out + daylist_in
+
+        # Sort combined the same way: time, then unit
+        combined.sort(key=lambda v: v[7])
+        combined.sort(key=lambda v: order.get(v[2], 999))
+
+
+        return combined
+
+    return None
+
 
 
 def build_weeklists(mon_out, tue_out, wed_out, thu_out, mth_out, fri_out, sat_out, sun_out,
@@ -85,6 +112,7 @@ def make_legacy_stables_dict_from_store(store, day_order):
         in_lists  = [store[yard][c]['in']  for c in day_order]
         legacy[yard] = tuple(out_lists + in_lists)  # 16 tuples rather than 16 lists 
     return legacy
+
 
 def write_sheet_from_store(ws, store, yard_name, day_order, write_sheet_legacy):
     o = [store[yard_name][c]['out'] for c in day_order]
@@ -166,4 +194,18 @@ def build_singletrip_col(d_list, run_dict):
     return singletrip_col
 
 
-##### stabling count specific code 
+def merge_out_in_per_day(out_list, in_list, sort_by_unit=True):
+    """
+    Merge OUT + IN into a single legacy day list.
+    Sort by time (primary) and unit (secondary). Times are trimmed before sort.
+    """
+    
+    merged = list(out_list) + list(in_list)
+
+    unit_idx = {u: i for i, u in enumerate(MTP_constants.SORT_ORDER_UNIT)}
+    if sort_by_unit:
+        merged.sort(key=lambda v: (_time_key(v[7]), unit_idx.get(v[2], 999)))
+    else:
+        merged.sort(key=lambda v: _time_key(v[7]))
+
+    return merged

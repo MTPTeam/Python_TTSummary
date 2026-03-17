@@ -13,8 +13,8 @@ from tkinter.filedialog import askopenfilename
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day_test
-from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT
+from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day
+from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, STEPS_COL
 import traceback
 import logging
 from collections import defaultdict
@@ -408,8 +408,6 @@ def TTS_SC(path, mypath = None):
         headers = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Dep/Arr',
                    'Δ (6car)','Count'] + u_list
         
-    
-        
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
         
         acceptable_stables = [code 
@@ -421,10 +419,7 @@ def TTS_SC(path, mypath = None):
             if bad in acceptable_stables:   # works for list or set
                 acceptable_stables.remove(bad)
 
-
         print(store)
-
-        
         # Fill the empty lists with runs given it starts or finishes at one of the options
         for yard_name, meta in YARDS.items():
             build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True)
@@ -440,8 +435,6 @@ def TTS_SC(path, mypath = None):
             sheets[yard_name] = workbook.add_worksheet(yard_name)
         
         # Summary
-        #########################################################################################
-        #########################################################################################
         Summary.write_row(  0,0,                list((3*n+8)*' '),                   bottom)
         Summary.write_row(  1,0,                list((3*n+8)*' '),                   bottom)
         Summary.merge_range(0,2,0,3,            'Daily Difference',             boldleft_bottom)
@@ -472,7 +465,7 @@ def TTS_SC(path, mypath = None):
         stables_dict = {}
 
         for yard_name in YARDS:
-            merged = [merge_out_in_per_day_test(store[yard_name][code]['out'], store[yard_name][code]['in']) for code in SORT_ORDER_WEEK]
+            merged = [merge_out_in_per_day(store[yard_name][code]['out'], store[yard_name][code]['in']) for code in SORT_ORDER_WEEK]
             stables_dict[yard_name] = tuple(merged)
 
 
@@ -482,9 +475,7 @@ def TTS_SC(path, mypath = None):
 
         # an accumulator for overnight totals 
         overnight_totals = defaultdict(lambda: defaultdict(int))
-
         day_index = {d: i for i, d in enumerate(SORT_ORDER_WEEK)}
-
         
         # Loop through all stabling locations and write totals and unit subtotals to worksheet
         # Add unit subtotals for all days and write under 'total overnight stabling'
@@ -495,88 +486,54 @@ def TTS_SC(path, mypath = None):
                 Summary.write_row(firstrow-1,0, list((3*n+8)*' '),bottom)
             Summary.write_row(    lastrow+1, 0, list((3*n+8)*' '),top)
 
-            monday, tuesday, wednesday, thursday, monthu, friday, saturday, sunday = v
+            days = dict(zip(SORT_ORDER_WEEK, v))
 
-            mon_total, mon_bkdwn = endofdayunitcount(monday)
-            tue_total, tue_bkdwn = endofdayunitcount(tuesday)
-            wed_total, wed_bkdwn = endofdayunitcount(wednesday)
-            thu_total, thu_bkdwn = endofdayunitcount(thursday)
-            mth_total, mth_bkdwn = endofdayunitcount(monthu)
-            fri_total, fri_bkdwn = endofdayunitcount(friday)
-            sat_total, sat_bkdwn = endofdayunitcount(saturday)
-            sun_total, sun_bkdwn = endofdayunitcount(sunday)
-            
-            mon_os_total, mon_os_bkdwn = overnightstabling(monday)
-            tue_os_total, tue_os_bkdwn = overnightstabling(tuesday)
-            wed_os_total, wed_os_bkdwn = overnightstabling(wednesday)
-            thu_os_total, thu_os_bkdwn = overnightstabling(thursday)
-            mth_os_total, mth_os_bkdwn = overnightstabling(monthu)
-            fri_os_total, fri_os_bkdwn = overnightstabling(friday)
-            sat_os_total, sat_os_bkdwn = overnightstabling(saturday)
-            sun_os_total, sun_os_bkdwn = overnightstabling(sunday)
-        
-            
-            mon_ip_total, mon_ip_bkdwn = interpeakstabling(monday)
-            tue_ip_total, tue_ip_bkdwn = interpeakstabling(tuesday)
-            wed_ip_total, wed_ip_bkdwn = interpeakstabling(wednesday)
-            thu_ip_total, thu_ip_bkdwn = interpeakstabling(thursday)
-            mth_ip_total, mth_ip_bkdwn = interpeakstabling(monthu)
-            fri_ip_total, fri_ip_bkdwn = interpeakstabling(friday)
-            sat_ip_total, sat_ip_bkdwn = interpeakstabling(saturday)
-            sun_ip_total, sun_ip_bkdwn = interpeakstabling(sunday)
+            summary_dict = {}
+
+            for dow, day in days.items():
+                total, bkdwn       = endofdayunitcount(day)
+                os_total, os_bkdwn = overnightstabling(day)
+                ip_total, ip_bkdwn = interpeakstabling(day)
+
+                summary_dict[dow] = (day, total, bkdwn, os_total, os_bkdwn, ip_total, ip_bkdwn)
+
 
             #Use a red font if the total is unbalanced at a stabling location at any point during the week
-            unbalanced_totals = any([mon_total,tue_total,wed_total,thu_total,mth_total,fri_total,sat_total,sun_total])
+            unbalanced_totals = any(summary_dict[d][1] for d in summary_dict)
             totals_font = boldborderred if unbalanced_totals else boldborder
             
             # Highlight any stabling location if any unit is unbalanced at any point during the week
-            breakdown_list = [mon_bkdwn,tue_bkdwn,wed_bkdwn,thu_bkdwn,mth_bkdwn,fri_bkdwn,sat_bkdwn,sun_bkdwn]
-            unbalanced_subtotals = any([any(x) for x in breakdown_list]                 )
+            #breakdown_list = [mon_bkdwn,tue_bkdwn,wed_bkdwn,thu_bkdwn,mth_bkdwn,fri_bkdwn,sat_bkdwn,sun_bkdwn]
+            unbalanced_subtotals = any(any(summary_dict[d][2]) for d in summary_dict)
             stablefont = boldleftvc_unbalanced if unbalanced_subtotals else boldleftvc
-
 
             if ndays == 1:
                 Summary.write(firstrow,3+n,None)
                 Summary.write(firstrow,6+2*n,None)
-            else:
-                Summary.merge_range(firstrow,3+n,lastrow,3+n,None)
-                Summary.merge_range(firstrow,6+2*n,lastrow,6+2*n,None)
-
-
-            if ndays == 1:
                 Summary.write(firstrow, 0,   k,                        stablefont)
                 Summary.write(firstrow, 4+n, stable_capacities.get(k), boldcentervc14  )
             else:
+                Summary.merge_range(firstrow,3+n,lastrow,3+n,None)
+                Summary.merge_range(firstrow,6+2*n,lastrow,6+2*n,None)
                 Summary.merge_range(firstrow,0,   lastrow, 0,   k,                        stablefont)
                 Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
+
                 
             # Write days
             # Old: [weekdaykey_dict.get(d) for d in d_list]
-            Summary.write_column(firstrow, 1, [WEEKDAY_KEYS_MASTER.get(d, {}).get('short') for d in d_list])
-
-
-            summary_dict = {
-                '64':  (monday,    mon_total,mon_bkdwn,mon_os_total,mon_os_bkdwn,mon_ip_total,mon_ip_bkdwn),
-                '32':  (tuesday,   tue_total,tue_bkdwn,tue_os_total,tue_os_bkdwn,tue_ip_total,tue_ip_bkdwn),
-                '16':  (wednesday, wed_total,wed_bkdwn,wed_os_total,wed_os_bkdwn,wed_ip_total,wed_ip_bkdwn), 
-                '8':   (thursday,  thu_total,thu_bkdwn,thu_os_total,thu_os_bkdwn,thu_ip_total,thu_ip_bkdwn),
-                '120': (monthu,    mth_total,mth_bkdwn,mth_os_total,mth_os_bkdwn,mth_ip_total,mth_ip_bkdwn),
-                '4':   (friday,    fri_total,fri_bkdwn,fri_os_total,fri_os_bkdwn,fri_ip_total,fri_ip_bkdwn),
-                '2':   (saturday,  sat_total,sat_bkdwn,sat_os_total,sat_os_bkdwn,sat_ip_total,sat_ip_bkdwn),
-                '1':   (sunday,    sun_total,sun_bkdwn,sun_os_total,sun_os_bkdwn,sun_ip_total,sun_ip_bkdwn)
-               }
-
+            Summary.write_column(firstrow,1,[WEEKDAY_KEYS_MASTER.get(d, {}).get('short') for d in d_list])
 
             row_ptr = firstrow # local pointer so we don't clobber firstrow used above
             #yard_days_present = [d for d, info in summary_dict.items() if info[0] is not None]
             d_list_s = [str(d) for d in d_list]
 
-            for DoW, summary_info in summary_dict.items():
-                day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_info
+            for DoW in SORT_ORDER_WEEK:
+                #day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_info
 
                 if DoW not in d_list_s:
                         continue
                 
+                day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_dict[DoW]
 
                 # Render row if the day exists (unchanged)
                 if day_obj is not None:
@@ -633,20 +590,12 @@ def TTS_SC(path, mypath = None):
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling count by run']
         Info.set_column(0,0,15)
         
-        steps_col = [
-            '1. Determine the location where each Run starts and finishes.',
-            '2. By Unit type by Day, count the number of Runs that start or finish at each location.',
-            '3. Find where start and finish counts do not match over the day.',
-            '4. Find where start and finish counts do not match over the week.'
-            ]
-        
-
         singletrip_col = build_singletrip_col(d_list, run_dict)
         runs_without_stable = find_runs_without_stable(run_dict, acceptable_stables)
         
         Info.write_column('A1',info_col,boldright)
         Info.write_column('B1',info_col2)
-        Info.write_column('A7',steps_col,boldleft)
+        Info.write_column('A7',STEPS_COL,boldleft)
         Info.write_column('A13',singletrip_col,boldleft)
         
         
@@ -688,10 +637,5 @@ def TTS_SC(path, mypath = None):
             time.sleep(15)
     
 if __name__ == "__main__":
-    path = gui.select_file(
-
-    caption="Select RSX file",
-    directory="",
-    filter_str="RSX Files (*.rsx);;All Files (*.*)")
-
+    path = gui.select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_SC(path)
