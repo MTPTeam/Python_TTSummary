@@ -16,7 +16,7 @@ from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
-from ExcelWriter import writecell_unbalanced, write_unit_totals
+from ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
@@ -56,6 +56,8 @@ def TTS_SB(path, mypath = None):
         filename = os.path.splitext(os.path.basename(path))[0]
         filename_xlsx = f'StablingBalance-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
+        formats = build_excel_formats(workbook)
+        print(formats)
 
 
         d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
@@ -82,13 +84,13 @@ def TTS_SB(path, mypath = None):
                 
                 # Write runs using individual unittype cell formatting
                 for idx,line in enumerate(daylist,r):
-                    sheet.write_row(idx,c,line,font_dict.get(line[2])[0])
+                    sheet.write_row(idx, c, line, formats[line[2]]["normal"])
                     
                     # Use red font if run ends at a station not a stabling yard
                     if line[5] in NON_STABLE_LOCATIONS:
-                        sheet.write(idx,c+5,line[5],font_dict.get(line[2])[4])
+                        sheet.write(idx, c+5, line[5], formats[line[2]]["boldred"])
                     if line[6] in NON_STABLE_LOCATIONS:
-                        sheet.write(idx,c+6,line[6],font_dict.get(line[2])[4])
+                        sheet.write(idx, c+6, line[6], formats[line[2]]["boldred"])
             
 
         def write_day(sheet, daylist_out, daylist_in, row):
@@ -139,7 +141,7 @@ def TTS_SB(path, mypath = None):
                 BDogt = BD_out.get(ttype)
                 BDigt = BD_in.get(ttype)
                 if BDogt != BDigt:
-                    font = font_dict.get(ttype)[3]
+                    font = formats[ttype]["bigred"]
                     if BDogt:
                         write_unit_totals(sheet, sum_unit_out, n_unit_out, out_row, widecol1,  font)
                         out_row += n_unit_out
@@ -148,7 +150,7 @@ def TTS_SB(path, mypath = None):
                         in_row += n_unit_in
                     
                 else:
-                    font = font_dict.get(ttype)[2]
+                    font = formats[ttype]["big"]
                     if BDogt:
                         write_unit_totals(sheet, sum_unit_out, n_unit_out, out_row, widecol1, font)
                         out_row += n_unit_out
@@ -191,82 +193,16 @@ def TTS_SB(path, mypath = None):
                 write_day(sheet, a,b, firstrow)
                 firstrow += max(len(a),len(b)) + 2*bool(a or b)
             
-        # Formatting
-        qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
-        ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
-        ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
-        imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
-        emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
-        smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
-        dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
-        qmu = workbook.add_format({'align':'center','bg_color':"#B7FFDB"})
-        
-        # qtmpred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C'})
-        # ngrred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C'})
-        # imured  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C'})
-        # emured  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C'})
-        # smured  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C'})
-        # deptred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C'})
-        
-        qtmpbold = workbook.add_format({'align':'center','bg_color':'#FFB7B7','bold':True,'bottom':1})
-        ngrbold  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','bold':True,'bottom':1})
-        ngrebold = workbook.add_format({'align':'center','bg_color':'#FFFF93','bold':True,'bottom':1})
-        imubold  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','bold':True,'bottom':1})
-        emubold  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','bold':True,'bottom':1})
-        smubold  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','bold':True,'bottom':1})
-        deptbold = workbook.add_format({'align':'center','bg_color':'#EBF1DE','bold':True,'bottom':1})
-        qmubold = workbook.add_format({'align':'center','bg_color':'#B7FFDB','bold':True,'bottom':1})
-        
-        qtmpbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_size':16})
-        ngrbig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_size':16})
-        ngrebig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFFF93','font_size':16})
-        imubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_size':16})
-        emubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_size':16})
-        smubig  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_size':16})
-        deptbig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_size':16})
-        qmubig = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#B7FFDB','font_size':16})
-        
-        qtmpbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFB7B7','font_color':'#CC194C','font_size':16})
-        ngrbigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#E4DFEC','font_color':'#CC194C','font_size':16})
-        ngrebigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FFFF93','font_color':'#CC194C','font_size':16})
-        imubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#FDE9D9','font_color':'#CC194C','font_size':16})
-        emubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#DAEEF3','font_color':'#CC194C','font_size':16})
-        smubigred  = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#F2DCDB','font_color':'#CC194C','font_size':16})
-        deptbigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
-        qmubigred = workbook.add_format({'align':'center','valign':'vcenter','bg_color':'#EBF1DE','font_color':'#CC194C','font_size':16})
-        
-        qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
-        ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
-        ngreboldred = workbook.add_format({'align':'center','bg_color':'#FFFF93','font_color':'#CC194C', 'bold':True})
-        imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
-        emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
-        smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
-        deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        qmuboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
         
         # size16vc = workbook.add_format({'font_size':16,'align':'center','valign':'vcenter'})
-        
-        font_dict = {
-            'REP':    [qtmp,qtmpbold,qtmpbig,qtmpbigred,qtmpboldred],
-            'NGR':    [ngr,ngrbold,ngrbig,ngrbigred,ngrboldred],
-            'NGRE':   [ngre,ngrebold,ngrebig,ngrebigred,ngreboldred],
-            'IMU100': [imu,imubold,imubig,imubigred,imuboldred],
-            'EMU':    [emu,emubold,emubig,emubigred,emuboldred],
-            'HYBRID': [emu,emubold,emubig,emubigred,emuboldred],
-            'SMU':    [smu,smubold,smubig,smubigred,smuboldred],
-            'DEPT':   [dept,deptbold,deptbig,deptbigred,deptboldred],
-            'QMU':    [qmu, qmubold, qmubig, qmubigred, qmuboldred]
-            }   
+    
         
         title                   = workbook.add_format({'bold':True,'align':'center'})
         header                  = workbook.add_format({'bold':True,'align':'center','bg_color':'#CCCCCC'})
-        # size14                  = workbook.add_format({'font_size':16})
         size16                  = workbook.add_format({'font_size':16})
         
         boldleft                = workbook.add_format({'bold':True,'align':'left'})
-        # boldcenter              = workbook.add_format({'bold':True,'align':'center'})
         boldright               = workbook.add_format({'bold':True,'align':'right'})
-        # greyedouttext           = workbook.add_format({'align':'center','font_color':'#666666'})
         centered                = workbook.add_format({'align':'center'})
         redcentered             = workbook.add_format({'align':'center','font_color':'#CC194C'})
         redboldleft             = workbook.add_format({'bold':True,'align':'left','font_color':'#CC194C'})
@@ -274,11 +210,9 @@ def TTS_SB(path, mypath = None):
         
         leftborder              = workbook.add_format({'left':1,'align':'center'})
         boldbottomleftborder    = workbook.add_format({'left':1,'bottom':1,'align':'center','bold':True})
-        # leftborderred           = workbook.add_format({'left':1,'align':'center','font_color':'#CC194C'})
         leftborder_unbalanced   = workbook.add_format({'left':1,'align':'center','bg_color':'#CCB233'})
         
         topleftborder           = workbook.add_format({'top':1,'left':1,'align':'center'})
-        # topleftborderredfont    = workbook.add_format({'top':1,'left':1,'align':'center','font_color':'#CC194C'})
         topleftborderredbg      = workbook.add_format({'top':1,'left':1,'align':'center','font_color':'#FFFFFF','bg_color':'#CC194C'})
         
         topborder               = workbook.add_format({'top':1,'align':'center'})
@@ -289,17 +223,10 @@ def TTS_SB(path, mypath = None):
         boldleftvc              = workbook.add_format({'bold':True,'align':'left','valign':'vcenter'})
         boldleftvc_unbalanced_b = workbook.add_format({'bold':True,'align':'left','valign':'vcenter','bg_color':'#CCB233'})
         boldleftvc_unbalanced_r = workbook.add_format({'bold':True,'align':'left','valign':'vcenter','bg_color':'#CC194C'}) 
-        # boldcentervc14          = workbook.add_format({'bold':True,'align':'center','valign':'vcenter','font_size':14})
         
-        # border                  = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':14})
         border16                = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':16})
-        # tborder                 = workbook.add_format({'border':2, 'border_color':'#000000', 'align':'center','font_size':14})
-        # rborder                 = workbook.add_format({'border':1, 'border_color':'#CC194C', 'align':'center','font_size':14,'font_color':'#CC194C'})
         rborder16               = workbook.add_format({'border':1, 'border_color':'#CC194C', 'align':'center','font_size':16,'font_color':'#CC194C'})
-        
-        # boldborder              = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True})
-        # boldborderred           = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','bold':True,'font_color':'#FF0000'})
-        
+                
         top                     = workbook.add_format({'top':1})
         bottom                  = workbook.add_format({'bottom':1})
         
@@ -370,7 +297,7 @@ def TTS_SB(path, mypath = None):
             total_total = 0
             weekly_totals_list = []
             for col,ttype in enumerate(u_list,2):
-                Summary.write(1,col,ttype,font_dict.get(ttype)[1])
+                Summary.write(1, col, ttype, formats[ttype]["bold"])
                 for r,day in enumerate(d_list,srow):
                     daily_unit_balance = sum([x[8] for x in d_dict.get(day)[1] if x[2] == ttype]) - sum([x[8] for x in d_dict.get(day)[0] if x[2] == ttype])
                     total_total += daily_unit_balance

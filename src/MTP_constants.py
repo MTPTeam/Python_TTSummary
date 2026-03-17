@@ -77,7 +77,7 @@ IMU   = "#FDE9D9"
 EMU   = "#DAEEF3"
 SMU   = "#F2DCDB"
 DEPT  = "#EBF1DE"
-QMU = "#A7B48D"
+QMU = "#B7FFDB"
 
 
 UNBALANCED_YELLOW = "#CCB233"
@@ -97,6 +97,125 @@ FAMILY_BG = {
 
 
 }
+
+
+STYLE_VARIANTS = {
+    "normal": {},
+
+    "bold": {
+        "bold": True,
+        "bottom": 1,
+    },
+
+    "boldred": {
+        "bold": True,
+        "font_color": ALERT,
+    },
+
+    "big": {
+        "font_size": 16,
+        "valign": "vcenter",
+    },
+
+    "bigred": {
+        "font_size": 16,
+        "valign": "vcenter",
+        "font_color": ALERT,
+    },
+
+    "border": {
+        "left": 1,
+        "right": 1,
+    },
+}
+
+
+
+
+GENERIC_STYLES = {
+    "title": {
+        "bold": True,
+        "align": "center",
+    },
+
+    "header": {
+        "bold": True,
+        "align": "center",
+        "bg_color": GREY,
+    },
+
+    "size16": {
+        "font_size": 16,
+    },
+
+    "size14": {
+        "font_size": 14,
+    },
+
+    "centered": {
+        "align": "center",
+    },
+
+    "boldleft": {
+        "bold": True,
+        "align": "left",
+    },
+
+    "boldright": {
+        "bold": True,
+        "align": "right",
+    },
+
+    "redcentered": {
+        "align": "center",
+        "font_color": ALERT,
+    },
+
+    "redleft": {
+        "align": "left",
+        "font_color": ALERT,
+    },
+
+    "redboldleft": {
+        "bold": True,
+        "align": "left",
+        "font_color": ALERT,
+    },
+}
+
+
+
+BORDER_STYLES = {
+    "top": {"top": 1},
+    "bottom": {"bottom": 1},
+    "left": {"left": 1},
+    "right": {"right": 1},
+    "border": {"border": 1, "border_color": "#000000"},
+    "border_alert": {"border": 1, "border_color": ALERT},
+}
+
+
+
+SEMANTIC_STYLES = {
+    "unbalanced": {
+        "bg_color": UNBALANCED_YELLOW,
+    },
+
+    "unbalanced_red": {
+        "bg_color": ALERT,
+        "font_color": WHITE,
+    },
+
+    "interpeak_flag": {
+        "bold": True,
+        "border": 1,
+        "border_color": "#000000",
+        "font_color": "#FF0000",
+        "bg_color": UNBALANCED_YELLOW,
+        "align": "center",
+    },
+}
+
 
 
 # Explicit override

@@ -8,12 +8,11 @@ import numpy as np
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
 from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day
+from ExcelWriter import build_excel_formats
 from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, STEPS_COL
 import traceback
 import logging
@@ -47,6 +46,7 @@ def TTS_SC(path, mypath = None):
         filename = filename[:-4]
         filename_xlsx = f'StablingCount-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
+        formats = build_excel_formats(workbook)
         
         ### Check for duplicate train numbers before executing the script
         if duplicates:
@@ -100,7 +100,7 @@ def TTS_SC(path, mypath = None):
             """ Writes overnight stabling headers for each unit type """
             
             nonlocal col
-            Summary.write(row, 6+col, unit, font_dict.get(unit)[1])
+            Summary.write(row, 6+col, unit, formats[unit]["bold"])
             col += 1            
         
         def startofdayunitcount(daylist):
@@ -287,15 +287,13 @@ def TTS_SC(path, mypath = None):
                     
                     stablechange = list(stablechange)
                     for j,cell in enumerate(entry+stablechange):
-                        if j == 9:
-                            sheet.write(idx,j,cell,font_dict.get(entry[2])[3])
-                        else:
-                            sheet.write(idx,j,cell,font_dict.get(entry[2])[0])
+                        sheet.write(idx, j, cell, formats[entry[2]]["normal"])
+                       
                     # sheet.write_row(idx,0,entry+stablechange,font_dict.get(entry[2])[0])
                     if entry[5] in NON_STABLE_LOCATIONS:
-                        sheet.write(idx,5,entry[5],font_dict.get(entry[2])[2])
+                        sheet.write(idx, 5, entry[5], formats[entry[2]]["boldred"])
                     if entry[6] in NON_STABLE_LOCATIONS:
-                        sheet.write(idx,6,entry[6],font_dict.get(entry[2])[2])
+                        sheet.write(idx, 6, entry[6], formats[entry[2]]["boldred"])
                         
                 sheet.write(        row-1,9,  stablechange[0],      tborder)
                 sheet.write_row(    row-1,10, stablechange[1:],     border)
@@ -326,56 +324,6 @@ def TTS_SC(path, mypath = None):
                 write_day(sheet,d,firstrow)
                 firstrow += len(d) + 5*bool(d)
         
-        # Formatting
-        qtmp = workbook.add_format({'align':'center','bg_color':'#FFB7B7'})
-        imu  = workbook.add_format({'align':'center','bg_color':'#FDE9D9'})
-        emu  = workbook.add_format({'align':'center','bg_color':'#DAEEF3'})
-        ngr  = workbook.add_format({'align':'center','bg_color':'#E4DFEC'})
-        ngre = workbook.add_format({'align':'center','bg_color':'#FFFF93'})
-        smu  = workbook.add_format({'align':'center','bg_color':'#F2DCDB'})
-        dept = workbook.add_format({'align':'center','bg_color':'#EBF1DE'})
-        qmu = workbook.add_format({'align':'center','bg_color':"#B7FFDB"})
-        
-        qtmpbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFB7B7','bottom':1})
-        imubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FDE9D9','bottom':1})
-        emubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#DAEEF3','bottom':1})
-        ngrbold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#E4DFEC','bottom':1})
-        ngrebold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#FFFF93','bottom':1})
-        smubold  = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#F2DCDB','bottom':1})
-        deptbold = workbook.add_format({'align':'center', 'bold':True,'bg_color':'#EBF1DE','bottom':1})
-        qmubold = workbook.add_format({'align':'center','bg_color':'#B7FFDB','bold':True,'bottom':1})
-        
-        qtmpboldred = workbook.add_format({'align':'center','bg_color':'#FFB7B7','font_color':'#CC194C', 'bold':True})
-        imuboldred  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','font_color':'#CC194C', 'bold':True})
-        emuboldred  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','font_color':'#CC194C', 'bold':True})
-        ngrboldred  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','font_color':'#CC194C', 'bold':True})
-        ngreboldred = workbook.add_format({'align':'center','bg_color':'#FFFF93','font_color':'#CC194C', 'bold':True})
-        smuboldred  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','font_color':'#CC194C', 'bold':True})
-        deptboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        qmuboldred = workbook.add_format({'align':'center','bg_color':'#EBF1DE','font_color':'#CC194C', 'bold':True})
-        
-        qtmpborder = workbook.add_format({'align':'center','bg_color':'#FFB7B7','left':1,'right':1})
-        imuborder  = workbook.add_format({'align':'center','bg_color':'#FDE9D9','left':1,'right':1})
-        emuborder  = workbook.add_format({'align':'center','bg_color':'#DAEEF3','left':1,'right':1})
-        ngrborder  = workbook.add_format({'align':'center','bg_color':'#E4DFEC','left':1,'right':1})
-        ngreborder = workbook.add_format({'align':'center','bg_color':'#FFFF93','left':1,'right':1})
-        smuborder  = workbook.add_format({'align':'center','bg_color':'#F2DCDB','left':1,'right':1})
-        deptborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
-        qmuborder = workbook.add_format({'align':'center','bg_color':'#EBF1DE','left':1,'right':1})
-
-        
-        font_dict = {
-            'QMU':    [qmu, qmubold, qmuboldred, qmuborder],
-            'REP':    [qtmp,qtmpbold,qtmpboldred,qtmpborder],
-            'NGR':    [ngr,ngrbold,ngrboldred,ngrborder],
-            'NGRE':   [ngre,ngrebold,ngreboldred,ngreborder],
-            'IMU100': [imu,imubold,imuboldred,imuborder],
-            'EMU':    [emu,emubold,emuboldred,emuborder],
-            'HYBRID': [emu,emubold,emuboldred,emuborder],
-            'SMU':    [smu,smubold,smuboldred,smuborder],
-            'DEPT':   [dept,deptbold,deptboldred,deptborder]
-            }
-        
         title                 = workbook.add_format({'bold':True,'align':'center'})
         header                = workbook.add_format({'bold':True,'align':'center','bg_color':'#CCCCCC'})
         size14                = workbook.add_format({'font_size':14})
@@ -405,15 +353,11 @@ def TTS_SC(path, mypath = None):
         bottom                = workbook.add_format({'bottom':1})
         
         
-        headers = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Dep/Arr',
-                   'Δ (6car)','Count'] + u_list
+        headers = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Dep/Arr', 'Δ (6car)','Count'] + u_list
         
         # Create a list of legimate stabling options in order to flag any runs that do not end at one of these locations
         
-        acceptable_stables = [code 
-                            for v in YARDS.values() 
-                            for code in v['yards']]
-
+        acceptable_stables = [code for v in YARDS.values() for code in v['yards']]
                 
         for bad in ('RS', 'BHI'):
             if bad in acceptable_stables:   # works for list or set
@@ -452,7 +396,7 @@ def TTS_SC(path, mypath = None):
         # Write the column headers for unit types
         for i,uu in enumerate(u_list):
             row = 3+i
-            font = font_dict.get(uu)[1]
+            font = formats[uu]["bold"]
             Summary.write(1,row,uu,font)
             row += 3 + n
             Summary.write(1,row,uu,font)
@@ -610,8 +554,6 @@ def TTS_SC(path, mypath = None):
                 
                 Info.merge_range(row,0,row,10,f'{runID} on {DoO} starts the run at {start_sID} and ends at {end_sID}',redleft)
         
-        # Manly.activate()    
-        # Caboolture.activate()
         Summary.activate()
         
         
