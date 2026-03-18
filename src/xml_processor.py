@@ -1,11 +1,11 @@
 from typing import List, Dict
-from MTP_constants import SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER
+from MTP_constants import SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT
 import MTP_constants
 from utils import timetrim
 from xml_parser import resolve_DoO
 from utils import csl
 from utils import _time_key
-
+import numpy as np
 
 def init_store(locations_dict, day_codes):
     # Change 'yard' to 'loc_data['yards']' to handle the new nested structure
@@ -209,3 +209,161 @@ def merge_out_in_per_day(out_list, in_list, sort_by_unit=True):
         merged.sort(key=lambda v: _time_key(v[7]))
 
     return merged
+
+
+
+def startofdayunitcount(daylist, u_list):
+    """ 
+    Finds the minimum number of units stabled at each location at the start of the day
+    Could be other, unused units
+    If SORT_ORDER_UNIT is updated then this function will update automatically and calculate new unit types if needed 
+    """
+    
+    # adjust these if the row layout changes
+    UNIT_IDX = 2   # where the unit type string lives, e.g NGR, EMU
+    DELTA_IDX = 8  # where the +1/-1 (or other delta) lives
+
+    # init running totals and min prefix per unit from the list,
+    # so everything is present even if a unit never appears in the daylist.
+    running = {u: 0 for u in SORT_ORDER_UNIT}
+    min_prefix = {u: 0 for u in SORT_ORDER_UNIT}
+
+    # Walk the day's events and track its running sum and its minimum per unit
+    for row in (daylist or []):
+        unit = row[UNIT_IDX]
+        delta = row[DELTA_IDX]
+
+        # If a unit appears that's not in SORT_ORDER_UNIT, init on the fly (so if new traintypes are added to SORT_ORDER_UNIT this will propagate through to this function)
+        if unit not in running:
+            running[unit] = 0
+            min_prefix[unit] = 0
+
+        running[unit] += float(delta)
+        if running[unit] < min_prefix[unit]:
+            min_prefix[unit] = running[unit]
+
+    # The number required at start of day for each unit is -min_prefix (never negative)
+    per_unit_dict = {u: float(max(0.0, -min_prefix.get(u, 0.0))) for u in SORT_ORDER_UNIT}
+
+    # Produce output aligned to u_list (matches Summary writing order)
+    per_unit_aligned = [per_unit_dict.get(u, 0.0) for u in u_list]
+
+    total_required = float(sum(per_unit_aligned))
+    return [total_required] + per_unit_aligned
+
+
+
+def endofdayunitcount(daylist, u_list, change_matrix):
+    """ 
+    Finds the end of day balance between units at the start of the day and units at the end of the day
+    An output of zero means the stabling location is balanced for that day
+    """
+    
+    startcount = startofdayunitcount(daylist, u_list)
+    stablechange = np.array(startcount)
+    
+    
+    for entry in daylist:
+        if entry[2] == 'NGR' or entry[2] == 'NGRE':
+            threecarscalar = 1
+        else:
+            threecarscalar = 2 if entry[3] == 6 else 1
+
+        if entry[8] < 0:
+            stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
+            
+        else:
+            stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
+            
+            
+    total = stablechange[0]-startcount[0]
+    breakdown  = list(stablechange[1:]-np.array(startcount[1:]))
+    
+    return total,breakdown
+
+
+
+        
+def overnightstabling(daylist, u_list, change_matrix):
+    """ 
+    Finds the number of units back in each location at the end of the day
+    Uses the startofdayunitcount function as a startpoint, minimum required units for that day
+    Could be other, unused units which never left
+    """
+    
+    startcount = startofdayunitcount(daylist, u_list)
+    stablechange = np.array(startcount)
+    
+    for entry in daylist:
+        if entry[2] == 'NGR' or entry[2] == 'NGRE':
+            threecarscalar = 1
+        else:
+            threecarscalar = 2 if entry[3] == 6 else 1
+
+        if entry[8] < 0:
+            stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
+        else:
+            stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
+    
+    
+    
+    if max(stablechange[0],startcount[0]) == stablechange[0]:
+        return stablechange[0],stablechange[1:]
+    else:
+        return startcount[0],startcount[1:]
+    
+
+
+    
+def interpeakstabling(daylist, u_list):
+    """ 
+    Finds the maximum number of trains stabled at each location during interpeak
+    Returns the total and the unit breakdown at that point in time
+    """
+    
+    ip_tracker = []
+    prepeak = True
+    ip = startofdayunitcount(daylist, u_list)[0]
+    for t,x in enumerate(daylist):
+        
+        if len(x[7]) == 4:
+            x[7] = '0' + x[7]
+            
+            
+        ip += x[8]
+        if '09:00:00' < x[7] < '15:30:00':
+            
+            
+            while prepeak == True:
+                ip_tracker.append((daylist[t-1][7],ip-daylist[t][8]))
+                
+                prepeak = False
+            
+            ip_tracker.append((x[7],ip))
+    
+    if ip_tracker:
+        traincount = [x[1] for x in ip_tracker]
+        output_total = max(traincount)
+        idx = traincount.index(output_total)
+        max_oclock = ip_tracker[idx][0]
+    else:
+        output_total = 0
+        
+    unit_subtotals = []
+    for u in u_list:
+        unit_ip = startofdayunitcount(daylist, u_list)[1:][u_list.index(u)]
+        for x in daylist:
+            try: 
+                max_oclock
+                
+                if x[2] == u:
+                    unit_ip += x[8]
+                if x[7] == max_oclock:
+                    break
+            except:
+                break
+        if output_total == 0:
+            unit_ip = 0
+        unit_subtotals.append(unit_ip)    
+
+    return output_total,unit_subtotals

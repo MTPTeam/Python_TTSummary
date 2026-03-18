@@ -11,8 +11,8 @@ import xml.etree.ElementTree as ET
 import gui 
 from utils import timetrim, csl
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day
-from ExcelWriter import build_excel_formats
+from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount, endofdayunitcount, overnightstabling, interpeakstabling
+from ExcelWriter import build_excel_formats, summary_writerow, summary_writetotals, summary_totalheaders
 from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, STEPS_COL
 import traceback
 import logging
@@ -42,6 +42,8 @@ def TTS_SC(path, mypath = None):
         want_duplicates=True)
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
+
+        print("printing run_dict\n", run_dict)
         
         filename = filename[:-4]
         filename_xlsx = f'StablingCount-{filename}.xlsx'
@@ -76,189 +78,11 @@ def TTS_SC(path, mypath = None):
 
         store = init_store(YARDS, SORT_ORDER_WEEK)
             
-        
-        def summary_writerow(r,c,data):
-            """ Writes a list of data into a row, with zero values appearing in a grey font """
-            
-            for i,x in enumerate(data):
-                if x:
-                    Summary.write(r,c+i,x,centered)
-                else:
-                    Summary.write(r,c+i,x,greyedouttext)
-                    
-        def summary_writetotals(day):
-            """ Writes overnight stabling figures for each unit type and a total for every day """
-            
-            nonlocal row
-            i = d_list.index(day)
-            Summary.write(row+1, 4+n, WEEKDAY_KEYS_MASTER.get(day, {}).get('short'))
-            Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
-            Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
-            row += 1
-        
-        def summary_totalheaders(unit):
-            """ Writes overnight stabling headers for each unit type """
-            
-            nonlocal col
-            Summary.write(row, 6+col, unit, formats[unit]["bold"])
-            col += 1            
-        
-        def startofdayunitcount(daylist):
-            """ 
-            Finds the minimum number of units stabled at each location at the start of the day
-            Could be other, unused units
-            If SORT_ORDER_UNIT is updated then this function will update automatically and calculate new unit types if needed 
-            """
-            
-            # adjust these if the row layout changes
-            UNIT_IDX = 2   # where the unit type string lives, e.g NGR, EMU
-            DELTA_IDX = 8  # where the +1/-1 (or other delta) lives
-
-            # init running totals and min prefix per unit from the list,
-            # so everything is present even if a unit never appears in the daylist.
-            running = {u: 0 for u in SORT_ORDER_UNIT}
-            min_prefix = {u: 0 for u in SORT_ORDER_UNIT}
-
-            # Walk the day's events and track its running sum and its minimum per unit
-            for row in (daylist or []):
-                unit = row[UNIT_IDX]
-                delta = row[DELTA_IDX]
-
-                # If a unit appears that's not in SORT_ORDER_UNIT, init on the fly (so if new traintypes are added to SORT_ORDER_UNIT this will propagate through to this function)
-                if unit not in running:
-                    running[unit] = 0
-                    min_prefix[unit] = 0
-
-                running[unit] += float(delta)
-                if running[unit] < min_prefix[unit]:
-                    min_prefix[unit] = running[unit]
-
-            # The number required at start of day for each unit is -min_prefix (never negative)
-            per_unit_dict = {u: float(max(0.0, -min_prefix.get(u, 0.0))) for u in SORT_ORDER_UNIT}
-
-            # Produce output aligned to u_list (matches Summary writing order)
-            per_unit_aligned = [per_unit_dict.get(u, 0.0) for u in u_list]
-
-            total_required = float(sum(per_unit_aligned))
-            return [total_required] + per_unit_aligned
-
-        
-        def endofdayunitcount(daylist):
-            """ 
-            Finds the end of day balance between units at the start of the day and units at the end of the day
-            An output of zero means the stabling location is balanced for that day
-            """
-            
-            startcount = startofdayunitcount(daylist)
-            stablechange = np.array(startcount)
-            
-            
-            for entry in daylist:
-                if entry[2] == 'NGR' or entry[2] == 'NGRE':
-                    threecarscalar = 1
-                else:
-                    threecarscalar = 2 if entry[3] == 6 else 1
-        
-                if entry[8] < 0:
-                    stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
-                    
-                else:
-                    stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-                 
-                    
-            total = stablechange[0]-startcount[0]
-            breakdown  = list(stablechange[1:]-np.array(startcount[1:]))
-            
-            return total,breakdown
-        
-        def overnightstabling(daylist):
-            """ 
-            Finds the number of units back in each location at the end of the day
-            Uses the startofdayunitcount function as a startpoint, minimum required units for that day
-            Could be other, unused units which never left
-            """
-            
-            startcount = startofdayunitcount(daylist)
-            stablechange = np.array(startcount)
-            
-            for entry in daylist:
-                if entry[2] == 'NGR' or entry[2] == 'NGRE':
-                    threecarscalar = 1
-                else:
-                    threecarscalar = 2 if entry[3] == 6 else 1
-        
-                if entry[8] < 0:
-                    stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
-                else:
-                    stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-            
-            
-            
-            if max(stablechange[0],startcount[0]) == stablechange[0]:
-                return stablechange[0],stablechange[1:]
-            else:
-                return startcount[0],startcount[1:]
-                    
-                    
-        def interpeakstabling(daylist):
-            """ 
-            Finds the maximum number of trains stabled at each location during interpeak
-            Returns the total and the unit breakdown at that point in time
-            """
-            
-            ip_tracker = []
-            prepeak = True
-            ip = startofdayunitcount(daylist)[0]
-            for t,x in enumerate(daylist):
-                
-                if len(x[7]) == 4:
-                    x[7] = '0' + x[7]
-                    
-                  
-                ip += x[8]
-                if '09:00:00' < x[7] < '15:30:00':
-                    
-                    
-                    while prepeak == True:
-                        ip_tracker.append((daylist[t-1][7],ip-daylist[t][8]))
-                        
-                        prepeak = False
-                    
-                    ip_tracker.append((x[7],ip))
-            
-            if ip_tracker:
-                traincount = [x[1] for x in ip_tracker]
-                output_total = max(traincount)
-                idx = traincount.index(output_total)
-                max_oclock = ip_tracker[idx][0]
-            else:
-                output_total = 0
-                
-            unit_subtotals = []
-            for u in u_list:
-                unit_ip = startofdayunitcount(daylist)[1:][u_list.index(u)]
-                for x in daylist:
-                    try: 
-                        max_oclock
-                        
-                        if x[2] == u:
-                            unit_ip += x[8]
-                        if x[7] == max_oclock:
-                            break
-                    except:
-                        break
-                if output_total == 0:
-                    unit_ip = 0
-                unit_subtotals.append(unit_ip)    
-
-            return output_total,unit_subtotals
-        
     
-        
         def write_day(sheet,daylist,row):
             """ Prints each run to the workbook and updates the unit count, printing the subsequent balance of all units """
             
-            startcount = startofdayunitcount(daylist)
+            startcount = startofdayunitcount(daylist, u_list)
             if daylist:
                 sheet.write_column( row,0,['Start of Day Unit Count','End of Day Unit Count'], size14)
                 sheet.write(        row,9, startcount[0],      tborder)
@@ -274,8 +98,6 @@ def TTS_SC(path, mypath = None):
                     else:
                         threecarscalar = 2 if cars == 6 else 1
 
-                    if unit == "QMU":
-                        print("that is why")
                     
     
                     if entry[8] < 0:
@@ -405,7 +227,6 @@ def TTS_SC(path, mypath = None):
         
         stable_capacities = {yard: meta['capacity'] for yard, meta in YARDS.items()}
 
-
         stables_dict = {}
 
         for yard_name in YARDS:
@@ -435,9 +256,9 @@ def TTS_SC(path, mypath = None):
             summary_dict = {}
 
             for dow, day in days.items():
-                total, bkdwn       = endofdayunitcount(day)
-                os_total, os_bkdwn = overnightstabling(day)
-                ip_total, ip_bkdwn = interpeakstabling(day)
+                total, bkdwn       = endofdayunitcount(day, u_list, change_matrix)
+                os_total, os_bkdwn = overnightstabling(day, u_list, change_matrix)
+                ip_total, ip_bkdwn = interpeakstabling(day, u_list)
 
                 summary_dict[dow] = (day, total, bkdwn, os_total, os_bkdwn, ip_total, ip_bkdwn)
 
@@ -482,11 +303,11 @@ def TTS_SC(path, mypath = None):
                 # Render row if the day exists (unchanged)
                 if day_obj is not None:
                     Summary.write(row_ptr, 2, total, totals_font)
-                    summary_writerow(row_ptr, 3, breakdown)
+                    summary_writerow(row_ptr, 3, breakdown, Summary, centered, greyedouttext)
                     Summary.write(row_ptr, 5 + n, os_total, boldborder)
-                    summary_writerow(row_ptr, 6 + n, os_breakdown)
+                    summary_writerow(row_ptr, 6 + n, os_breakdown, Summary, centered, greyedouttext)
                     Summary.write(row_ptr, 7 + 2 * n, ip_total, boldborder)
-                    summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown)
+                    summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown, Summary, centered, greyedouttext)
 
                     if ip_total > os_total:
                         Summary.write(row_ptr, 7 + 2 * n, ip_total, interpeak_flag)
@@ -526,9 +347,11 @@ def TTS_SC(path, mypath = None):
         
         col = n
         for unit in u_list:
-            summary_totalheaders(unit)     
+            summary_totalheaders(unit, row, col, Summary, formats)    
+            col += 1
         for day in d_list:
-            summary_writetotals(day)
+            summary_writetotals(day, row, d_list, Summary, totals_col, daylist_dict, boldcenter, centered, n)
+            row += 1
         
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling count by run']
