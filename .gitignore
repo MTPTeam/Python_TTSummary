@@ -218,3 +218,7 @@ __marimo__/
 
 
 backups/
+
+# ignore pdfs 
+.pdf
+
