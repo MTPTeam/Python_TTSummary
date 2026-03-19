@@ -128,6 +128,13 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
         dow_label = WEEKDAY_KEYS_MASTER.get(dow, {}).get('long', dow)
         ticks, counts = extract_regular_series(daylist, u_list, change_matrix)
 
+        
+        present_units = [
+            u for u in u_list
+            if any(v != 0 for v in counts.get(u, []))
+        ]
+
+
         if not ticks:
             continue
 
@@ -153,7 +160,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
             for r, v in enumerate(counts[u]):
                 data_sheet.write(data_row_start + r, uc, v)
 
-        if capacity:
+        if isinstance(capacity, int):
             cap_col = col + block_w
             data_sheet.write(0, cap_col, f'{yard_name}_{dow}_capacity', hdr_fmt)
             for r in range(n_rows):
@@ -236,7 +243,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
         })
 
         # per-unit — thinner, slightly transparent-looking via lighter shade
-        for i, u in enumerate(u_list):
+        for i, u in enumerate(present_units):
             uc     = unit_cols[u]
             colour = _UNIT_COLOURS[i % len(_UNIT_COLOURS)]
             chart.add_series({
@@ -250,7 +257,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
             })
 
         # capacity — dashed red
-        if capacity:
+        if isinstance(capacity, int):
             cap_col = col + block_w - 1
             chart.add_series({
                 'name':       f'Capacity ({capacity})',

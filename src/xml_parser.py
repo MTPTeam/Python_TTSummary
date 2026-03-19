@@ -110,10 +110,21 @@ class TrainInfo:
         
         self.train_type_raw = self.origin.get('trainTypeId', '')
         self.train_type = normalise_train_type(self.train_type_raw)   # raw variant
-        self.train_type_revenue = self.train_type.replace('Empty_', '') # revenue only train 
+        #self.train_type_revenue = self.train_type.replace('Empty_', '') # revenue only train 
 
         self.unit = self._extract_unit_from_normalised(self.train_type)
         self.cars = self._extract_cars_from_normalised(self.train_type)
+
+        # add upward/downward direction here
+        
+        # pattern attribute includes day, sector, empty or not, return/to. can use it to get other info if you want 
+        self.pattern = train.attrib['pattern']
+
+        # this is the sector (as an integer)
+        match = re.search(r"Sector\s+(\d+)", self.pattern)
+        self.sector = int(match.group(1)) if match else None
+
+        print("sector: ", self.sector)
 
 
         # stationlist

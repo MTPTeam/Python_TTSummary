@@ -13,6 +13,7 @@ from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 import MTP_constants
+import gui
 
 
 
@@ -1049,10 +1050,8 @@ def TTS_H(path, mypath = None):
             print('RSX copied                 ',end='\r')
         
         
-        
         if ProcessDoneMessagebox and __name__ == "__main__":
-            from tkinter import messagebox
-            messagebox.showinfo('HASTUS Converter','Process Done')
+            gui.show_info('HASTUS Converter','Process Done')
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
@@ -1060,5 +1059,5 @@ def TTS_H(path, mypath = None):
             
 if __name__ == "__main__":
     Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_H(path)
