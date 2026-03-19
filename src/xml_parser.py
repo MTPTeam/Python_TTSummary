@@ -86,6 +86,9 @@ def normalise_train_type(raw):
     return s
 
 
+
+
+
 class TrainInfo:
 
     def __init__(self, train):
@@ -107,10 +110,11 @@ class TrainInfo:
         self.destin = self.entries[-1].attrib
 
         # train type ID + cars (NORMALISED)
-        
         self.train_type_raw = self.origin.get('trainTypeId', '')
         self.train_type = normalise_train_type(self.train_type_raw)   # raw variant
         #self.train_type_revenue = self.train_type.replace('Empty_', '') # revenue only train 
+
+        self.is_empty_train = self.train_type.startswith('Empty_')
 
         self.unit = self._extract_unit_from_normalised(self.train_type)
         self.cars = self._extract_cars_from_normalised(self.train_type)
@@ -124,12 +128,13 @@ class TrainInfo:
         match = re.search(r"Sector\s+(\d+)", self.pattern)
         self.sector = int(match.group(1)) if match else None
 
-        print("sector: ", self.sector)
-
+        #print("sector: ", self.sector)
 
         # stationlist
         self.stations = [e.attrib['stationID'] for e in self.entries]
 
+        # get connection elem if present - at most there will be one for each train
+        self.connection = next((e.find('connection') for e in self.entries if e.find('connection') is not None),None)
         # times 
         self.odep = self.origin['departure']
         self.ddep = self.destin['departure']
@@ -153,7 +158,7 @@ class TrainInfo:
         return 2 if cars == 6 else 1
     
 
-        
+
     @staticmethod
     def _extract_unit_from_normalised(train_type):
         """
@@ -179,8 +184,6 @@ class TrainInfo:
             t = t[len('Empty_'):]
         m = re.match(r'(\d+)-', t)
         return int(m.group(1)) if m else 0
-
-
 
 
 def load_rsx(path):
@@ -296,3 +299,7 @@ def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True)
 
     return sorted_days
 
+def load_rsx_with_tree(path):
+    tree = ET.parse(path)
+    filename_wo_ext = os.path.splitext(os.path.basename(path))[0]
+    return tree, tree.getroot(), filename_wo_ext

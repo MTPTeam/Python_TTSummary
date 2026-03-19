@@ -1,5 +1,5 @@
 # helper functions live here 
-
+from MTP_constants import WEEKDAY_KEYS_MASTER
 
 def _time_key(t):
     """
@@ -62,3 +62,13 @@ def csl(string):
             output.append(x)
     return ','.join(output)
 
+
+
+
+def get_weekday_short(weekdaykey):
+
+    weekdaykey = int(weekdaykey)
+    if weekdaykey != 0 and (weekdaykey & 120) == weekdaykey:
+        return 'Mon-Thu'
+
+    return WEEKDAY_KEYS_MASTER[str(weekdaykey)]['short']

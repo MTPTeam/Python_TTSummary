@@ -19,6 +19,9 @@ ID_TO_SHORT = {k: v['short'] for k, v in WEEKDAY_KEYS_MASTER.items()}
 ID_TO_LONG  = {k: v['long'] for k, v in WEEKDAY_KEYS_MASTER.items()}
 ID_TO_ALIAS = {k: v['alias'] for k, v in WEEKDAY_KEYS_MASTER.items()}
 
+MON_THU_MASK = 64 | 32 | 16 | 8   # = 120
+
+
 # Universal Reverse Map (maps name/alias back to the ID)
 NAME_TO_ID = {}
 for uid, info in WEEKDAY_KEYS_MASTER.items():
