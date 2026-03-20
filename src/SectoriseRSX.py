@@ -197,11 +197,8 @@ if __name__ == "__main__":
         start_stn = t.stations[0]
         end_stn = t.stations[-1]
         sector = get_common_sector(start_stn, end_stn)
-
-        
         weekday = get_weekday_short(t.weekday)
         line_id = t.raw.get("lineID")
-
         trains_by_line_and_day[(line_id, weekday)].append(t)
 
 
@@ -227,15 +224,9 @@ if __name__ == "__main__":
 
         else:
             # OD either does not match sectors or arent in the dict
-
             # it is unassigned
-
-
             pattern_str = create_unassigned_pattern(t)
             t.raw.set("pattern", pattern_str) # set pattern to the pattern string we made with sector
-           
-
-
             if t.connection is not None:
                 # means a connection was found
                 t.connection.set("trainPattern", pattern_str)  # update connection 'trainPattern' to equal pattern 
@@ -252,7 +243,6 @@ if __name__ == "__main__":
 
 
     for (line_id, weekday), line_trains in trains_by_line_and_day.items():
-
         sectors_seen = set()
         unassigned_trains = []
 
@@ -268,21 +258,16 @@ if __name__ == "__main__":
         # only upgrade if exactly one sector exists 
         if len(sectors_seen) == 1 and unassigned_trains:
             sector = sectors_seen.pop()
-
             for t in unassigned_trains:
                 new_pattern = f"/{weekday}/Sector {sector}"
                 t.raw.set("pattern", new_pattern)
 
-
                 if t.connection is not None:
                     t.connection.set("trainPattern", new_pattern)
-
                 
                 upgraded += 1
                 same_sector_pairs += 1
                 diff_sector_pairs -= 1
-
-
                 
                 if t.is_empty_train:
                     same_sector_empty += 1
