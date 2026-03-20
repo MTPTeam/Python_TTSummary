@@ -36,30 +36,32 @@ SORT_ORDER_WEEK = ['64','32','16','8','120','4','2','1']
 SORT_ORDER_UNIT = ['QMU', 'REP','NGR','NGRE','IMU100','EMU','SMU','HYBRID', 'DEPT']
 
 ### LOCATIONS (YARDS/STATIONS)
-# if new location found, update locations , flag it 
+# if new location found, update locations, flag it 
 # print new location in excel file for easy debugging 
-# update stabling yard locations here 
+# update stabling yard locations, capacity, and sectors here 
+# DO NOT!!! ADD a sector variable for yards that share sectors - this is handled automatically. only add a sector if yards in list are single sector
 YARDS = {
-    'Wulkuraka':    {'capacity': 11,  'yards': ['WFE', 'WFW', 'FEE']},
-    'Ipswich':      {'capacity': 7,   'yards': ['IPSS', 'IPS']},
-    'Redbank':      {'capacity': 6,   'yards': ['RDKS']},
-    'Robina':       {'capacity': 11,  'yards': ['ROBS']},
-    'Manly':        {'capacity': 3,   'yards': ['MNY']},
-    'Beenleigh':    {'capacity': 8,   'yards': ['BNHS']},
-    'Mayne West':   {'capacity': '/',  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI']},
-    'Mayne North':  {'capacity': '/',  'yards': ['YN', 'MNS']},
-    'Mayne East':   {'capacity': '/',  'yards': ['MES']},
-    'Petrie':       {'capacity': 1,   'yards': ['PETS']},
-    'Kippa-Ring':   {'capacity': 10,  'yards': ['KPRS']},
-    'Caboolture':   {'capacity': 9,   'yards': ['CAE', 'CAW', 'CAB']},
-    'Elimbah':      {'capacity': 8,   'yards': ['EMHS']},
-    'Woombye':      {'capacity': 4,   'yards': ['WOBS']},
-    'Nambour':      {'capacity': 3,   'yards': ['NBR']},
-    'Gympie North': {'capacity': 1,   'yards': ['GYN']},
-    'Banyo':        {'capacity': 4,   'yards': ['BQYS']},
-    'Clapham':      {'capacity': '/',  'yards': ['CPM']},
-    'Ormeau':       {'capacity': '/',  'yards': ['ORMS']},
-    'Beerwah South':{'capacity': 8,   'yards': ['BWHS']},
+    'Wulkuraka':    {'capacity': 11,  'yards': ['WFE', 'WFW', 'FEE'], 'sector': 2,},
+    'Ipswich':      {'capacity': 7,   'yards': ['IPSS', 'IPS'], 'sector': 2 },
+    'Redbank':      {'capacity': 6,   'yards': ['RDKS'], 'sector': 2},
+    'Robina':       {'capacity': 11,  'yards': ['ROBS'], 'sector': 1},
+    'Manly':        {'capacity': 3,   'yards': ['MNY'], 'sector': 3},
+    'Beenleigh':    {'capacity': 8,   'yards': ['BNHS'], 'sector': 1 },
+    'Mayne West':   {'capacity': '/',  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI'],},
+    'Mayne North':  {'capacity': '/',  'yards': ['YN', 'MNS'], 'sector': 2},
+    'Mayne East':   {'capacity': '/',  'yards': ['MES'], 'sector': 1,},
+    'Petrie':       {'capacity': 1,   'yards': ['PETS'], 'sector': 1},
+    'Kippa-Ring':   {'capacity': 10,  'yards': ['KPRS'], 'sector': 1,},
+    'Caboolture':   {'capacity': 9,   'yards': ['CAE', 'CAW', 'CAB'], 'sector': 1 },
+    'Elimbah':      {'capacity': 8,   'yards': ['EMHS'], 'sector': 1},
+    'Woombye':      {'capacity': 4,   'yards': ['WOBS'], 'sector': 1,},
+    'Nambour':      {'capacity': 3,   'yards': ['NBR'], 'sector': 1 },
+    'Gympie North': {'capacity': 1,   'yards': ['GYN'], 'sector': 1},
+    'Banyo':        {'capacity': 4,   'yards': ['BQYS'], 'sector': 2},
+    'Clapham':      {'capacity': '/',  'yards': ['CPM'], 'sector': 1,},
+    'Ormeau':       {'capacity': '/',  'yards': ['ORMS'], 'sector': 1,},
+    'Beerwah South':{'capacity': 8,   'yards': ['BWHS'], 'sector': 1},
+    'Birtinya':     {'capacity': '/', 'yards': ['BIRS'], 'sector': 1}
 }
 
 

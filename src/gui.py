@@ -3,6 +3,7 @@ import sys
 import os
 import platform
 from typing import Optional
+import shutil
 
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 
@@ -38,12 +39,18 @@ def select_file(caption="Select a file", directory="", filter_str="All Files (*.
 
 
 
+
 def show_info(title: str, message: str) -> None:
-    """
-    Show an informational message box.
-    """
-    ensure_app()
-    QMessageBox.information(None, title, message, QMessageBox.Ok)
+    app = ensure_app()
+
+    box = QMessageBox()
+    box.setIcon(QMessageBox.Information)
+    box.setWindowTitle(title)
+    box.setText(message)
+    box.setStandardButtons(QMessageBox.Ok)
+
+    box.exec_()  # <-- CRITICAL
+
 
 
 def show_error(title: str, message: str) -> None:
@@ -73,3 +80,6 @@ def open_file_crossplatform(path: str) -> None:
     except Exception as e:
         # Non-fatal: log to stdout as a fallback
         print(f"Failed to open file '{path}': {e}")
+
+
+
