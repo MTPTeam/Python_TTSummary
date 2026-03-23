@@ -19,9 +19,78 @@ Sector1 = {
     'City': ['BOG', 'RTL'],
     'Exhibition': ['EXH'],
     'Yeerongpilly' : ['YLY'],
-    'Lawnton': ['LWO']
+    'Lawnton': ['LWO'],
+    'Robina' : ['ROB'],
+    'Merrimac' : ['MRC'],
+    'Nerang' : ['NRG'],
+    'Helensvale' : ['HLN'],
+    'Hope Island' : ['HID'],
+    'Coomera' : ['CXM'],
+    'Pimpama': ['PIA'],
+    'Ormeau': ['ORM'],
+    'Holmview': ['HVW'],
+    'Edens Landing': ['EDL'],
+    'Bethania': ['BTI'],
+    'Loganlea': ['LGL'],
+    'Kingston': ['KGT'],
+    'Woodridge': ['WOI'],
+    'Trinder Park': ['TDP'],
+    'Kuraby': ['KRY'],
+    'Fruitgrove': ['FTG'],
+    'Runcorn': ['RUC'],
+    'Altandi': ['ATI'],
+    'Sunnybank': ['SYK'],
+    'Banoon': ['BQO'],
+    'Coopers Plains': ['CEP'],
+    'Salisbury': ['SLY'],
+    'Rocklea': ['RKE'],
+    'Moorooka': ['MQK'],
+    'Yeronga': ['YRG'],
+    'Fairfield': ['FFI'],
+    'Dutton Park': ['DUP'],
+    'Virginia': ['VGI'],
+    #'Sunshine': [''],
+    'Geebung': ['GEB'],
+    'Zillmere': ['ZLL'],
+    'Carseldine': ['CDE'],
+    'Bald Hills': ['BDS'],
+    'Strathpine': ['SPN'],
+    'Bray Park': ['BPR'],
+    'Kallangur': ['KGR'],
+    'Murrumba Downs': ['MRD'],
+    'Mango Hill': ['MGH'],
+    'Mango Hill East': ['MGE'],
+    'Rothwell': ['RWL'],
+    'Kippa Ring': ['KPR'],
+    'Petrie': ['PET'],
+    'Dakabin': ['DKB'],
+    'Narangba': ['NRB'],
+    'Burpengary': ['BPY'],
+    'Morayfield': ['MYE'],
+    'Elimbah': ['EMH'],
+    'Beerburrum': ['BEB'],
+    'Glass House Mountains': ['GSS'],
+    'Beerwah': ['BWH'],
+    'Landsborough': ['LSH'],
+    'Mooloolah': ['MOH'],
+    'Eudlo': ['EUD'],
+    'Palmwoods': ['PAL'],
+    'Woombye': ['WOB'],
+    'Nambour': ['NBR'],
+    'Yandina': ['YAN'],
+    'Eumundi': ['EUM'],
+    'Cooroy': ['COO'],
+    'Pomona': ['PMQ'],
+    'Cooran': ['COZ'],
+    'Traveston': ['TRA'],
+    'Gympie North': ['GYN'],
+
 }
 
+
+
+### unsure (ej)
+### Sector 2 includes rosewood, springfield, doombem, airport, and shorncliffe lines 
 Sector2 = {
     'Rosewood': ['RSW'],
     'Ipswich': ['IPS', 'IPSS'],
@@ -34,16 +103,80 @@ Sector2 = {
     'Corinda': ['CQD'],
     'Toowong': ['TWG'],
     'Milton': ['MTZ'],
-    'Thagoona': ['TAO']
-
+    'Thagoona': ['TAO'],
+    'Walloon': ['WOQ'],
+    'Karrabin': ['KRA'],
+    'Wulkuraka': ['WUL'],
+    'Thomas St': ['THS'], 
+    'East Ipswich': ['EIP'], 
+    'Booval': ['BOV'],
+    'Bundamba': ['BDX'],
+    'Ebbw Vale': ['EBV'],
+    'Richlands': ['RHD'],
+    'Dinmore': ['DIR'],
+    'Riverview': ['RVV'],
+    'Redbank': ['RDK'],
+    'Goodna': ['GDQ'],
+    'Gailes': ['GAI'],
+    'Wacol': ['WAC'],
+    'Darra': ['DAR'],
+    'Oxley': ['OXL'],
+    'Sherwood': ['SHW'],
+    'Graceville': ['GVQ'],
+    'Chelmer': ['CMZ'],
+    'Indooroopilly': ['IDP'],
+    'Taringa': ['TIQ'],
+    'Auchenflower': ['AHF'],
+    'Albion' : ['AIN'],
+    'Wooloowin': ['WWI'],
+    'Toombul': ['TBU'],
+    'Nundah': ['NND'],
+    'Northgate': ['NTG'],
+    'Clayfield': ['CYF'],
+    'Hendra': ['HDR'],
+    'Ascot': ['ACO'],
+    'Bindha' : ['BHA'],
+    'Banyo' : ['BQY'],
+    'Nudgee' : ['NUD'],
+    'Boondall' : ['BZL'],
+    'North Boondall' : ['NBD'],
+    'Deagon' : ['DEG'],
+    'Sandgate' : ['SGE'],
 
 }
+
 
 Sector3 = {
     'Cleveland': ['CVN', 'MNY', 'CNQ'],
     'FernyGrove': ['FYG'],
     'City': ['RS', 'BHI'],
-    'Park Rd': ['PKR']
+    'Park Rd': ['PKR'],
+    'Keperra': ['KEP'],
+    'Grovely': ['GOQ'],
+    'Oxford Park': ['OXP'],
+    'Mitchelton': ['MHQ'],
+    'Gaythorne': ['GAO'],
+    'Enoggera': ['EGG'],
+    'Alderley': ['ADY'],
+    'Newmarket': ['NWM'],
+    'Wilston': ['WLQ'],
+    'Buranda': ['BRD'],
+    'Coorparoo': ['CRO'],
+    'Norman Park': ['NPR'],
+    'Morningside': ['MGS'],
+    'Cannon Hill': ['CNQ'],
+    'Murarrie': ['MJE'],
+    'Hemmant': ['HMM'],
+    'Lindum': ['LDM'],
+    'Wynnum North': ['WYH'],
+    'Wynnum': ['WNM'],
+    'Wynnum Central': ['WNC'],
+    'Manly' : ['MNY'],
+    'Lota': ['LOT'],
+    'Thorneside': ['TNS'],
+    'Birkdale': ['BDE'],
+    'Wellington Point': ['WPT'],
+    'Ormiston': ['ORO'],
 }
 
 
@@ -97,7 +230,6 @@ def resolve_possible_sectors(code):
         return set(sectors)
 
     return set()
-
 
 
 def get_common_sector(code1, code2):
@@ -165,6 +297,13 @@ def extract_sector_from_pattern(pattern):
     return None
 
 
+def apply_pattern(train, pattern):
+    train.raw.set("pattern", pattern)
+    if train.connection is not None:
+        train.connection.set("trainPattern", pattern)
+
+
+
 if __name__ == "__main__":
 
     path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
@@ -189,23 +328,25 @@ if __name__ == "__main__":
 
     for t in trains:
         if t.is_empty_train:
-            non_revenue += 1 # skip if its non revenue 
+            non_revenue += 1 # increment 
         else:
             revenue += 1
 
 
         start_stn = t.stations[0]
         end_stn = t.stations[-1]
+
         sector = get_common_sector(start_stn, end_stn)
         weekday = get_weekday_short(t.weekday)
         line_id = t.raw.get("lineID")
+
         trains_by_line_and_day[(line_id, weekday)].append(t)
 
 
         # keep a running total of same vs diff sectors 
         if sector:
             pattern_str = create_pattern(t, sector)
-            t.raw.set("pattern", pattern_str) # set pattern to the pattern string we made with sector
+            apply_pattern(t, pattern_str) # set pattern to the pattern string we made with sector
 
             #print("t, raw set", t.raw.get('pattern')) # checking if it changed
             same_sector_pairs += 1
@@ -217,8 +358,6 @@ if __name__ == "__main__":
 
 
             if t.connection is not None:
-                # means a connection was found
-                t.connection.set("trainPattern", pattern_str)  # update connection 'trainPattern' to equal pattern 
                 connections += 1
                 #print("connection trainpattern", t.connection.get("trainPattern")) # checking if it changed
 
@@ -226,19 +365,17 @@ if __name__ == "__main__":
             # OD either does not match sectors or arent in the dict
             # it is unassigned
             pattern_str = create_unassigned_pattern(t)
-            t.raw.set("pattern", pattern_str) # set pattern to the pattern string we made with sector
-            if t.connection is not None:
-                # means a connection was found
-                t.connection.set("trainPattern", pattern_str)  # update connection 'trainPattern' to equal pattern 
-                connections += 1
+            apply_pattern(t, pattern_str) # set pattern to the pattern string we made with sector
 
-            #print(pattern_str)
             diff_sector_pairs += 1
             diff_sector_list.add((start_stn, end_stn))
 
+            if t.connection is not None:
+                # means a connection was found
+                connections += 1
+
     
     upgraded = 0
-    
     mixed_lineid_flags = []
 
 
@@ -258,13 +395,11 @@ if __name__ == "__main__":
         # only upgrade if exactly one sector exists 
         if len(sectors_seen) == 1 and unassigned_trains:
             sector = sectors_seen.pop()
+
             for t in unassigned_trains:
                 new_pattern = f"/{weekday}/Sector {sector}"
-                t.raw.set("pattern", new_pattern)
+                apply_pattern(t, new_pattern)
 
-                if t.connection is not None:
-                    t.connection.set("trainPattern", new_pattern)
-                
                 upgraded += 1
                 same_sector_pairs += 1
                 diff_sector_pairs -= 1
@@ -291,10 +426,6 @@ if __name__ == "__main__":
     print(f"Empty sectorised: {same_sector_empty}/{non_revenue}")
     print(f"Total sectorised: {same_sector_pairs}/{same_sector_pairs + diff_sector_pairs}")
     print(f"Upgraded {upgraded} previously unassigned trains via lineID inference")
-
-
-
-        
     print(f"\nLineID/day combinations with mixed sectors (connection breaks): {len(mixed_lineid_flags)}")
 
     ### DEBUG PRINT
@@ -306,15 +437,22 @@ if __name__ == "__main__":
         )
 
 
+    mixed_lineid_flags = 0
+
     #### GUI PRINT
+
+    """"
     if mixed_lineid_flags:
         for flag in mixed_lineid_flags:
+
             gui.show_info(
                 "Broken connections",
                 f"LineID {flag['line_id']} \n{flag['weekday']}\n"
                 f"Sectors: {', '.join(flag['sectors_seen'])}\n"
                 f"Unassigned: {flag['unassigned_count']} / {flag['total_trains']}"
             )
+    
+    """
 
 
 
@@ -335,8 +473,6 @@ if __name__ == "__main__":
 
     """
 
-
-    
     
     final_diff = set()
 
@@ -352,7 +488,7 @@ if __name__ == "__main__":
 
 
 
-    #print("different O/D sectors: ", diff_sector_list)
+    print("different O/D sectors: ", diff_sector_list)
 
     
 
