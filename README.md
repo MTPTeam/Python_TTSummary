@@ -30,7 +30,7 @@
 
 - Add instructions here (todo)
 
-### 3. Run the following commands in a Python Terminal located in the root directory. 
+### 4. Run the following commands in a Python Terminal located in the root directory. 
 - For all commands, replace the `<username>` part with your own username (e.g r123456)
 
 - Open a Python terminal inside the `Python_TTSummary` folder (the repository you just cloned/downloaded). This is the 'root' directory. In the Python terminal run the following commands.
@@ -59,8 +59,12 @@
 
     `.\venv\Scripts\python.exe -m pip install -e .`
 
+### 5. Setup complete
+- At this point, TAIPAN and all its dependencies should be installed and ready to use. To verify, run the following (in the same place you ran the previous commands) and if no errors pop up the installation succeeded. 
 
+    `.\venv\Scripts\python.exe -c "import taipan"`
 
+    If an error popped up, ask for help. Otherwise, you’re good to go 🚀
 
 
 
