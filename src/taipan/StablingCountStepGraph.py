@@ -1,5 +1,7 @@
 # stabling_graph.py
 
+import sys
+
 import xlsxwriter
 import os
 from collections import defaultdict
@@ -7,8 +9,12 @@ from collections import defaultdict
 import gui
 from xml_parser import parse_rsx, normalise_days, sort_days, sort_units
 from xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
-from MTP_constants import YARDS, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, FAMILY_BG, _UNIT_COLOURS, _TOTAL_COLOUR, _CAPACITY_COLOUR, _GRID_COLOUR, _AXIS_COLOUR
 
+from constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
+from constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
+from constants.styles import FAMILY_BG, _UNIT_COLOURS, _TOTAL_COLOUR, _CAPACITY_COLOUR, _GRID_COLOUR, _AXIS_COLOUR
+
+from PyQt6.QtWidgets import QApplication
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -94,7 +100,6 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
     graph_sheet.set_tab_color('#2563EB')
 
     title_fmt = workbook.add_format({
-        'bold':      True,
         'font_size': 13,
         'font_name': 'Aptos',
         'align':     'center',
@@ -168,7 +173,9 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
             block_w += 1
 
         # ── chart ─────────────────────────────────────────────────────────────
-        chart = workbook.add_chart({'type': 'line'})
+        chart = workbook.add_chart({'type': 'line'})   #original
+
+        #chart = workbook.add_chart({'type': 'scatter', 'subtype': 'straight'}) # new 
 
         chart.set_title({
             'name':    dow_label,
@@ -252,7 +259,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list,change_matrix, d
                                data_row_start + n_rows - 1, time_col],
                 'values':     [data_sn, data_row_start, uc,
                                data_row_start + n_rows - 1, uc],
-                'line':       {'color': colour, 'width': 1.5},
+                'line':       {'color': colour, 'width': 2},
                 'marker':     {'type': 'none'},
             })
 
@@ -325,5 +332,6 @@ def TTS_Graph(path):
 
 
 if __name__ == '__main__':
+    app = QApplication(sys.argv)
     path = gui.select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
     TTS_Graph(path)

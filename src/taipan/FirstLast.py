@@ -14,7 +14,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-import MTP_constants
+from MTP_constants import WEEKDAY_KEYS_MASTER
 
 
 
@@ -22,13 +22,6 @@ OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
-
-
-
-
-
-
-
 
 daylist = ['120','4','2','1']
 headers = ['Station','Line','Direction']
@@ -226,26 +219,6 @@ for x in [x[0] for x in bystation_list]:
     file2_enddict[x]   = [['00:00:00','00:00:00'],['00:00:00','00:00:00'],['00:00:00','00:00:00'],['00:00:00','00:00:00']]
     
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def TTS_FL(path, mypath = None):
 
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
@@ -295,16 +268,7 @@ def TTS_FL(path, mypath = None):
         
         
         
-        
-        
         os.chdir(directory)
-        
-        
-        
-        
-        
-        
-        
         
         
         def timetrim(timestring):
@@ -439,7 +403,7 @@ def TTS_FL(path, mypath = None):
                                 
                                 
                             
-                                
+                    
                                         
                                         
                     for k,v in file2_enddict.items():
@@ -502,10 +466,6 @@ def TTS_FL(path, mypath = None):
         info.set_column(0,0,18.5)
         info.set_column(1,1,max(len(filename1),len(filename2))+5)
         
-    
-        
-        
-        
         def setupformatting(sheet,stationlist):   
             
             sheet.write_row(0,0,headers,bold)
@@ -535,10 +495,7 @@ def TTS_FL(path, mypath = None):
                     sheet.write(1,col,'',       grey)
                     sheet.write(2,col,'',       grey)
                     sheet.set_column(col,col,1)
-            
-            
-            
-            
+        
             
             
             station_width = 0

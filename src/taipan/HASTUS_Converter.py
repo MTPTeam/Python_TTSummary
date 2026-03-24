@@ -12,8 +12,8 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-import MTP_constants
-import gui
+
+
 
 
 
@@ -24,7 +24,7 @@ import gui
 ### "= False" line can be left on permanently to facilitate easy toggling
 ### "= True" lines must be turned on when uploading files to the taipan script library
 # --------------------------------------------------------------------------------------------------- #
-CreateFile = ProcessDoneMessagebox = hastuscopyfile = True
+CreateFile = ProcessDoneMessagebox = hastuscopyfile = False
 ProcessDoneMessagebox = True
 CreateFile = True 
 
@@ -33,10 +33,14 @@ hastuscopyfile = True if os.path.basename(__file__) == 'HASTUS_Converter - Copy.
 # --------------------------------------------------------------------------------------------------- #
 
 
+
+
+
 ### Dictionary used to title reports for each daycode
 daycode_dict = {'120':'muwt','4':'f','2':'a','1':'s'}
 
-### Dictionary used for printouts when running the report - const moved
+### Dictionary used for printouts when running the report
+weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 
 ### Do not want these entries included at all in the HASTUSExport
 entries_to_exclude = ['RSWJ','YNA','RSF',
@@ -86,6 +90,26 @@ HASTUS_stableconverter = {
     }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 def TTS_H(path, mypath = None):
     
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
@@ -118,6 +142,16 @@ def TTS_H(path, mypath = None):
             print(myhastuspath)
             print('———————————————————————————————————————————————————————————————————————————————\n')
         
+        
+    
+        
+        
+        
+        
+        
+        
+        
+        
       
         tree = ET.parse(filename)
         root = tree.getroot()
@@ -139,9 +173,18 @@ def TTS_H(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         def format_run(run):
@@ -235,6 +278,23 @@ def TTS_H(path, mypath = None):
     
         SORT_ORDER_WEEK = ['1','2','4','120']
         d_list.sort(key=SORT_ORDER_WEEK.index)
+        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+        
+                    
+        
+    
+              
+                
+        
         
         
         ### uniquestations_dict, network_vrt_dict and virtual run time (vrt) dictionaries for each line are used to determine direction (Up or Down)
@@ -598,6 +658,10 @@ def TTS_H(path, mypath = None):
             }
         
         
+        
+        
+        
+        
         def create_textfile(weekdaykey):
             """ Creates a HASTUS Export textfile for a single day of operations """
             
@@ -917,6 +981,9 @@ def TTS_H(path, mypath = None):
     #                 print(f'{line} - {firstonline} then {secondonline}\n')
     # =============================================================================
                     
+                
+                
+                
     
                 tripinfo = [tn,empt,drct,stations]
                 
@@ -968,6 +1035,11 @@ def TTS_H(path, mypath = None):
                             stop = station[3]
                             
                             
+                            
+                            
+                            
+                            
+                            
                             hhmmss = hhmm + ':00'
                             stationtosignal = str(pd.Timedelta(hhmmss) + pd.Timedelta(seconds=60))
                             signaltostation = str(pd.Timedelta(hhmmss) - pd.Timedelta(seconds=60))
@@ -997,11 +1069,17 @@ def TTS_H(path, mypath = None):
                                 
                             
                             
+                            
+       
+                            
                             ### Write the station
                             wl([nl,'triptp',l,sID,l,hhmm,l,zero,l,stop,l,f'{run}_{tn}'])
                             
                             
     
+                            
+    
+                            
                             
                             ### Input EJ28 Signal Turnback after the last station to avoid mismatched plaform errors
                             if station == stations[-1]:
@@ -1014,9 +1092,14 @@ def TTS_H(path, mypath = None):
                                     #time + 1 minutes
                    
                             
+                   
+                    
+                   
+                    
+                   
                     
                 o.close()
-                #print(f'All trains on {MTP_constants.WEEKDAYKEY.get(weekdaykey)} have been processed')
+                print(f'All trains on {weekdaykey_dict.get(weekdaykey)} have been processed')
                 # print('—————————————————————————————————————————————————————')
                 print('\n\n')
                 if hastuscopyfile:
@@ -1032,9 +1115,17 @@ def TTS_H(path, mypath = None):
         ### Run the create_textfile function for every day present in the rsx
         for day in d_list:
             # print('—————————————————————————————————————————————————————')
-            print(f'Processing trains on {MTP_constants.WEEKDAY_KEYS_MASTER[day]["short"]}...', end='\r')
+            print(f'Processing trains on {weekdaykey_dict.get(day)}...', end='\r')
             create_textfile(day)
             
+                
+    
+        
+        
+        
+        
+        
+        
         
         if __name__ == "__main__":
             print(f'(runtime: {time.time()-start_time:.2f}seconds)')
@@ -1050,8 +1141,10 @@ def TTS_H(path, mypath = None):
             print('RSX copied                 ',end='\r')
         
         
+        
         if ProcessDoneMessagebox and __name__ == "__main__":
-            gui.show_info('HASTUS Converter','Process Done')
+            from tkinter import messagebox
+            messagebox.showinfo('HASTUS Converter','Process Done')
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
@@ -1059,5 +1152,5 @@ def TTS_H(path, mypath = None):
             
 if __name__ == "__main__":
     Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    path = askopenfilename() 
     TTS_H(path)

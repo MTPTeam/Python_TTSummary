@@ -7,12 +7,11 @@ import pandas as pd
 import traceback
 import logging
 
-OpenWorkbook = CreateWorkbook = False
+OpenWorkbook = CreateWorkbook = True
 CreateWorkbook = True
 OpenWorkbook = True
 
 try:
-    
     
     
     #Option 1
@@ -26,9 +25,6 @@ try:
     os.chdir(directory)
     filename = path.split('/')[-1]
 
-
-
-    
     # #Option 2
     # directory = 'C:/Users/r913332/OneDrive - Queensland Rail/04 Project Python'
     # os.chdir(directory)
@@ -1255,9 +1251,6 @@ try:
             # print(entries)
             # print()
                     
-                    
-                
-                    
             build_triplist( list1,  'Beenleigh'                                )
             build_triplist( list2,  'Beenleigh',                 Outbound=True )
             
@@ -1363,33 +1356,7 @@ try:
             print(f'Opening {dayofop[1]} workbook')
         ###########################################################
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
         
         
     for book in workbooks: 

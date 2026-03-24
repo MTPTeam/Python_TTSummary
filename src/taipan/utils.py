@@ -1,5 +1,6 @@
 # helper functions live here 
-from MTP_constants import WEEKDAY_KEYS_MASTER
+
+from constants.days import WEEKDAY_KEYS_MASTER
 
 def _time_key(t):
     """

@@ -12,11 +12,19 @@ import time
 
 import traceback
 import logging
-from MTP_constants import YARDS, SORT_ORDER_WEEK, NON_STABLE_LOCATIONS, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT, STEPS_COL, ID_TO_SHORT
+
+from constants.locations import YARDS, NON_STABLE_LOCATIONS
+from constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, ID_TO_SHORT
+from constants.trains import SORT_ORDER_UNIT
+from constants.styles import STEPS_COL
+
 
 from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
 from ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
+
+
+from PyQt6.QtWidgets import QApplication
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
@@ -48,7 +56,7 @@ def TTS_SB(path, mypath = None):
         if duplicates:
             print("Error - duplicate train numbers")
             for tn, day in duplicates:
-                print(f' - 2 trains running on {MTP_constants.weekday_short(day)} with train number {tn} - ')
+                print(f' - 2 trains running on {ID_TO_SHORT.get(day, day)} with train number {tn} - ')
 
         
         directory = os.path.dirname(path)
@@ -381,6 +389,8 @@ def TTS_SB(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
+
+    app = QApplication(sys.argv)
     
     start_time = time.perf_counter()
     path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")

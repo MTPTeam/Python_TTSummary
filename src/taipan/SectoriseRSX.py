@@ -6,193 +6,20 @@ from MTP_constants import WEEKDAY_KEYS_MASTER, MON_THU_MASK, YARDS
 from utils import get_weekday_short
 import os
 from collections import defaultdict
+from constants.locations import STATIONS_MASTER
 
-
-### EXPAND THIS AND PUT INTO MTPCONSTANTS WHEN DONE 
-Sector1 = {
-    'Caboolture': ['CAB', 'CAW', 'CAE'],
-    'SunshineCoast': ['NBR', 'CRD', 'BIR'],
-    'Gympie': ['GYN'],
-    'Redcliffe': ['KPR'],
-    'Beenleigh': ['BNH', 'BNHS', 'BNT', 'KRY', 'CEP'],
-    'GoldCoast': ['VYS', 'VYST'],
-    'City': ['BOG', 'RTL'],
-    'Exhibition': ['EXH'],
-    'Yeerongpilly' : ['YLY'],
-    'Lawnton': ['LWO'],
-    'Robina' : ['ROB'],
-    'Merrimac' : ['MRC'],
-    'Nerang' : ['NRG'],
-    'Helensvale' : ['HLN'],
-    'Hope Island' : ['HID'],
-    'Coomera' : ['CXM'],
-    'Pimpama': ['PIA'],
-    'Ormeau': ['ORM'],
-    'Holmview': ['HVW'],
-    'Edens Landing': ['EDL'],
-    'Bethania': ['BTI'],
-    'Loganlea': ['LGL'],
-    'Kingston': ['KGT'],
-    'Woodridge': ['WOI'],
-    'Trinder Park': ['TDP'],
-    'Kuraby': ['KRY'],
-    'Fruitgrove': ['FTG'],
-    'Runcorn': ['RUC'],
-    'Altandi': ['ATI'],
-    'Sunnybank': ['SYK'],
-    'Banoon': ['BQO'],
-    'Coopers Plains': ['CEP'],
-    'Salisbury': ['SLY'],
-    'Rocklea': ['RKE'],
-    'Moorooka': ['MQK'],
-    'Yeronga': ['YRG'],
-    'Fairfield': ['FFI'],
-    'Dutton Park': ['DUP'],
-    'Virginia': ['VGI'],
-    #'Sunshine': [''],
-    'Geebung': ['GEB'],
-    'Zillmere': ['ZLL'],
-    'Carseldine': ['CDE'],
-    'Bald Hills': ['BDS'],
-    'Strathpine': ['SPN'],
-    'Bray Park': ['BPR'],
-    'Kallangur': ['KGR'],
-    'Murrumba Downs': ['MRD'],
-    'Mango Hill': ['MGH'],
-    'Mango Hill East': ['MGE'],
-    'Rothwell': ['RWL'],
-    'Kippa Ring': ['KPR'],
-    'Petrie': ['PET'],
-    'Dakabin': ['DKB'],
-    'Narangba': ['NRB'],
-    'Burpengary': ['BPY'],
-    'Morayfield': ['MYE'],
-    'Elimbah': ['EMH'],
-    'Beerburrum': ['BEB'],
-    'Glass House Mountains': ['GSS'],
-    'Beerwah': ['BWH'],
-    'Landsborough': ['LSH'],
-    'Mooloolah': ['MOH'],
-    'Eudlo': ['EUD'],
-    'Palmwoods': ['PAL'],
-    'Woombye': ['WOB'],
-    'Nambour': ['NBR'],
-    'Yandina': ['YAN'],
-    'Eumundi': ['EUM'],
-    'Cooroy': ['COO'],
-    'Pomona': ['PMQ'],
-    'Cooran': ['COZ'],
-    'Traveston': ['TRA'],
-    'Gympie North': ['GYN'],
-
-}
-
-
-
-### unsure (ej)
-### Sector 2 includes rosewood, springfield, doombem, airport, and shorncliffe lines 
-Sector2 = {
-    'Rosewood': ['RSW'],
-    'Ipswich': ['IPS', 'IPSS'],
-    'Springfield': ['SFC', 'DAR'],
-    'Airport': ['BDT'],
-    'Shorncliffe': ['SHC', 'NTG'],
-    'Doomben': ['DBN'],
-    'City': ['RS', 'BHI'],
-    'Auchenflower': ['AHF'],
-    'Corinda': ['CQD'],
-    'Toowong': ['TWG'],
-    'Milton': ['MTZ'],
-    'Thagoona': ['TAO'],
-    'Walloon': ['WOQ'],
-    'Karrabin': ['KRA'],
-    'Wulkuraka': ['WUL'],
-    'Thomas St': ['THS'], 
-    'East Ipswich': ['EIP'], 
-    'Booval': ['BOV'],
-    'Bundamba': ['BDX'],
-    'Ebbw Vale': ['EBV'],
-    'Richlands': ['RHD'],
-    'Dinmore': ['DIR'],
-    'Riverview': ['RVV'],
-    'Redbank': ['RDK'],
-    'Goodna': ['GDQ'],
-    'Gailes': ['GAI'],
-    'Wacol': ['WAC'],
-    'Darra': ['DAR'],
-    'Oxley': ['OXL'],
-    'Sherwood': ['SHW'],
-    'Graceville': ['GVQ'],
-    'Chelmer': ['CMZ'],
-    'Indooroopilly': ['IDP'],
-    'Taringa': ['TIQ'],
-    'Auchenflower': ['AHF'],
-    'Albion' : ['AIN'],
-    'Wooloowin': ['WWI'],
-    'Toombul': ['TBU'],
-    'Nundah': ['NND'],
-    'Northgate': ['NTG'],
-    'Clayfield': ['CYF'],
-    'Hendra': ['HDR'],
-    'Ascot': ['ACO'],
-    'Bindha' : ['BHA'],
-    'Banyo' : ['BQY'],
-    'Nudgee' : ['NUD'],
-    'Boondall' : ['BZL'],
-    'North Boondall' : ['NBD'],
-    'Deagon' : ['DEG'],
-    'Sandgate' : ['SGE'],
-
-}
-
-
-Sector3 = {
-    'Cleveland': ['CVN', 'MNY', 'CNQ'],
-    'FernyGrove': ['FYG'],
-    'City': ['RS', 'BHI'],
-    'Park Rd': ['PKR'],
-    'Keperra': ['KEP'],
-    'Grovely': ['GOQ'],
-    'Oxford Park': ['OXP'],
-    'Mitchelton': ['MHQ'],
-    'Gaythorne': ['GAO'],
-    'Enoggera': ['EGG'],
-    'Alderley': ['ADY'],
-    'Newmarket': ['NWM'],
-    'Wilston': ['WLQ'],
-    'Buranda': ['BRD'],
-    'Coorparoo': ['CRO'],
-    'Norman Park': ['NPR'],
-    'Morningside': ['MGS'],
-    'Cannon Hill': ['CNQ'],
-    'Murarrie': ['MJE'],
-    'Hemmant': ['HMM'],
-    'Lindum': ['LDM'],
-    'Wynnum North': ['WYH'],
-    'Wynnum': ['WNM'],
-    'Wynnum Central': ['WNC'],
-    'Manly' : ['MNY'],
-    'Lota': ['LOT'],
-    'Thorneside': ['TNS'],
-    'Birkdale': ['BDE'],
-    'Wellington Point': ['WPT'],
-    'Ormiston': ['ORO'],
-}
+from PyQt6.QtWidgets import QApplication
 
 
 def build_code_to_sector_map():
-    all_sectors = {
-        'Sector1': Sector1,
-        'Sector2': Sector2,
-        'Sector3': Sector3,
-    }
-
     lookup = {}
-    for sector_name, sector in all_sectors.items():
-        for codes in sector.values():
-            for code in codes:
-                lookup.setdefault(code.upper(), set()).add(sector_name)
-
+    for code, data in STATIONS_MASTER['stations'].items():
+        sector = data.get('sector')
+        if sector is not None:
+            lookup.setdefault(code.upper(), set()).add(f"Sector{sector}")
+        elif data.get('shared_sectors'):
+            for s in data['shared_sectors']:
+                lookup.setdefault(code.upper(), set()).add(f"Sector{s}")
     return lookup
 
 def build_yard_code_lookup(yards):
@@ -222,7 +49,7 @@ def resolve_possible_sectors(code):
             if sectors:
                 possible |= sectors  
 
-        return possible
+        return possible if possible else set()
 
     # otherwise its a regular station
     sectors = CODE_TO_SECTOR.get(code)
@@ -305,6 +132,7 @@ def apply_pattern(train, pattern):
 
 
 if __name__ == "__main__":
+    app = QApplication(sys.argv)
 
     path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
 
@@ -454,24 +282,6 @@ if __name__ == "__main__":
     
     """
 
-
-
-        
-    """
-    print("same: ", same_sector_pairs)
-    print("diff: ", diff_sector_pairs)
-    start_stn = t.stations[0]
-    end_stn = t.stations[-1]
-    print("revenue:", revenue)
-    print("non_revenue", non_revenue)
-    print("START DIFF SECTORS NOW")
-    
-
-    for elem in diff_sector_list:
-        print(elem)
-
-
-    """
 
     
     final_diff = set()

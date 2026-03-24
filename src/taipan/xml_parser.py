@@ -2,9 +2,10 @@ from importlib.resources import path
 import os
 import xml.etree.ElementTree as ET
 import re
-import MTP_constants
 import typing
 
+from constants.trains import SORT_ORDER_UNIT, TRAIN_TYPE_MASK
+from constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK
 
 def rep_to_qmu_tokenwise(text):
     # replace standalone REP tokens with QMU (preserve delimiters)
@@ -43,9 +44,10 @@ def normalise_train_type(raw):
     s = raw.strip()
 
     # mask (case insensitive exact key)
+    
     low = s.lower()
-    if hasattr(MTP_constants, 'TRAIN_TYPE_MASK') and low in MTP_constants.TRAIN_TYPE_MASK:
-        s = MTP_constants.TRAIN_TYPE_MASK[low]
+    if low in TRAIN_TYPE_MASK:
+        s = TRAIN_TYPE_MASK[low]
         # fall back - still allow AW enforcement + suffix strip in case mask value carries them
     # else: keep s as-is
 
@@ -259,10 +261,10 @@ def build_run_dict(trains):
 
 def resolve_DoO(wkdk):
     # wkdk is a tuple of strings like ('120','64')
-    for day in MTP_constants.DAY_PRIORITY:
+    for day in DAY_PRIORITY:
         if day in wkdk:
-            print("DEBUG:", day, type(MTP_constants.WEEKDAY_KEYS_MASTER[day]))
-            return MTP_constants.WEEKDAY_KEYS_MASTER[day]['short']   # or long/alias
+            print("DEBUG:", day, type(WEEKDAY_KEYS_MASTER[day]))
+            return WEEKDAY_KEYS_MASTER[day]['short']   # or long/alias
     return None
 
 
@@ -279,10 +281,10 @@ def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days =
 
 
 def sort_days(days):
-    return sorted(days, key=MTP_constants.SORT_ORDER_WEEK.index)
+    return sorted(days, key=SORT_ORDER_WEEK.index)
 
 def sort_units(units):
-    return sorted(units, key=MTP_constants.SORT_ORDER_UNIT.index)
+    return sorted(units, key=SORT_ORDER_UNIT.index)
 
 
 def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True) -> typing.List[str]:

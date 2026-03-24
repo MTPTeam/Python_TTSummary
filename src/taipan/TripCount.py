@@ -1352,12 +1352,6 @@ def TTS_TC(root, path, mypath = None):
         writesheet(sun_out, Sun_Outbound)
         
         
-        
-        
-        
-        
-        
-        
         if CreateWorkbook:
             workbook.close()
             print('Creating workbook')  
@@ -1367,9 +1361,6 @@ def TTS_TC(root, path, mypath = None):
                 if OpenWorkbook:
                     os.startfile(rf'{filename_xlsx}')
                     print('\nOpening workbook')  
-        
-        
-        
         
         
         if ProcessDoneMessagebox and __name__ == "__main__":

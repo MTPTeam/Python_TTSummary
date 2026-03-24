@@ -1,6 +1,8 @@
 from typing import List, Dict
-from MTP_constants import SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, SORT_ORDER_UNIT
-import MTP_constants
+
+from constants.trains import SORT_ORDER_UNIT
+from constants.days import WEEKDAY_KEYS_MASTER, ID_TO_LONG
+
 from utils import timetrim
 from xml_parser import resolve_DoO
 from utils import csl
@@ -51,7 +53,7 @@ def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge
     daylist_in.sort(key=lambda v: v[7])
 
     # Then by unit order (stable sort retains time order within unit)
-    order = {u: i for i, u in enumerate(MTP_constants.SORT_ORDER_UNIT)}
+    order = {u: i for i, u in enumerate(SORT_ORDER_UNIT)}
     daylist_out.sort(key=lambda v: order.get(v[2], 999))
     daylist_in.sort(key=lambda v: order.get(v[2], 999))
 
@@ -184,7 +186,7 @@ def build_singletrip_col(d_list, run_dict):
         if day_id not in per_day:
             continue
 
-        label = MTP_constants.ID_TO_LONG.get(day_id, day_id)
+        label = ID_TO_LONG.get(day_id, day_id)
         count = len(set(per_day[day_id]))
 
         singletrip_col.append(
@@ -202,7 +204,7 @@ def merge_out_in_per_day(out_list, in_list, sort_by_unit=True):
     
     merged = list(out_list) + list(in_list)
 
-    unit_idx = {u: i for i, u in enumerate(MTP_constants.SORT_ORDER_UNIT)}
+    unit_idx = {u: i for i, u in enumerate(SORT_ORDER_UNIT)}
     if sort_by_unit:
         merged.sort(key=lambda v: (_time_key(v[7]), unit_idx.get(v[2], 999)))
     else:

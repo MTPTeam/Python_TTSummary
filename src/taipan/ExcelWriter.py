@@ -3,7 +3,11 @@ import xlsxwriter
 from xlsxwriter.workbook import Workbook
 from xlsxwriter.worksheet import Worksheet
 
-from MTP_constants import (FAMILY_BG, ALERT, GREY, UNBALANCED_YELLOW, WHITE, STYLE_VARIANTS, GENERIC_STYLES, BORDER_STYLES, SEMANTIC_STYLES)
+
+
+from constants.days import WEEKDAY_KEYS_MASTER
+
+from constants.styles import FAMILY_BG, ALERT, GREY, UNBALANCED_YELLOW, WHITE, STYLE_VARIANTS, GENERIC_STYLES, BORDER_STYLES, SEMANTIC_STYLES
 
 
 def writecell_unbalanced(Summary, r,c,value,unbalancedfont,balancedfont):
@@ -24,6 +28,31 @@ def write_unit_totals(sheet, sum_of_units, n_units, r, c, font):
         sheet.write(r, c, sum_of_units, font)
     else:
         sheet.merge_range(r, c, r+n_units-1, c, sum_of_units, font)    
+
+
+
+def summary_writerow(r,c,data, Summary, centered, greyedouttext):
+    """ Writes a list of data into a row, with zero values appearing in a grey font """
+    
+    for i,x in enumerate(data):
+        if x:
+            Summary.write(r,c+i,x,centered)
+        else:
+            Summary.write(r,c+i,x,greyedouttext)
+
+
+
+def summary_writetotals(day, row, d_list, Summary, totals_col, daylist_dict, boldcenter, centered, n ):
+    """ Writes overnight stabling figures for each unit type and a total for every day. row must be manually incremented after this function is called"""
+    
+    i = d_list.index(day)
+    Summary.write(row+1, 4+n, WEEKDAY_KEYS_MASTER.get(day, {}).get('short'))
+    Summary.write(      row+1, 5+n,   totals_col[i],      boldcenter)
+    Summary.write_row(  row+1, 6+n,   daylist_dict.get(day),        centered)
+
+def summary_totalheaders(unit, row, col, Summary, formats):
+    """ Writes overnight stabling headers for each unit type. col must be manually incremented after function is called"""
+    Summary.write(row, 6+col, unit, formats[unit]["bold"])
 
 
 

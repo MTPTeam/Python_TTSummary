@@ -61,46 +61,6 @@ stations_dict = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def TTS_RI(path, mypath = None):
  
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
