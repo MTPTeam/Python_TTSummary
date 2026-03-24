@@ -43,9 +43,12 @@
 
     `.\venv\Scripts\activate`
 
-    After running the previous two steps, you see something that looks like the below image, note the green (venv) to the left of the folder structure. If you don't see the green (venv)  <b style="color:red;">DO NOT CONTINUE WITH THE REST OF THE STEPS!</b>
+    After running the previous two steps, you see something that looks like the below image, note the green (venv) to the left of the folder structure. 
+
 
     ![venv](/images/activating_venv.png "venv")
+
+    If you don't see the green (venv)  **🚨 DO NOT CONTINUE WITH THE REST OF THE STEPS! 🚨**. Doing so may break your Python environment. 
 
 - Install TAIPAN's Python packages to virtual environment:
 
