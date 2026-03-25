@@ -13,6 +13,8 @@ from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 
+from taipan.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
+
 
 
 
@@ -143,46 +145,19 @@ def TTS_H(path, mypath = None):
             print('———————————————————————————————————————————————————————————————————————————————\n')
         
         
-    
-        
-        
-        
-        
-        
-        
-        
-        
-      
-        tree = ET.parse(filename)
-        root = tree.getroot()
-        
-        filename = filename[:-4]
-        
-        
-        
-        
-        ### Check for duplicate train numbers before executing the script
-        ### Print warning for user if duplicates exist
-        ### Print out all duplicates
-        tn_list = []
-        tn_doubles = []
-        for train in root.iter('train'):
-            tn  = train.attrib['number']; day = train[0][0][0].attrib['weekdayKey']
-            if (tn,day) in tn_list: tn_doubles.append((tn,day))
-            tn_list.append((tn,day))
-                
-        if tn_doubles:
+
+        root, filename = load_rsx(path)
+        all_trains = extract_trains(root)
+        dup = detect_duplicates(all_trains)
+
+
+        if dup:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn, day in dup:
+                print(f' - 2 trains running on {weekdaykey_dict.get(day)} with train number {tn} - ')
             time.sleep(15)
-            sys.exit() 
-        
-        
-        
-        
-        
-        
-        
+            sys.exit()
+
         
         
         
@@ -230,23 +205,30 @@ def TTS_H(path, mypath = None):
         d_list = []
         runs   = {}
         oID_dID_dict = {}
-        trains = [x for x in root.iter('train') if ('DEPT' not in [y for y in x.iter('entry')][0].attrib['trainTypeId'])]
+        #trains = [x for x in root.iter('train') if ('DEPT' not in [y for y in x.iter('entry')][0].attrib['trainTypeId'])]
+
+        non_dept_trains = [t for t in all_trains if 'DEPT' not in t.train_type_raw]
+
+
+
         # trains = [x for x in root.iter('train') ]
-        for train in trains:
-            tn         = train.attrib['number']
-            run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
-            run        = format_run(run)
-            WeekdayKey = train[0][0][0].attrib['weekdayKey']
-            entries    = [x for x in train.iter('entry')]
-            origin     = entries[0].attrib
-            destin     = entries[-1].attrib
-            oID        = origin['stationID']
-            dID        = destin['stationID']
-            
+        for t in non_dept_trains:
+
+            tn         = t.number
+            run        = format_run(t.run)
+            WeekdayKey = t.weekday
+            entries    = t.entries
+            origin     = t.origin
+            destin     = t.destin
+            oID        = t.start_id
+            dID        = t.end_id
             otrack     = origin['trackID'].split('-')[-1]
             dtrack     = destin['trackID'].split('-')[-1]
             loID       = oID + otrack
             ldID       = dID + dtrack
+
+
+
             
             
             if WeekdayKey not in d_list:
@@ -277,23 +259,7 @@ def TTS_H(path, mypath = None):
          
     
         SORT_ORDER_WEEK = ['1','2','4','120']
-        d_list.sort(key=SORT_ORDER_WEEK.index)
-        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-        
-                    
-        
-    
-              
-                
+        d_list = sort_days(d_list)
         
         
         
@@ -708,35 +674,28 @@ def TTS_H(path, mypath = None):
             ###  - if the trains stops and dwells for more than 60seconds, a second entry with departure time for that location is added as well
             run_dict   = {}
             unassigned = []
-            day_trains = (x for x in root.iter('train') if (x[0][0][0].attrib['weekdayKey'] == weekdaykey) and ('DEPT' not in [y for y in x.iter('entry')][0].attrib['trainTypeId']) )
-            for train in day_trains:
-                WeekdayKey = train[0][0][0].attrib['weekdayKey']
-                tn         = train.attrib['number']
-                entries    = [x for x in train.iter('entry')]
-                origin     = entries[0].attrib
-                destin     = entries[-1].attrib
+            day_trains = [t for t in non_dept_trains if t.weekday == weekdaykey]
+
+
+            for t in day_trains:
                 
-                sIDs       = {x.attrib['stationID'] for x in entries}
-                sIDs_list  = [x.attrib['stationID'] for x in entries]
-                unit       = origin['trainTypeId'].split('-',1)[1]
-                # if unit == 'IMU100':
-                #     unit == 'IMU'
-                # elif unit == 'HYBRID':
-                #     unit == 'NGRE'
-                # else:
-                #     unit == unit
-                unit       = 'IMU' if unit == 'IMU100' else unit
-                run        = train.attrib['lineID'].split('~',1)[1][1:] if '~' in train.attrib['lineID'] else train.attrib['lineID']
-                run        = format_run(run)
-                
-                oID        = origin['stationID']
-                dID        = destin['stationID']
-                odep       = origin['departure']
-                ddep       = destin['departure']
-                
-                traintype  = origin['trainTypeId']
-                cars       = re.findall(r'\d+', traintype)[0]
-                
+
+                WeekdayKey = t.weekday
+                tn         = t.number
+                entries    = t.entries
+                origin     = t.origin
+                destin     = t.destin
+                unit       = 'IMU' if t.unit == 'IMU100' else t.unit
+                cars       = str(t.cars)
+                run        = format_run(t.run)
+                oID        = t.start_id
+                dID        = t.end_id
+                odep       = t.odep
+                ddep       = t.ddep
+                traintype  = t.train_type_raw
+                sIDs       = set(t.stations)
+                sIDs_list  = t.stations
+                empt       = '3' if t.is_empty_train else '0'
                 
                 
                 ### Some adjustments to the location+platform entry are made for special cases
@@ -1037,9 +996,6 @@ def TTS_H(path, mypath = None):
                             
                             
                             
-                            
-                            
-                            
                             hhmmss = hhmm + ':00'
                             stationtosignal = str(pd.Timedelta(hhmmss) + pd.Timedelta(seconds=60))
                             signaltostation = str(pd.Timedelta(hhmmss) - pd.Timedelta(seconds=60))
@@ -1054,9 +1010,6 @@ def TTS_H(path, mypath = None):
                                 signaltostation = signaltostation[7:12]
        
                                 
-                            
-                            
-                            
                             ### Input EJ28 Signal Turnback before the first station to avoid mismatched plaform errors
                             if station == stations[0]:
                                 if (tn,wkdk) in EDJ_orig_list:
@@ -1068,18 +1021,11 @@ def TTS_H(path, mypath = None):
                                     #time - 1 minute
                                 
                             
-                            
-                            
-       
-                            
                             ### Write the station
                             wl([nl,'triptp',l,sID,l,hhmm,l,zero,l,stop,l,f'{run}_{tn}'])
                             
                             
     
-                            
-    
-                            
                             
                             ### Input EJ28 Signal Turnback after the last station to avoid mismatched plaform errors
                             if station == stations[-1]:
@@ -1092,11 +1038,6 @@ def TTS_H(path, mypath = None):
                                     #time + 1 minutes
                    
                             
-                   
-                    
-                   
-                    
-                   
                     
                 o.close()
                 print(f'All trains on {weekdaykey_dict.get(weekdaykey)} have been processed')
@@ -1109,9 +1050,6 @@ def TTS_H(path, mypath = None):
                         shutil.copy(filename_txt, mypath) 
     
     
-    
-    
-    
         ### Run the create_textfile function for every day present in the rsx
         for day in d_list:
             # print('—————————————————————————————————————————————————————')
@@ -1119,13 +1057,6 @@ def TTS_H(path, mypath = None):
             create_textfile(day)
             
                 
-    
-        
-        
-        
-        
-        
-        
         
         if __name__ == "__main__":
             print(f'(runtime: {time.time()-start_time:.2f}seconds)')
