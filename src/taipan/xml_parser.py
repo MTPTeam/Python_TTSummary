@@ -4,8 +4,8 @@ import xml.etree.ElementTree as ET
 import re
 import typing
 
-from constants.trains import SORT_ORDER_UNIT, TRAIN_TYPE_MASK
-from constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK
+from taipan.constants.trains import SORT_ORDER_UNIT, TRAIN_TYPE_MASK
+from taipan.constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK
 
 def rep_to_qmu_tokenwise(text):
     # replace standalone REP tokens with QMU (preserve delimiters)

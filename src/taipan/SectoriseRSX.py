@@ -1,12 +1,12 @@
-from xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
-import gui
+from taipan.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
+from taipan import gui
 import sys 
 
-from MTP_constants import WEEKDAY_KEYS_MASTER, MON_THU_MASK, YARDS
-from utils import get_weekday_short
+from taipan.utils import get_weekday_short
 import os
 from collections import defaultdict
-from constants.locations import STATIONS_MASTER
+from taipan.constants.locations import STATIONS_MASTER, YARDS
+from taipan.constants.days import WEEKDAY_KEYS_MASTER, MON_THU_MASK
 
 from PyQt6.QtWidgets import QApplication
 

@@ -1,6 +1,6 @@
 # helper functions live here 
 
-from constants.days import WEEKDAY_KEYS_MASTER
+from taipan.constants.days import WEEKDAY_KEYS_MASTER
 
 def _time_key(t):
     """
@@ -48,8 +48,8 @@ def timetrim(timestring):
         pass
         
     
-    elif timestring[0] == '0':
-        timestring = timestring[1:-3]
+    #elif timestring[0] == '0':
+        #timestring = timestring[1:-3] #comm out for hastus 
     else: timestring = timestring[:-3]
     return timestring
 

@@ -14,9 +14,9 @@ import traceback
 import logging
 
 from taipan.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
-
-
-
+from taipan.gui import open_file_crossplatform, show_info, select_file
+from taipan.utils import _time_key, timetrim
+from PyQt6.QtWidgets import QApplication
 
 
 ### CreateFile toggles whether text files are generated on running the script
@@ -33,9 +33,6 @@ CreateFile = True
 
 hastuscopyfile = True if os.path.basename(__file__) == 'HASTUS_Converter - Copy.py' else False
 # --------------------------------------------------------------------------------------------------- #
-
-
-
 
 
 ### Dictionary used to title reports for each daycode
@@ -92,26 +89,6 @@ HASTUS_stableconverter = {
     }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def TTS_H(path, mypath = None):
     
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
@@ -158,9 +135,6 @@ def TTS_H(path, mypath = None):
             time.sleep(15)
             sys.exit()
 
-        
-        
-        
         
         def format_run(run):
             if '-' in run:
@@ -227,9 +201,6 @@ def TTS_H(path, mypath = None):
             loID       = oID + otrack
             ldID       = dID + dtrack
 
-
-
-            
             
             if WeekdayKey not in d_list:
                 d_list.append(WeekdayKey)
@@ -624,25 +595,8 @@ def TTS_H(path, mypath = None):
             }
         
         
-        
-        
-        
-        
         def create_textfile(weekdaykey):
             """ Creates a HASTUS Export textfile for a single day of operations """
-            
-            def timetrim(timestring):
-                """ Format converter from hh:mm:ss to [h]:mm """
-                
-                if type(timestring) == list:
-                    timestring = timestring[0]
-                    
-                if timestring is None or timestring.isalpha() or ':' not in timestring:
-                    pass
-                # elif timestring[0] == '0':
-                #     timestring = timestring[1:-3]
-                else: timestring = timestring[:-3]
-                return timestring
             
             def stoptime_info(n): 
                 """ Returns the arrival and departure times for the nth stop in a trip """
@@ -662,7 +616,6 @@ def TTS_H(path, mypath = None):
                 departure = timetrim(departure)
     
                 return (arrival,departure)
-            
             
             
             
@@ -724,7 +677,7 @@ def TTS_H(path, mypath = None):
                         lsID = HASTUS_stableconverter.get(sID)
                     else:
                         if sID == 'RS':
-                            track = '0' + track
+                            track = track.zfill(2)   # RS10 fix
     
                         firstinrun = runs.get((run,WeekdayKey))[0]
                         lastinrun  = runs.get((run,WeekdayKey))[-1]
@@ -733,11 +686,13 @@ def TTS_H(path, mypath = None):
                             lsID = 'MNY_S'
                         elif tn == lastinrun and sID == 'MNY' and n == len(entries) - 1:
                             lsID = 'MNY_S'
-                            
+
+                        # Restored CPM_S to CPM1/2 here    
                         if tn == firstinrun and sID == 'CPM' and n == 0:
-                            lsID = 'CPM_S'
+                            lsID = sID + track          
                         elif tn == lastinrun and sID == 'CPM' and n == len(entries) - 1:
-                            lsID = 'CPM_S'
+                            lsID = sID + track          
+
                             
                         elif tn == firstinrun and sID == 'CEN' and n == 0:
                             lsID = 'CAB_S'
@@ -941,8 +896,6 @@ def TTS_H(path, mypath = None):
     # =============================================================================
                     
                 
-                
-                
     
                 tripinfo = [tn,empt,drct,stations]
                 
@@ -992,9 +945,6 @@ def TTS_H(path, mypath = None):
                             hhmm = station[1]
                             zero = station[2]
                             stop = station[3]
-                            
-                            
-                            
                             
                             hhmmss = hhmm + ':00'
                             stationtosignal = str(pd.Timedelta(hhmmss) + pd.Timedelta(seconds=60))
@@ -1062,8 +1012,6 @@ def TTS_H(path, mypath = None):
             print(f'(runtime: {time.time()-start_time:.2f}seconds)')
     
     
-    
-    
         if hastuscopyfile:
             print('\n\nProcess done, files created and copies made')
             print('\n\nCopying rsx to folder...',end='\r')
@@ -1074,14 +1022,16 @@ def TTS_H(path, mypath = None):
         
         
         if ProcessDoneMessagebox and __name__ == "__main__":
-            from tkinter import messagebox
-            messagebox.showinfo('HASTUS Converter','Process Done')
+            show_info('HASTUS Converter', 'Process Done')
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    #Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+    app = QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    
     TTS_H(path)
