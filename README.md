@@ -9,6 +9,13 @@
 - `xml_parser.py`
 - `xml_processor.py`
 - `utils.py`
+- `tests/`
+
+
+## Testing
+ - Run all tests; copy into cmd
+
+    `.\venv\Scripts\python.exe -m pytest`
 
 
 ## Installation Instructions 

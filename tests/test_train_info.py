@@ -1,54 +1,52 @@
-import sys
-import os
 import pytest
-
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, src_path)
-
-from xml_parser import TrainInfo
 import xml.etree.ElementTree as ET
+import os
+import sys 
 
+from taipan.xml_parser import TrainInfo
 
-TRAIN_XML_SNIPPET = """
-<train number="2SB6" lineID="PSG-_____S_ ~ 174">
-    <header>
-        <service>
-            <opdaySection weekdayKey="2" holidayKey="0"/>
-        </service>
-    </header>
-    <timetableentries>
-        <entry stationID="ETF" departure="24:46:11" trainTypeId="Empty_6-EMU" />
-        <entry stationID="EDJ" departure="24:52:11" trainTypeId="Empty_6-EMU" />
-        <entry stationID="BHI" departure="24:55:12" trainTypeId="Empty_6-EMU" />
-    </timetableentries>
-</train>
-"""
+import xml.etree.ElementTree as ET
+from taipan.xml_parser import TrainInfo, load_rsx_with_tree
 
+def test_traininfo_full_rsx_parse(tmp_path):
+    # Does a full parse of test_data/traininfo_init.rsx file (dummy file which is structurally equivalent to the rsx files) and checks whether parsing functions return the correctly formated variables when TrainInfo object is initialised.
 
-@pytest.fixture
-def train_obj():
-    # Convert the snippet into an Element
-    element = ET.fromstring(TRAIN_XML_SNIPPET)
-    return TrainInfo(element)
+    rsx_path = os.path.join(os.path.dirname(__file__),"test_data","traininfo_init.rsx",)
+    tree, root, filename = load_rsx_with_tree(rsx_path)
+    train_elem = root.find("train")
+    assert train_elem is not None, "No <train> element found in RSX"
+    t = TrainInfo(train_elem)
 
-def test_basic_attributes(train_obj):
-    assert train_obj.number == "2SB6"
-    assert train_obj.weekday == "2"
-    assert train_obj.run == "174"
+    # Basic metadata
+    assert t.number == "AS14"
+    assert t.lineID == "PSG-_____S_ ~ 174"
+    assert t.run == "174"
+    assert t.weekday == "4"
 
-def test_stations_and_times(train_obj):
-    # Testing that it finds the first and last entry correctly
-    assert train_obj.origin['stationID'] == "ETF"
-    assert train_obj.destin['stationID'] == "BHI"
-    assert train_obj.stations == ["ETF", "EDJ", "BHI"]
+    # pattern/sector 
+    assert t.pattern == "/Fr/Sector 3/ETF-PKR/To"
+    assert t.sector == 3
 
-def test_train_types(train_obj):
-    # Testing normalisation logic
-    assert train_obj.unit == "EMU"
-    assert train_obj.cars == 6
-    #assert train_obj.train_type_revenue == "6-EMU"
+    # entries
+    assert t.stations == ["ETF", "EDJ", "PKR"]
+    assert t.origin["stationID"] == "ETF"
+    assert t.destin["stationID"] == "PKR"
 
+    # times 
+    assert t.odep == "04:05:45"
+    assert t.ddep == "04:32:53"
 
-if __name__ == "__main__":
-    # Disable BOTH dash and hypothesis to be safe from internal errors - both libraries are conflicting with pytest 
-    pytest.main([__file__, "-p", "no:dash", "-p", "no:hypothesis"])
+    # traintypes
+    assert t.train_type_raw == "Empty_6-IMU100"
+    assert t.is_empty_train is True
+    assert t.unit == "IMU100"
+    assert t.cars == 6
+
+    # connection 
+    assert t.connection is not None
+
+    # aliases 
+    assert t.start_id == "ETF"
+    assert t.end_id == "PKR"
+    assert t.start_time == "04:05:45"
+    assert t.end_time == "04:32:53"

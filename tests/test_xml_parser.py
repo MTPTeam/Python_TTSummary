@@ -2,11 +2,9 @@ import sys
 import os
 
 # this needs to come before EVERY test file!!
-src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
-sys.path.insert(0, src_path)
 
 import pytest
-from xml_parser import normalise_train_type 
+from taipan.xml_parser import normalise_train_type 
 
 @pytest.mark.parametrize("raw, expected", [
     ("Empty_6-NGR",             "Empty_6-NGR"),
@@ -26,9 +24,16 @@ from xml_parser import normalise_train_type
     ("Empty_6-EMU",             "Empty_6-EMU"),
     ("6-EMU",                   "6-EMU"),
 ])
+
 def test_normalise_train_type(raw, expected):
     assert normalise_train_type(raw) == expected
 
-if __name__ == "__main__":
+
+
+
+"""if __name__ == "__main__":
     # Disable BOTH dash and hypothesis to be safe from internal errors - both libraries are conflicting with pytest 
     pytest.main([__file__, "-p", "no:dash", "-p", "no:hypothesis"])
+
+"""
+
