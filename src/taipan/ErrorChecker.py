@@ -523,8 +523,6 @@ try:
     
     
     
-    
-    
     nolineid = []
     for train in root.iter('train'):
         tn         = train.attrib['number']
@@ -543,7 +541,14 @@ try:
             print(f'Train {x[0]} on {weekdaykey_dict.get(x[1])} has no LineID attribute')
         sys.exit()
     
-    
+
+    lineid_lookup = {}
+    for train in root.iter('train'):
+        tn = train.attrib['number']
+        wk = train[0][0][0].attrib['weekdayKey']
+        lineid_lookup[(tn, wk)] = train.attrib.get('lineID', '')
+
+        
     
     
     test_unittype = []
@@ -586,6 +591,8 @@ try:
     stablingissue       = []
     shortturnbacks      = []
     missingconnects     = []
+    lineid_mismatches   = []
+    lineid_missing      = []
 
     
 
@@ -632,14 +639,24 @@ try:
         
         traintype = origin['trainTypeId']
         cars = int(re.findall(r'\d+', traintype)[0])
-        
-        
+
         
         
         sIDs = {x.attrib['stationID'] for x in train.iter('entry')}
-        
-        
-        
+
+
+        for conn in train.iter('connection'):
+            conn_tn = conn.attrib.get('trainNumber')
+            if not conn_tn:
+                continue
+            conn_lineid = lineid_lookup.get((conn_tn, WeekdayKey))
+            parent_lineid = train.attrib.get('lineID', '')
+            if conn_lineid is None:
+                lineid_missing.append(f'Train {tn} on {day} connects to {conn_tn} which is not found on the same day')
+            elif conn_lineid != parent_lineid:
+                lineid_mismatches.append(f'Train {tn} on {day} (lineID {parent_lineid}) connects to {conn_tn} (lineID {conn_lineid})')
+
+
         
         traintypeset = set([x.attrib['trainTypeId'] for x in train.iter('entry')])
         if len(traintypeset) > 1:
@@ -739,11 +756,6 @@ try:
             
             
             
-            
-        
-            
-    
-            
         if not run_dict.get((run,WeekdayKey)):
             run_dict[(run,WeekdayKey)] = [tn]
             runs_oIDdID_dict[(run,WeekdayKey)] = [(loID,ldID)]
@@ -829,20 +841,6 @@ try:
                     mismatchedplatforms.append(f'Run {run} on {day} has mismatched platforms between {train1} and {train2} - {pltfm1} then {pltfm2}')
 
        
-
-
-       
-        
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     filename_txt = f'Errors-{filename}.txt'
     o = open(filename_txt, 'w')
@@ -924,15 +922,19 @@ try:
             printwl(f'Train with trainnumber {tn} already running on {weekdaykey_dict.get(day)}')
             # wl([f'Train with trainnumber {tn} already running on {weekdaykey_dict.get(day)}',nl])
     
-    
-    
+    if lineid_mismatches:
+        printwl('\n\nConnected trains with mismatched lineIDs')
+        for x in lineid_mismatches:
+            printwl(x)
+
+    if lineid_missing:
+        printwl('\n\nConnections referencing a train not found on the same day')
+        for x in lineid_missing:
+            printwl(x)
+
     
     
     o.close
-    
-    
-    
-    
     
     
     
