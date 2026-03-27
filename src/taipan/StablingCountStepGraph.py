@@ -6,13 +6,13 @@ import xlsxwriter
 import os
 from collections import defaultdict
 
-import gui
-from xml_parser import parse_rsx, normalise_days, sort_days, sort_units
-from xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.xml_parser import parse_rsx, normalise_days, sort_days, sort_units
+from taipan.xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
 
-from constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
-from constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
-from constants.styles import FAMILY_BG, _UNIT_COLOURS, _TOTAL_COLOUR, _CAPACITY_COLOUR, _GRID_COLOUR, _AXIS_COLOUR
+from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
+from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
+from taipan.constants.styles import FAMILY_BG, _UNIT_COLOURS, _TOTAL_COLOUR, _CAPACITY_COLOUR, _GRID_COLOUR, _AXIS_COLOUR
 
 from PyQt6.QtWidgets import QApplication
 
@@ -328,10 +328,10 @@ def TTS_Graph(path):
 
     workbook.close()
     print(f'Saved: {xlsx_path}')
-    gui.open_file_crossplatform(xlsx_path)
+    open_file_crossplatform(xlsx_path)
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    path = gui.select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
+    path = select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
     TTS_Graph(path)

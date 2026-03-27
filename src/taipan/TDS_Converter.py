@@ -16,10 +16,6 @@ import logging
 ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 
-
-
-
-
 weekdaykey_dict  = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 jp_daycode_dict  = {'120':'032', '4':'064', '2':'128', '1':'002'}
 tds_daycode_dict = {'120':'060', '4':'064', '2':'128', '1':'002'}
@@ -39,25 +35,6 @@ sID_stableconverter = {
     'RSF':'RS',
     'BNT':'BNH'
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def TTS_TDS(path, mypath = None):
@@ -153,19 +130,6 @@ def TTS_TDS(path, mypath = None):
         
         def writesheet(day,name,daycodedict):
             if set(day).intersection(d_list):
-            
-            
-                def timetrim(timestring):
-                    if type(timestring) == list:
-                        timestring = timestring[0]
-                    
-                    if timestring is None or timestring.isalpha() or ':' not in timestring:
-                        pass
-                    elif timestring[0] == '0':
-                        timestring = timestring[1:-3]
-                    else: timestring = timestring[:-3]
-                    return timestring
-                
                 def stoptime_info(entry_index, condition, dwelltime): 
                     x = entry_index
                     departure = entries[x].attrib['departure'] 
@@ -352,17 +316,13 @@ def TTS_TDS(path, mypath = None):
                         wl(['\n'])
                 
                     
-            
-                
-                
                 
                 o.close()
                 if __name__ != "__main__":
                     if copyfile:
                         shutil.copy(filename_txt, mypath) 
                     
-                    
-    
+                
         writesheet(['120'],             'JourneyPlanner',   jp_daycode_dict)
         writesheet(['4'],               'JourneyPlanner',   jp_daycode_dict)
         writesheet(['2'],               'JourneyPlanner',   jp_daycode_dict)
@@ -370,17 +330,11 @@ def TTS_TDS(path, mypath = None):
         writesheet(['120','4','2','1'], 'TDSExtract',       tds_daycode_dict)
         
 
-            
-        
-        
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             from tkinter import messagebox
             messagebox.showinfo('TDS Converter','Process Done')
 
-            
-            
-            
     
     except Exception as e:
         logging.error(traceback.format_exc())

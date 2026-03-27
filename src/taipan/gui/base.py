@@ -1,8 +1,13 @@
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea
+
+from PyQt6.QtGui import QStandardItemModel, QStandardItem, QFont
+from PyQt6.QtCore import Qt
+from taipan.constants.days import ID_TO_SHORT
+
 import sys
 import os
 import platform
-
+import math 
 
 def ensure_app() -> QApplication:
     app = QApplication.instance()
@@ -53,3 +58,4 @@ def open_file_crossplatform(path: str) -> None:
             os.spawnlp(os.P_NOWAIT, "xdg-open", "xdg-open", path)
     except Exception as e:
         print(f"Failed to open file '{path}': {e}")
+

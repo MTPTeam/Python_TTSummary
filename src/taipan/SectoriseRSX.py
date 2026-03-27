@@ -1,5 +1,5 @@
 from taipan.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
-from taipan import gui
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
 import sys 
 
 from taipan.utils import get_weekday_short
@@ -134,7 +134,7 @@ def apply_pattern(train, pattern):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
 
     tree, root, filename = load_rsx_with_tree(path)
         
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     trains = extract_trains(root)
 
     if check_CRR(trains):
-        gui.show_info('ERROR', 'RS present but RTL missing (Please check for CRR)')
+        show_info('ERROR', 'RS present but RTL missing (Please check for CRR)')
         sys.exit("CRITICAL ERROR: RS present but RTL missing (no CRR)")
 
     # for debugging / summary stats of matched and unmatched 

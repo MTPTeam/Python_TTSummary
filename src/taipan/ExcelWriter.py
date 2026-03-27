@@ -2,12 +2,9 @@
 import xlsxwriter
 from xlsxwriter.workbook import Workbook
 from xlsxwriter.worksheet import Worksheet
+from taipan.constants.days import WEEKDAY_KEYS_MASTER
 
-
-
-from constants.days import WEEKDAY_KEYS_MASTER
-
-from constants.styles import FAMILY_BG, ALERT, GREY, UNBALANCED_YELLOW, WHITE, STYLE_VARIANTS, GENERIC_STYLES, BORDER_STYLES, SEMANTIC_STYLES
+from taipan.constants.styles import FAMILY_BG, ALERT, GREY, UNBALANCED_YELLOW, WHITE, STYLE_VARIANTS, GENERIC_STYLES, BORDER_STYLES, SEMANTIC_STYLES
 
 
 def writecell_unbalanced(Summary, r,c,value,unbalancedfont,balancedfont):

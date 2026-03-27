@@ -8,14 +8,14 @@ import numpy as np
 from datetime import datetime
 import xml.etree.ElementTree as ET
 
-import gui 
-from utils import timetrim, csl
-from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
-from xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount, endofdayunitcount, overnightstabling, interpeakstabling
-from ExcelWriter import build_excel_formats, summary_writerow, summary_writetotals, summary_totalheaders
-from constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
-from constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
-from constants.styles import STEPS_COL
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.utils import timetrim, csl
+from taipan.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
+from taipan.xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount, endofdayunitcount, overnightstabling, interpeakstabling
+from taipan.ExcelWriter import build_excel_formats, summary_writerow, summary_writetotals, summary_totalheaders
+from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
+from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
+from taipan.constants.styles import STEPS_COL
 
 import traceback
 import logging
@@ -393,13 +393,13 @@ def TTS_SC(path, mypath = None):
                 shutil.copy(filename_xlsx, mypath) 
             else:
                 if OpenWorkbook:
-                    gui.open_file_crossplatform(filename_xlsx)
+                    open_file_crossplatform(filename_xlsx)
                     print('\nOpening workbook')
 
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            gui.show_info('Stabling Count Report','Process Done')
+            show_info('Stabling Count Report','Process Done')
             
     
     except Exception as e:
@@ -411,5 +411,5 @@ if __name__ == "__main__":
     
     app = QApplication(sys.argv)
 
-    path = gui.select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_SC(path)

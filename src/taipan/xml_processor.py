@@ -1,12 +1,12 @@
 from typing import List, Dict
 
-from constants.trains import SORT_ORDER_UNIT
-from constants.days import WEEKDAY_KEYS_MASTER, ID_TO_LONG
+from taipan.constants.trains import SORT_ORDER_UNIT
+from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_LONG
 
-from utils import timetrim
-from xml_parser import resolve_DoO
-from utils import csl
-from utils import _time_key
+from taipan.utils import timetrim
+from taipan.xml_parser import resolve_DoO
+from taipan.utils import csl
+from taipan.utils import _time_key
 import numpy as np
 
 def init_store(locations_dict, day_codes):

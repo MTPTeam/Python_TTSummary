@@ -6,22 +6,21 @@ import time
 import shutil
 from datetime import datetime
 import xml.etree.ElementTree as ET
-import gui
 import time
 
-
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
 import traceback
 import logging
 
-from constants.locations import YARDS, NON_STABLE_LOCATIONS
-from constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, ID_TO_SHORT
-from constants.trains import SORT_ORDER_UNIT
-from constants.styles import STEPS_COL
+from taipan.constants.locations import YARDS, NON_STABLE_LOCATIONS
+from taipan.constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, ID_TO_SHORT
+from taipan.constants.trains import SORT_ORDER_UNIT
+from taipan.constants.styles import STEPS_COL
 
 
-from xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
-from xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
-from ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
+from taipan.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
+from taipan.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
+from taipan.ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
 
 
 from PyQt6.QtWidgets import QApplication
@@ -375,13 +374,13 @@ def TTS_SB(path, mypath = None):
                 shutil.copy(filename_xlsx, mypath) 
             else:
                 if OpenWorkbook:
-                    gui.open_file_crossplatform(filename_xlsx)
+                    open_file_crossplatform(filename_xlsx)
                     print('\nOpening workbook')
 
         
         if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            gui.show_info('Public Timetable', 'Process Done')
+            show_info('Public Timetable', 'Process Done')
     
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -393,7 +392,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     
     start_time = time.perf_counter()
-    path = gui.select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     end_time = time.perf_counter()
     # Calculate the elapsed time - checking if pyqt is consistently faster than tk (should be)
     elapsed_time = end_time - start_time
