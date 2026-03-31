@@ -213,6 +213,8 @@ if len(common) == 0:
    DEFAULT_DAY     = aa["Day"].iloc[0]
 else:
    DEFAULT_STATION, DEFAULT_DAY = common.index[0]
+   DEFAULT_STATION_NAME = rev_map.get(DEFAULT_STATION, DEFAULT_STATION)
+
 print(f"Default filter: {DEFAULT_STATION} / {DEFAULT_DAY}")
 
 print(f"Data ready: {len(aa)} rows")
@@ -292,8 +294,9 @@ try:
     )
 
     # Slicer fields as page fields (hidden filters, slicers will control these)
-    for field in ["Station", "Day"]:          # remove Timetable from here
+    for field in ["StationName", "Day"]:
         pt.PivotFields(field).Orientation = xlPageField
+
     # Row fields
     pt.PivotFields("Timetable").Orientation = xlRowField
     pt.PivotFields("Timetable").Position    = 1
@@ -378,31 +381,41 @@ try:
     chart.Axes(2).AxisTitle.Text = "1=Inbound  2=Outbound"
     chart.HasLegend              = True
     chart.Legend.Position        = xlLegendPositionBottom
+    chart.Legend.Font.Size = 12
     ax = chart.Axes(1)
     ax.MinimumScale = 0.0
     ax.MaximumScale = 27/24
     ax.MajorUnit    = 2/24
     ax.TickLabels.NumberFormat = "h:mm"
+    ax.AxisTitle.Font.Size = 12  # <--- Change Axis Title Size
+
+    ax.TickLabels.Font.Size = 11 # <--- Change Label/Ticks Size
     ay = chart.Axes(2)
     ay.MinimumScale = 0
     ay.MaximumScale = 3
     ay.MajorUnit    = 1
     ay.HasTitle     = False
+    #ay.AxisTitle.Font.Size = 12  
+
+    ay.TickLabels.Font.Size = 11 
     chart_total_w = CHART_W * 2 + 20
     quarter       = CHART_LEFT + chart_total_w * 0.25
     three_quarter = CHART_LEFT + chart_total_w * 0.75
     tb1 = ws_chart.Shapes.AddTextbox(1, quarter - 50, 15, 120, 20)
     tb1.TextFrame.Characters().Text        = "Last Departure"
-    tb1.TextFrame.Characters().Font.Size   = 9
+    tb1.TextFrame.Characters().Font.Size   = 14
     tb1.TextFrame.Characters().Font.Italic = True
     tb1.TextFrame.Characters().Font.Bold   = True
     tb1.Line.Visible = False
     tb2 = ws_chart.Shapes.AddTextbox(1, three_quarter - 50, 15, 120, 20)
     tb2.TextFrame.Characters().Text        = "First Departure"
-    tb2.TextFrame.Characters().Font.Size   = 9
+    tb2.TextFrame.Characters().Font.Size   = 14
     tb2.TextFrame.Characters().Font.Italic = True
     tb2.TextFrame.Characters().Font.Bold   = True
     tb2.Line.Visible = False
+
+
+    
 
     # ── 4. SLICERS (Station, Day, Timetable) ─────────────────────────────────
     for field, caption, top, left, width, height in SLICER_CONFIGS:
@@ -418,6 +431,7 @@ try:
             Height=height,
         )
         sl.Style = "SlicerStyleLight2"
+        
         print(f"{field}: Top={sl.Top}, Left={sl.Left}, Width={sl.Width}, Height={sl.Height}")
         sl.Top = top
         sl.Left = left
@@ -425,9 +439,9 @@ try:
         sl.Height = height
 
     # ── 5. SAVE ───────────────────────────────────────────────────────────────
-    sc_station = wb.SlicerCaches("SlicerCache_Station")
+    sc_station = wb.SlicerCaches("SlicerCache_StationName")
     for item in sc_station.SlicerItems:
-        item.Selected = (item.Name == DEFAULT_STATION)
+        item.Selected = (item.Name == DEFAULT_STATION_NAME)
     sc_day = wb.SlicerCaches("SlicerCache_Day")
     for item in sc_day.SlicerItems:
         item.Selected = (item.Name == DEFAULT_DAY)
