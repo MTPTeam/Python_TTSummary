@@ -175,3 +175,15 @@ STEPS_COL = [
             '3. Find where start and finish counts do not match over the day.',
             '4. Find where start and finish counts do not match over the week.'
             ]
+
+
+# for first last graph
+CHART_W, CHART_H = 500, 380
+SLICER_LEFT      = 10
+CHART_LEFT       = 170   # leave room for slicers on the left
+
+SLICER_CONFIGS = [
+    ("Station",   "Station",   10,  CHART_LEFT + CHART_W*2 + 40, 150, 200),
+    ("Day",       "Day",       220, CHART_LEFT + CHART_W*2 + 40, 150, 160),
+    ("Timetable", "Timetable", 390, CHART_LEFT + CHART_W*2 + 40, 150, 120),
+    ]
