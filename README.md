@@ -65,6 +65,12 @@
 
     ![package installer](/images/installing_packages.png "packages")
 
+- Install pywin32 (requires .whl file, cannot be downloaded manually)
+
+    `.\venv\Scripts\python.exe -m pip install C:\Users\<username>\Downloads\pywin32-311-cp312-cp312-win_amd64.whl`
+
+
+
 - Now tell Python this code is a 'package':
 
     `.\venv\Scripts\python.exe -m pip install -e .`

@@ -15,7 +15,7 @@ from tkinter.filedialog import askopenfilename
 
 import traceback
 import logging
-import MTP_constants
+
 
 
 ### CreateFile toggles whether text files are generated on running the script
@@ -40,6 +40,7 @@ pmpeak_srt = '15:30:00'
 pmpeak_end = '18:30:00'
 
 
+weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 xl_daycode_dict = {
         '64':'M______',
         '32':'_T_____',
@@ -100,6 +101,7 @@ non_revenue_stations = [
     'YLE',
     'ETS',
     'CAM',
+    'HRTB',
     'EXH',
     'NBY',
     'YNA',
@@ -174,6 +176,8 @@ non_revenue_stations = [
     'MES',    #Mayne East Yard
     'FRK',    #Fork Timing Point
     'TNYBCHJ',#Tennyson Branch Junction
+    'ORMS',
+    'ORMH',
     ]
 
 
@@ -275,7 +279,23 @@ def TTS_TM(path, mypath = None):
             
             traintype = [x.attrib['trainTypeId'] for x in train.iter('entry')][0]
             if 'Empty' not in traintype:
-                stoptypes = [x.attrib['type'] for x in train.iter('entry') if x.attrib['stationID'] not in non_revenue_stations]
+                train_stations = [x.attrib['stationID'] for x in train.iter('entry')]
+                early_non_revenue = list(non_revenue_stations)
+                if 'RTL' not in train_stations:
+                    if 'EXH' not in early_non_revenue:
+                        early_non_revenue.append('EXH')
+                else:
+                    early_non_revenue = [s for s in early_non_revenue if s != 'EXH']
+
+                
+                if tn == 'DB01':
+                    print('early_non_revenue contains EXH:', 'EXH' in early_non_revenue)
+                    print([(x.attrib['stationID'], x.attrib['type']) for x in train.iter('entry') if x.attrib['stationID'] not in early_non_revenue][:5])
+
+
+                
+                stoptypes = [x.attrib['type'] for x in train.iter('entry') if x.attrib['stationID'] not in early_non_revenue]
+
                 
                 origintype,destintype = stoptypes[0],stoptypes[-1]
                 if origintype == 'pass':
@@ -286,14 +306,14 @@ def TTS_TM(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
         
         if originpass or destinpass:
             print('           Error: First station pass or last station pass through a revenue location')
-            for tn,day in originpass: print(f' - First pass: {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
-            for tn,day in destinpass: print(f' - Last pass:  {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
+            for tn,day in originpass: print(f' - First pass: {tn} on {weekdaykey_dict.get(day)} - ')
+            for tn,day in destinpass: print(f' - Last pass:  {tn} on {weekdaykey_dict.get(day)} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -793,12 +813,26 @@ def TTS_TM(path, mypath = None):
             dID = destin.attrib['stationID']
             odep = origin.attrib['departure']
             ddep = destin.attrib['departure']
+
+
+            stations = [x.attrib['stationID'] for x in entries]
+            # per train non revenue list
+            train_non_revenue = list(non_revenue_stations)  # copy the global list
+            if 'RTL' not in stations:
+                if 'EXH' not in train_non_revenue:
+                    train_non_revenue.append('EXH')
+            else:
+                # RTL exists so EXH is revenue, remove it from the exclusion list
+                train_non_revenue = [s for s in train_non_revenue if s != 'EXH']
+
+
+
     
             
-            patternentries = [x for x in entries if x.attrib['stationID'] not in non_revenue_stations]
+            patternentries = [x for x in entries if x.attrib['stationID'] not in train_non_revenue]
             stoplist = [(x.attrib['stationID'],x.attrib['type']) for x in patternentries]
             # stations = [x.attrib['stationID'] for x in patternentries]
-            stations = [x.attrib['stationID'] for x in entries]
+            #stations = [x.attrib['stationID'] for x in entries]
             
             citystations = ['BHI','BRC','BNC','RS','NBY','EXH','CAM','MYJ','MNE','YNA','YN','RSWJ','ETF','EDJ','ETS']
             goesthrucity = set(citystations).intersection(set(sIDs))
@@ -1047,7 +1081,7 @@ def TTS_TM(path, mypath = None):
             formedby = run_list[run_idx-1] if run_idx > 0 else ''
             
             
-            test = [x.attrib['stationID'] not in non_revenue_stations for x in entries]
+            test = [x.attrib['stationID'] not in train_non_revenue for x in entries]
             test2 = [x.attrib['stationID'] for x in entries]
             stoptimes = [stoptime_info(x) for x in entries]
             
@@ -1066,7 +1100,7 @@ def TTS_TM(path, mypath = None):
                 platform = entry.attrib['trackID'][-1]
                 stoptype = entry.attrib['type'].capitalize()
                 stoptype = 'Empty_'+stoptype if Empty else stoptype
-                locationtype = 'Non-Revenue' if mnemonic in non_revenue_stations else 'Station' 
+                locationtype = 'Non-Revenue' if mnemonic in train_non_revenue else 'Station'
                 track = entry.attrib['trackID'][0]
                 
                 if goesthrucity:
