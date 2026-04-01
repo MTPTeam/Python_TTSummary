@@ -11,7 +11,7 @@ from taipan.constants.styles import SLICER_CONFIGS, CHART_H, CHART_LEFT, CHART_W
 
 # ── CONFIG — edit these ───────────────────────────────────────────────────────
 
-RSX_FILES = [r"C:/Users/r919150/Downloads/RSX files/3STT MRTP Refresh v1.3.rsx",r"C:/Users/r919150/Downloads/RSX files/Soft Open MRTP Refresh v2.3.rsx"]
+RSX_FILES = [r"C:/Users/r919150/Downloads/RSX files/3STT MRTP Refresh v1.3.rsx",r"C:/Users/r919150/Downloads/RSX files/Soft Open MRTP Refresh v2.3.rsx", r"C:/Users/r919150/Downloads/RSX files/Wave Medium v2.0.rsx", r"C:/Users/r919150/Downloads/RSX files/2025 TT Refresh M2505-A v2.1 BGR.rsx"]
 OUTPUT_PATH = os.path.abspath(os.path.join(os.path.expanduser("~"), "rsx_scatter.xlsx"))
 COLORS = [0xC44244, 0x47AD70, 0x31D7ED, 0xF5A623]  # add more if needed
 
@@ -184,13 +184,13 @@ if len(aa[aa.Direction == 'Unknown']) > 0:
 
 # Add numeric time columns for scatter (minutes since midnight)
 
-aa["First_t"] = aa["First"].apply(hhmm_to_excel_time)
+aa["First_t"] = aa["First"].apply(hhmm_to_excel_time) + 1
 aa["Last_t"]  = aa["Last"].apply(hhmm_to_excel_time)
 
 # Y value: just a row index — spreads dots vertically so they don't overlap
 
 aa = aa.reset_index(drop=True)
-aa["Y"] = aa["Direction"].map({"Inbound": 1, "Outbound": 2})
+aa["Y"] = aa["Direction"].map({"Inbound": 2, "Outbound": 1})
 
 
 # Final column order for the Excel table
@@ -204,7 +204,7 @@ LAST_AXIS_MIN = max(0, (last_min - 1/24))  # 1 hour before earliest, floored at 
 LAST_AXIS_MAX = last_max + 1/24             # 1 hour after latest
 
 
-timetable_names = [os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES]
+timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES])
 counts = aa.groupby(["Station", "Day"])["Timetable"].nunique()
 common = counts[counts == len(timetable_names)]
 if len(common) == 0:
@@ -320,6 +320,9 @@ try:
     # Hide subtotals on Timetable field
     pt.PivotFields("Timetable").Subtotals = (False,False,False,False,False,False,False,False,False,False,False,False)
 
+    for i in range(1, 5):
+        print(f"Col {i}: {ws_pivot.Cells(4, i).Value}")
+
 
     for i in range(1, 14):
         print(f"Row {i}: A={ws_pivot.Range(f'A{i}').Value} B={ws_pivot.Range(f'B{i}').Value} C={ws_pivot.Range(f'C{i}').Value} D={ws_pivot.Range(f'D{i}').Value}")
@@ -345,34 +348,43 @@ try:
     co    = ws_chart.ChartObjects().Add(Left=CHART_LEFT, Top=10, Width=CHART_W*2+20, Height=CHART_H)
     chart = co.Chart
     chart.ChartType = xlXYScatter
-    timetable_names = [os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES]
+    timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES])
     data_start = 5
 
+    print("timetable_names:", timetable_names)
+    print("data_start:", data_start)
+    for i in range(data_start, data_start + len(timetable_names) * 2 + 1):
+        print(f"Pivot row {i}: A={ws_pivot.Range(f'A{i}').Value} B={ws_pivot.Range(f'B{i}').Value} C={ws_pivot.Range(f'C{i}').Value} D={ws_pivot.Range(f'D{i}').Value}")
     for t_idx, name in enumerate(timetable_names):
         inbound_row  = data_start + t_idx * 2
         outbound_row = data_start + t_idx * 2 + 1
-        for series_col in ["C", "D"]:
+        for series_col in ["D", "C"]:
             s = chart.SeriesCollection().NewSeries()
-            s.Name    = f"={ws_pivot.Name}!$A${inbound_row}"
+            s.Name    = f"={ws_pivot.Name}!$A${inbound_row}"  # pulls name FROM pivot, not hardcoded
             s.XValues = ws_pivot.Range(f"{series_col}{inbound_row}:{series_col}{outbound_row}")
             s.Values  = ws_pivot.Range(f"E{inbound_row}:E{outbound_row}")
+            
+        for s_offset in range(2):
+            s = chart.SeriesCollection(t_idx * 2 + s_offset + 1)
+            print(f"Series {t_idx*2+s_offset+1} ({name}) XValues: {s.XValues}")
 
     
     for t_idx in range(len(timetable_names)):
         for s_offset in range(2):  # 0 = First (C), 1 = Last (D)
             s = chart.SeriesCollection(t_idx * 2 + s_offset + 1)
-            s.MarkerStyle           = 8
-            s.MarkerSize            = 14
-            s.MarkerForegroundColor = COLORS[t_idx % len(COLORS)]
-            s.MarkerBackgroundColor = COLORS[t_idx % len(COLORS)]
+            s.MarkerStyle = 8
+            s.MarkerSize  = 14
             s.Format.Fill.Solid()
             s.Format.Fill.Visible       = True
             s.Format.Fill.BackColor.RGB = COLORS[t_idx % len(COLORS)]
             s.Format.Fill.ForeColor.RGB = COLORS[t_idx % len(COLORS)]
             s.Format.Fill.Transparency  = 0.6
             s.Format.Line.Visible       = False
-        # Hide Last series (D col, every even series) from legend
+            idx = t_idx * 2 + s_offset + 1
+            print(f"Series {idx} ({timetable_names[t_idx]}) getting color: {hex(COLORS[t_idx % len(COLORS)])}")
 
+
+        # Hide Last series (D col, every even series) from legend
 
     for i in range(chart.Legend.LegendEntries().Count, 0, -1):
         if i % 2 == 0:
@@ -387,10 +399,13 @@ try:
     chart.Legend.Position        = xlLegendPositionBottom
     chart.Legend.Font.Size = 12
     ax = chart.Axes(1)
-    ax.MinimumScale = 0.0
-    ax.MaximumScale = 27/24
-    ax.MajorUnit    = 2/24
+    
+    ax.MinimumScale = 18/24
+    ax.MaximumScale = 1 + 6/24
+    ax.MajorUnit = 2/24
+    ax.MinorUnit = 1/24   # PREVENTS EXTENSION
     ax.TickLabels.NumberFormat = "h:mm"
+
     ax.AxisTitle.Font.Size = 12  # <--- Change Axis Title Size
 
     ax.TickLabels.Font.Size = 11 # <--- Change Label/Ticks Size
@@ -399,24 +414,39 @@ try:
     ay.MaximumScale = 3
     ay.MajorUnit    = 1
     ay.HasTitle     = False
-    #ay.AxisTitle.Font.Size = 12  
+    ay.TickLabels.NumberFormat = '""'
+    ay.TickLabels.Font.Size = 11
+    plot_top    = 7
+    plot_height = 314
+    y_unit      = plot_height / (ay.MaximumScale - ay.MinimumScale)
+    inbound_y  = co.Top + plot_top + plot_height - (1 - ay.MinimumScale) * y_unit - 10
+    outbound_y = co.Top + plot_top + plot_height - (2 - ay.MinimumScale) * y_unit - 10
+    for label, ypos in [("Outbound", inbound_y), ("Inbound", outbound_y)]:
+        tb = ws_chart.Shapes.AddTextbox(1, co.Left - 65, ypos, 63, 20)
+        tb.TextFrame.Characters().Text = label
+        tb.TextFrame.Characters().Font.Size = 11
+        tb.TextFrame.HorizontalAlignment = xlCenter
+        tb.Line.Visible = False
 
-    ay.TickLabels.Font.Size = 11 
+    pa = chart.PlotArea
+    print(f"PlotArea: Left={pa.Left}, Top={pa.Top}, Width={pa.Width}, Height={pa.Height}")
+    print(f"ChartObject: Left={co.Left}, Top={co.Top}, Width={co.Width}, Height={co.Height}")
+    print(f"Y axis min={ay.MinimumScale}, max={ay.MaximumScale}")
     chart_total_w = CHART_W * 2 + 20
     quarter       = CHART_LEFT + chart_total_w * 0.25
     three_quarter = CHART_LEFT + chart_total_w * 0.75
-    tb1 = ws_chart.Shapes.AddTextbox(1, quarter - 50, 15, 120, 20)
-    tb1.TextFrame.Characters().Text        = "Last Departure"
-    tb1.TextFrame.Characters().Font.Size   = 14
-    tb1.TextFrame.Characters().Font.Italic = True
+    tb1 = ws_chart.Shapes.AddTextbox(1, CHART_LEFT + chart_total_w * 0.5 - 60, 15, 160, 20)
+    tb1.TextFrame.Characters().Text        = "Last & First Departure"
+    tb1.TextFrame.Characters().Font.Size   = 16
+    #tb1.TextFrame.Characters().Font.Italic = True
     tb1.TextFrame.Characters().Font.Bold   = True
     tb1.Line.Visible = False
-    tb2 = ws_chart.Shapes.AddTextbox(1, three_quarter - 50, 15, 120, 20)
-    tb2.TextFrame.Characters().Text        = "First Departure"
-    tb2.TextFrame.Characters().Font.Size   = 14
-    tb2.TextFrame.Characters().Font.Italic = True
-    tb2.TextFrame.Characters().Font.Bold   = True
-    tb2.Line.Visible = False
+    #tb2 = ws_chart.Shapes.AddTextbox(1, three_quarter - 50, 15, 120, 20)
+    #tb2.TextFrame.Characters().Text        = "First Departure"
+    #tb2.TextFrame.Characters().Font.Size   = 14
+    #tb2.TextFrame.Characters().Font.Italic = True
+    #tb2.TextFrame.Characters().Font.Bold   = True
+    #tb2.Line.Visible = False
 
 
     
