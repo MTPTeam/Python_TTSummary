@@ -32,8 +32,6 @@ nonrev_map = {
 CORE = {"RS", "RTL"}
 City = ['RS','BNC','BRC','BHI','EXH','ALB','RTL','WLG','BOG']
 
-
-
 def parseTimeDelta(s):
     if str(s) == 'nan':
         return np.nan
@@ -349,7 +347,7 @@ try:
     chart = co.Chart
     chart.ChartType = xlXYScatter
     timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES])
-    data_start = 5
+    data_start = 5 #HARDCODED, MUST BE CHANGED
 
     print("timetable_names:", timetable_names)
     print("data_start:", data_start)
@@ -449,7 +447,26 @@ try:
     #tb2.Line.Visible = False
 
 
-    
+    # ── TABLE BELOW CHART ─────────────────────────────────────────────────────
+    table_top = co.Top + co.Height + 20
+    pc2 = pc
+    table_row = 28  # safely below chart
+    pt2 = pc2.CreatePivotTable(TableDestination=ws_chart.Range(f"Z{table_row}"),TableName="RsxPivotTable")
+
+    pt2.PivotFields("Timetable").Orientation = xlRowField
+    pt2.PivotFields("Timetable").Position    = 1
+    pt2.PivotFields("Direction").Orientation = xlRowField
+    pt2.PivotFields("Direction").Position    = 2
+    pt2.AddDataField(pt2.PivotFields("First"), "First Departure", xlMax)
+    pt2.AddDataField(pt2.PivotFields("Last"),  "Last Departure",  xlMax)
+    pt2.RowAxisLayout(1)
+    pt2.ColumnGrand = False
+    pt2.RowGrand    = False
+    pt2.PivotFields("Timetable").Subtotals = (False,False,False,False,False,False,False,False,False,False,False,False)
+    pt2.PivotFields("Direction").PivotItems("Unknown").Visible = False
+    pt2.TableStyle2 = "TableStyleLight17"
+    pt2.DataFields("First Departure").NumberFormat = "hh:mm"
+    pt2.DataFields("Last Departure").NumberFormat  = "hh:mm"
 
     # ── 4. SLICERS (Station, Day, Timetable) ─────────────────────────────────
     for field, caption, top, left, width, height in SLICER_CONFIGS:
@@ -471,6 +488,13 @@ try:
         sl.Left = left
         sl.Width = width
         sl.Height = height
+
+    
+    for field in ["StationName", "Day", "Timetable"]:
+        sc = wb.SlicerCaches(f"SlicerCache_{field}")
+        sc.PivotTables.AddPivotTable(pt2)
+
+        
 
     # ── 5. SAVE ───────────────────────────────────────────────────────────────
     sc_station = wb.SlicerCaches("SlicerCache_StationName")
