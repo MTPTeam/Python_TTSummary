@@ -347,33 +347,37 @@ try:
     chart.ChartType = xlXYScatter
     timetable_names = [os.path.splitext(os.path.basename(p))[0] for p in RSX_FILES]
     data_start = 5
+
     for t_idx, name in enumerate(timetable_names):
         inbound_row  = data_start + t_idx * 2
         outbound_row = data_start + t_idx * 2 + 1
-        # Last departure first
-        s2 = chart.SeriesCollection().NewSeries()
-        s2.Name    = f"={ws_pivot.Name}!$A${inbound_row}"
-        s2.XValues = ws_pivot.Range(f"D{inbound_row}:D{outbound_row}")
-        s2.Values  = ws_pivot.Range(f"E{inbound_row}:E{outbound_row}")
-        s2.MarkerStyle           = 8
-        s2.MarkerSize            = 10
-        s2.MarkerForegroundColor = COLORS[t_idx % len(COLORS)]
-        s2.MarkerBackgroundColor = COLORS[t_idx % len(COLORS)]
-        s2.Format.Line.Visible   = False
-        # First departure second
-        s = chart.SeriesCollection().NewSeries()
-        s.Name    = f"={ws_pivot.Name}!$A${inbound_row}"
-        s.XValues = ws_pivot.Range(f"C{inbound_row}:C{outbound_row}")
-        s.Values  = ws_pivot.Range(f"E{inbound_row}:E{outbound_row}")
-        s.MarkerStyle           = 8
-        s.MarkerSize            = 10
-        s.MarkerForegroundColor = COLORS[t_idx % len(COLORS)]
-        s.MarkerBackgroundColor = COLORS[t_idx % len(COLORS)]
-        s.Format.Line.Visible   = False
+        for series_col in ["C", "D"]:
+            s = chart.SeriesCollection().NewSeries()
+            s.Name    = f"={ws_pivot.Name}!$A${inbound_row}"
+            s.XValues = ws_pivot.Range(f"{series_col}{inbound_row}:{series_col}{outbound_row}")
+            s.Values  = ws_pivot.Range(f"E{inbound_row}:E{outbound_row}")
 
-    # Hide First series from legend (odd indices: 2, 4, ...)
+    
     for t_idx in range(len(timetable_names)):
-        chart.SeriesCollection(t_idx * 2 + 2).Name = '=""'
+        for s_offset in range(2):  # 0 = First (C), 1 = Last (D)
+            s = chart.SeriesCollection(t_idx * 2 + s_offset + 1)
+            s.MarkerStyle           = 8
+            s.MarkerSize            = 14
+            s.MarkerForegroundColor = COLORS[t_idx % len(COLORS)]
+            s.MarkerBackgroundColor = COLORS[t_idx % len(COLORS)]
+            s.Format.Fill.Solid()
+            s.Format.Fill.Visible       = True
+            s.Format.Fill.BackColor.RGB = COLORS[t_idx % len(COLORS)]
+            s.Format.Fill.ForeColor.RGB = COLORS[t_idx % len(COLORS)]
+            s.Format.Fill.Transparency  = 0.6
+            s.Format.Line.Visible       = False
+        # Hide Last series (D col, every even series) from legend
+
+
+    for i in range(chart.Legend.LegendEntries().Count, 0, -1):
+        if i % 2 == 0:
+            chart.Legend.LegendEntries(i).Delete()
+ 
     chart.HasTitle  = False
     chart.Axes(1).HasTitle       = True
     chart.Axes(1).AxisTitle.Text = "Time of Day"
