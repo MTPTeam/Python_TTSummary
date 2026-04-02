@@ -24,6 +24,13 @@ def select_file(caption="Select a file", directory="", filter_str="All Files (*.
     return file_path or ""
 
 
+def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = "") -> list[str]:
+    ensure_app()
+
+    files, _ = QFileDialog.getOpenFileNames(None,caption,directory,"RSX Files (*.rsx);;All Files (*.*)")
+    return files or []
+
+
 def show_info(title: str, message: str) -> None:
     ensure_app()
     box = QMessageBox()

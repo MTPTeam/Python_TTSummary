@@ -8,12 +8,37 @@ from taipan.constants.locations import STATIONS_MASTER
 import pandas
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 from taipan.constants.styles import SLICER_CONFIGS, CHART_H, CHART_LEFT, CHART_W
+from taipan.gui.base import select_multi_rsx_files, show_error
+from taipan.utils import _time_key, timetrim
+from PyQt6.QtWidgets import QApplication
+import colorsys
 
-# ── CONFIG — edit these ───────────────────────────────────────────────────────
 
-RSX_FILES = [r"C:/Users/r919150/Downloads/RSX files/3STT MRTP Refresh v1.3.rsx",r"C:/Users/r919150/Downloads/RSX files/Soft Open MRTP Refresh v2.3.rsx", r"C:/Users/r919150/Downloads/RSX files/Wave Medium v2.0.rsx", r"C:/Users/r919150/Downloads/RSX files/2025 TT Refresh M2505-A v2.1 BGR.rsx"]
+# for testing - RSX_FILES = [r"C:/Users/r919150/Downloads/RSX files/3STT MRTP Refresh v1.3.rsx",r"C:/Users/r919150/Downloads/RSX files/Soft Open MRTP Refresh v2.3.rsx", r"C:/Users/r919150/Downloads/RSX files/Wave Medium v2.0.rsx", r"C:/Users/r919150/Downloads/RSX files/2025 TT Refresh M2505-A v2.1 BGR.rsx"]
+app = QApplication(sys.argv)
+RSX_FILES = select_multi_rsx_files()
+
+if not RSX_FILES:
+    show_error("No RSX files selected","You must select at least one RSX file to continue.")
+    sys.exit(1)
+
+
+def generate_colors(n, saturation=0.65, value=0.85):
+    colors = []
+    for i in range(n):
+        h = i / n
+        r, g, b = colorsys.hsv_to_rgb(h, saturation, value)
+        rgb = (int(r * 255) << 16) | (int(g * 255) << 8) | int(b * 255)
+        colors.append(rgb)
+    return colors
+
+
+    
 OUTPUT_PATH = os.path.abspath(os.path.join(os.path.expanduser("~"), "rsx_scatter.xlsx"))
-COLORS = [0xC44244, 0x47AD70, 0x31D7ED, 0xF5A623]  # add more if needed
+
+COLORS = generate_colors(len(RSX_FILES))
+
+#COLORS = [0xC44244, 0x47AD70, 0x31D7ED, 0xF5A623]  # add more if needed
 
 # Revenue and non revenue maps based on master
 rev_map = {
@@ -53,31 +78,26 @@ def minutes_to_time_format(chart_obj):
 def timedeltatohhmmss(s):
     s = str(s)
     if s == 'NaT' or s == '': return ''
-    
-    # Example: "1 days 00:07:35.000000" -> split into ["1", "days", "00:07:35.000000"]
     parts = s.split()
-    
-    if len(parts) == 3:  # Case: "1 days 02:30:00"
+
+    if len(parts) == 3:
         days = int(parts[0])
-        timestamp = parts[2].split('.')[0] # Get "02:30:00", ignore decimals
+        timestamp = parts[2].split('.')[0]
         h, m, s = map(int, timestamp.split(':'))
         total_hours = (days * 24) + h
-        return f"{total_hours:02}:{m:02}:{s:02}"
-        
-    elif len(parts) == 1: # Case: "02:30:00" (no days mentioned)
-        return parts[0].split('.')[0]
-        
-    return s # Fallback
+        result = f"{total_hours:02}:{m:02}:{s:02}"
+    elif len(parts) == 1:
+        result = parts[0].split('.')[0]
+    else:
+        result = s
+
+    return timetrim(result)  # strips :ss consistently
+ 
 
 
 def hhmm_to_excel_time(hhmm):
    if not hhmm or pd.isna(hhmm): return np.nan
-   try:
-       parts = str(hhmm).split(':')
-       minutes = int(parts[0]) * 60 + int(parts[1])
-       return minutes / 1440.0   # back to fraction
-   except:
-       return np.nan
+   return _time_key(hhmm) / 86400.0
 
 
 def td_to_hhmm(td):
@@ -103,6 +123,8 @@ def rsx_to_first_last(rsx_path):
         stationsinTrain    = [e.attrib['stationID']   for e in entryelems]
         trackIDinTrain     = [e.attrib['trackID']      for e in entryelems]
         departureinTrain   = [e.attrib['departure']    for e in entryelems]
+        
+ 
         stopTimesinTrain   = [int(e.attrib['stopTime']) if 'stopTime' in e.attrib else np.nan for e in entryelems]
 
         train_type  = list(set([e.attrib['trainTypeId'] for e in train.iter() if 'trainTypeId' in e.attrib]))
@@ -135,6 +157,9 @@ def rsx_to_first_last(rsx_path):
     df['ArriveTimedelta'] = df.Depart.apply(parseTimeDelta) - pd.to_timedelta(df.Dwell, unit='s')
     df['Arrive'] = df.ArriveTimedelta.astype(str).apply(timedeltatohhmmss)
     df['Arrive'] = [x if x != '' else np.nan for x in df.Arrive]
+    
+    
+    
     df = df[['Train','Day','Block','TrainType','Station','TrackID','Arrive','Depart','Dwell']]
     df = df[~df.TrainType.str.contains('Empty')]
     if nonrev_map:
@@ -167,6 +192,7 @@ def rsx_to_first_last(rsx_path):
 
     aa["First"]     = aa["First"].apply(td_to_hhmm)
     aa["Last"]      = aa["Last"].apply(td_to_hhmm)
+    #print(aa[["First", "Last"]].head(10))
     aa["Timetable"] = os.path.splitext(os.path.basename(rsx_path))[0]
     return aa
 
@@ -195,6 +221,7 @@ aa["Y"] = aa["Direction"].map({"Inbound": 2, "Outbound": 1})
 cols = ["Timetable","Day","Station","StationName","Direction","First","First_t","Last","Last_t","Y"]
 
 aa = aa[cols]
+print(aa[["First", "Last"]].head(10))
 
 last_min = aa["Last_t"].min()
 last_max = aa["Last_t"].max()
@@ -254,6 +281,10 @@ try:
 
     
     data_with_header = [headers] + [[None if (isinstance(v, float) and np.isnan(v)) else v for v in row] for row in aa.itertuples(index=False)]
+    first_col = headers.index("First") + 1
+    last_col  = headers.index("Last") + 1
+    ws_data.Columns(first_col).NumberFormat = "@"
+    ws_data.Columns(last_col).NumberFormat  = "@"
     ws_data.Range(f"A1:{end_col}{nrows}").Value = data_with_header
     nrows = len(aa) + 1  # +1 for header
 
@@ -266,6 +297,8 @@ try:
 
     for i, col in enumerate(headers, 1):
         ws_data.Columns(i).ColumnWidth = 16
+    
+
 
     ws_data.Range("A2").Select()
     excel.ActiveWindow.FreezePanes = True
@@ -457,8 +490,8 @@ try:
     pt2.PivotFields("Timetable").Position    = 1
     pt2.PivotFields("Direction").Orientation = xlRowField
     pt2.PivotFields("Direction").Position    = 2
-    pt2.AddDataField(pt2.PivotFields("First"), "First Departure", xlMax)
-    pt2.AddDataField(pt2.PivotFields("Last"),  "Last Departure",  xlMax)
+    pt2.AddDataField(pt2.PivotFields("First_t"), "First Departure", xlMax)
+    pt2.AddDataField(pt2.PivotFields("Last_t"),  "Last Departure",  xlMax)
     pt2.RowAxisLayout(1)
     pt2.ColumnGrand = False
     pt2.RowGrand    = False
@@ -467,6 +500,7 @@ try:
     pt2.TableStyle2 = "TableStyleLight17"
     pt2.DataFields("First Departure").NumberFormat = "hh:mm"
     pt2.DataFields("Last Departure").NumberFormat  = "hh:mm"
+    
 
     # ── 4. SLICERS (Station, Day, Timetable) ─────────────────────────────────
     for field, caption, top, left, width, height in SLICER_CONFIGS:
