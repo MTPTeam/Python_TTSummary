@@ -7,8 +7,8 @@ import os
 from collections import defaultdict
 
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
-from taipan.xml_parser import parse_rsx, normalise_days, sort_days, sort_units
-from taipan.xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
+from taipan.core.xml_parser import parse_rsx, normalise_days, sort_days, sort_units
+from taipan.core.xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
 
 from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER

@@ -18,9 +18,9 @@ from taipan.constants.trains import SORT_ORDER_UNIT
 from taipan.constants.styles import STEPS_COL
 
 
-from taipan.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
-from taipan.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
-from taipan.ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
+from taipan.core.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
+from taipan.core.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
+from taipan.core.ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
 
 
 from PyQt6.QtWidgets import QApplication

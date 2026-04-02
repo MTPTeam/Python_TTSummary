@@ -2,12 +2,11 @@ import re
 import os 
 import pytest
 
-import taipan.SectoriseRSX as sectorise
+import taipan.rsx.SectoriseRSX as sectorise
 
 @pytest.fixture(autouse=True)
 def mock_sector_data(monkeypatch):
     #Replace global station + yard lookups with small predictable data
-    
 
     monkeypatch.setattr(
         sectorise,

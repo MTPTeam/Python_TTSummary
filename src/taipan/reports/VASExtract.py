@@ -12,13 +12,14 @@ from tkinter.filedialog import askopenfilename
  
 import traceback
 import logging
-import MTP_constants
 
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
+
+from taipan.constants.days import ID_TO_SHORT
 
 
 
@@ -341,14 +342,14 @@ def TTS_VAS(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {ID_TO_SHORT[day]} with train number {tn} - ')
             time.sleep(15)
             sys.exit()  
         
         if originpass or destinpass:
             print('           Error: First station pass or last station pass through a revenue location')
-            for tn,day in originpass: print(f' - First pass: {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
-            for tn,day in destinpass: print(f' - Last pass:  {tn} on {MTP_constants.WEEKDAYKEY.get(day)} - ')
+            for tn,day in originpass: print(f' - First pass: {tn} on {ID_TO_SHORT[day]} - ')
+            for tn,day in destinpass: print(f' - Last pass:  {tn} on {ID_TO_SHORT[day]} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -947,7 +948,7 @@ def TTS_VAS(path, mypath = None):
                 duptrains = ', '.join([y[1] for y in x])
                 wl([day,l,duptrains,nl])
                 for y in x:
-                    y[0] = MTP_constants.WEEKDAYKEY.get(y[0])
+                    y[0] = ID_TO_SHORT[day]
                     y[3] = f'{y[3][0]} → {y[3][1]}'
                     
                     print(f'{y[0]}_{y[1]} ({y[2]}) - {y[3]}')

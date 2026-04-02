@@ -18,7 +18,8 @@ def parseTimeDelta(s):
         return timedelta(**dict(( (key, int(value))
                               for key, value in d.items() ))) 
     else:
-        return np.NaN
+        return np.nan
+
 
 def timedeltatohhmmss(timegiven):
     timegiven = str(timegiven)
@@ -41,6 +42,8 @@ def timedeltatohhmmss(timegiven):
         return '29' + timegiven[9:]
     else:
         sys.exit('Failed in timedeltahhmmss function - Check Script')
+
+
 
 def returnday(str2):
     if str2 == '120':
@@ -89,7 +92,7 @@ try:
         stationsinTrain = [elem.attrib['stationID'] for elem in entryelems]
         trackIDinTrain = [elem.attrib['trackID'] for elem in entryelems]
         departureinTrain = [elem.attrib['departure'] for elem in entryelems]
-        stopTimesinTrain = [int(elem.attrib['stopTime']) if 'stopTime' in elem.attrib else np.NaN for elem in entryelems]
+        stopTimesinTrain = [int(elem.attrib['stopTime']) if 'stopTime' in elem.attrib else np.nan for elem in entryelems]
         train_type = list(set([elem.attrib['trainTypeId'] for elem in train.iter() if 'trainTypeId' in elem.attrib ]))
         weekdayKey = list(set([elem.attrib['weekdayKey'] for elem in train.iter() if 'weekdayKey' in elem.attrib ]))
         
@@ -108,13 +111,13 @@ try:
     
     df = pd.DataFrame({
                        'Train' : train_nums, 'Day': daycodes,'TrainType': train_types,
-                       'Station' : stationsinTrains, 'TrackID': trackIDinTrains,'Arrive': np.NaN,
+                       'Station' : stationsinTrains, 'TrackID': trackIDinTrains,'Arrive': np.nan,
                        'Depart': departureinTrains, 'Dwell' : stopTimesinTrains
                        })
     
     df['ArriveTimedelta'] = df.Depart.apply(parseTimeDelta) - pd.to_timedelta(df.Dwell, unit = 's') 
     df['Arrive'] = df.ArriveTimedelta.astype(str).apply(timedeltatohhmmss)
-    df['Arrive'] = [ x if x != '' else np.NaN for x in df.Arrive ]
+    df['Arrive'] = [ x if x != '' else np.nan for x in df.Arrive ]
     df = df[['Train', 'Day', 'TrainType', 'Station','TrackID', 'Arrive', 'Depart', 'Dwell']]
     
     

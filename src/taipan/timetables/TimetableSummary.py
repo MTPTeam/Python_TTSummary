@@ -9,21 +9,20 @@ import logging
 import tkinter as tk
 from tkinter.filedialog import askopenfilename
 import xml.etree.ElementTree as ET
-import MTP_constants
-from TripCount                 import TTS_TC
-from PublicTimetable           import TTS_PTT
-from WorkingTimetable          import TTS_WTT
-from StablingCount             import TTS_SC
-from StablingBalance           import TTS_SB
-from RunInfo                   import TTS_RI
-from HASTUS_Converter          import TTS_H
-from TDS_Converter             import TTS_TDS
-from VASExtract                import TTS_VAS
-from TrainMovements            import TTS_TM
+from taipan.reports.TripCount                 import TTS_TC
+from taipan.timetables.PublicTimetable           import TTS_PTT
+from taipan.timetables.WorkingTimetable          import TTS_WTT
+from taipan.stabling.StablingCount             import TTS_SC
+from taipan.stabling.StablingBalance           import TTS_SB
+from taipan.reports.RunInfo                   import TTS_RI
+from taipan.converters.HASTUS_Converter          import TTS_H
+from taipan.converters.TDS_Converter             import TTS_TDS
+from taipan.reports.VASExtract                import TTS_VAS
+from taipan.reports.TrainMovements            import TTS_TM
 # from TrainMovements_fulloutput import TTS_TMFO
-from FirstLast                 import TTS_FL
-from SimpleFirstLast           import TTS_SFL
-
+from taipan.first_last.FirstLast                 import TTS_FL
+from taipan.first_last.SimpleFirstLast           import TTS_SFL
+from taipan.constants.days import ID_TO_SHORT
 ProcessDoneMessagebox = copyfile  = False
 ProcessDoneMessagebox = True
 
@@ -128,7 +127,7 @@ try:
             
     if tn_doubles:
         print('           Error: Duplicate train numbers')
-        for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
+        for tn,day in tn_doubles: print(f' - 2 trains runnnig on {ID_TO_SHORT[day]} with train number {tn} - ')
         time.sleep(15)
         sys.exit()  
     

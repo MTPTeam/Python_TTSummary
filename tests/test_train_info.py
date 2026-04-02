@@ -3,10 +3,10 @@ import xml.etree.ElementTree as ET
 import os
 import sys 
 
-from taipan.xml_parser import TrainInfo
+from taipan.core.xml_parser import TrainInfo
 
 import xml.etree.ElementTree as ET
-from taipan.xml_parser import TrainInfo, load_rsx_with_tree
+from taipan.core.xml_parser import TrainInfo, load_rsx_with_tree
 
 def test_traininfo_full_rsx_parse(tmp_path):
     # Does a full parse of test_data/traininfo_init.rsx file (dummy file which is structurally equivalent to the rsx files) and checks whether parsing functions return the correctly formated variables when TrainInfo object is initialised.

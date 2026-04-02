@@ -16,7 +16,7 @@ import webbrowser
 import threading
 import socket
 import ctypes
-import MTP_constants
+from taipan.constants.days import ID_TO_LONG, ID_TO_SHORT
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -408,7 +408,7 @@ def runtime_dashboard(path, mypath=None):
         if tn_doubles:
             print('Error: Duplicate train numbers')
             for tn, day in tn_doubles:
-                print(f' - 2 trains running on {weekdaykey_dict.get(day)} with train number {tn} - ')
+                print(f' - 2 trains running on {ID_TO_SHORT[day]} with train number {tn} - ')
             time.sleep(15)
             sys.exit()
         
@@ -424,7 +424,7 @@ def runtime_dashboard(path, mypath=None):
             for train in revtrains:
                 tn = train.attrib['number']
                 weekday_key = train[0][0][0].attrib['weekdayKey']
-                day = MTP_constants.WEEKDAY_KEYS_MASTER.get(weekday_key, {}).get('long', "Unknown")
+                day = ID_TO_LONG.get(weekday_key, "Unknown")
                 day2 = weekdaykey_dict2.get(weekday_key, "Unknown")
                 entries = list(train.iter('entry'))
                 line = entries[0].attrib.get('zuggattung', 'Unknown')
@@ -475,7 +475,7 @@ def runtime_dashboard(path, mypath=None):
             for train in revtrains:
                 tn = train.attrib['number']
                 weekday_key = train[0][0][0].attrib['weekdayKey']
-                day = MTP_constants.WEEKDAY_KEYS_MASTER.get(weekday_key, {}).get('long', "Unknown")
+                day = ID_TO_LONG.get(weekday_key, "Unknown")
                 day2 = weekdaykey_dict2.get(weekday_key, "Unknown")
                 entries = list(train.iter('entry'))
                 line = entries[0].attrib.get('zuggattung', 'Unknown')

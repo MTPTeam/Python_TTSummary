@@ -6,6 +6,7 @@ import time
 import shutil
 from datetime import datetime
 import xml.etree.ElementTree as ET
+from taipan.constants.days import ID_TO_SHORT
 
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
@@ -99,7 +100,7 @@ def TTS_RI(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {MTP_constants.WEEKDAYKEY.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {ID_TO_SHORT[day]} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
                 

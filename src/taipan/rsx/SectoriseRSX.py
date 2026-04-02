@@ -1,8 +1,8 @@
-from taipan.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
+from taipan.core.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 import sys 
 
-from taipan.utils import get_weekday_short
+from taipan.core.utils import get_weekday_short
 import os
 from collections import defaultdict
 from taipan.constants.locations import STATIONS_MASTER, YARDS

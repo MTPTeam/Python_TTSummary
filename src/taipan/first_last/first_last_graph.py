@@ -7,9 +7,9 @@ from taipan.constants.locations import STATIONS_MASTER
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 from taipan.constants.styles import SLICER_CONFIGS, CHART_H, CHART_LEFT, CHART_W, xlSrcRange, xlCenter, xlLegendPositionBottom, xlRowField, xlPageField, xlAverage, xlXYScatter, xlOpenXMLWorkbook, xlSheetVeryHidden, xlMax
 from taipan.gui.base import select_multi_rsx_files, show_error, show_info
-from taipan.utils import _time_key, timetrim, parseTimeDelta, minutes_to_time_format, timedeltatohhmmss, hhmm_to_excel_time, td_to_hhmm, generate_colors
+from taipan.core.utils import _time_key, timetrim, parseTimeDelta, minutes_to_time_format, timedeltatohhmmss, hhmm_to_excel_time, td_to_hhmm, generate_colors
 from PyQt6.QtWidgets import QApplication
-from taipan.xml_parser import TrainInfo, load_rsx, extract_trains
+from taipan.core.xml_parser import TrainInfo, load_rsx, extract_trains
 
 
 OUTPUT_PATH = os.path.abspath(os.path.join(os.path.expanduser("~"), "FirstLastGraph.xlsx"))

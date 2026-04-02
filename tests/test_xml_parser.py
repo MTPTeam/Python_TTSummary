@@ -4,7 +4,7 @@ import os
 # this needs to come before EVERY test file!!
 
 import pytest
-from taipan.xml_parser import normalise_train_type 
+from taipan.core.xml_parser import normalise_train_type 
 
 @pytest.mark.parametrize("raw, expected", [
     ("Empty_6-NGR",             "Empty_6-NGR"),
@@ -29,11 +29,4 @@ def test_normalise_train_type(raw, expected):
     assert normalise_train_type(raw) == expected
 
 
-
-
-"""if __name__ == "__main__":
-    # Disable BOTH dash and hypothesis to be safe from internal errors - both libraries are conflicting with pytest 
-    pytest.main([__file__, "-p", "no:dash", "-p", "no:hypothesis"])
-
-"""
 

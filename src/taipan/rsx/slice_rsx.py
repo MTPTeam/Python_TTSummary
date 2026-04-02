@@ -7,7 +7,7 @@ import sys
 
 from taipan.gui.base import select_file, show_info, show_error, open_file_crossplatform
 from taipan.gui.slicer import ask_slice_options, SliceDialog
-from taipan.xml_parser import parse_rsx
+from taipan.core.xml_parser import parse_rsx
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT
 
 from PyQt6.QtWidgets import QApplication

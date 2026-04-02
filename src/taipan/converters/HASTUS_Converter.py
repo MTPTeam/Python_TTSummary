@@ -13,9 +13,9 @@ from tkinter.filedialog import askopenfilename
 import traceback
 import logging
 
-from taipan.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
-from taipan.gui import open_file_crossplatform, show_info, select_file
-from taipan.utils import _time_key, timetrim
+from taipan.core.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.core.utils import _time_key, timetrim
 from PyQt6.QtWidgets import QApplication
 
 
@@ -688,10 +688,22 @@ def TTS_H(path, mypath = None):
                             lsID = 'MNY_S'
 
                         # Restored CPM_S to CPM1/2 here    
-                        if tn == firstinrun and sID == 'CPM' and n == 0:
-                            lsID = sID + track          
-                        elif tn == lastinrun and sID == 'CPM' and n == len(entries) - 1:
-                            lsID = sID + track          
+                        #if tn == firstinrun and sID == 'CPM' and n == 0:
+                            #lsID = sID + track          
+                        #elif tn == lastinrun and sID == 'CPM' and n == len(entries) - 1:
+                            #lsID = sID + track     
+
+                        
+                        # IF trains start/end at CPM then set to CPM_S or if they just pass through then set based on its trackID as usual
+                        ### THIS NEEDS TO BE FIXED !!!!! BASED ON GEO
+                        if sID == 'CPM' and n == 0 and oID == 'CPM':
+                            
+                            lsID = 'CPM_S'
+                            
+                        elif sID == 'CPM' and n == len(entries) - 1 and dID == 'CPM':
+                            lsID = 'CPM_S'
+                        
+         
 
                             
                         elif tn == firstinrun and sID == 'CEN' and n == 0:
