@@ -5,7 +5,8 @@ import re
 import typing
 
 from taipan.constants.trains import SORT_ORDER_UNIT, TRAIN_TYPE_MASK
-from taipan.constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK
+from taipan.constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK, ID_TO_SHORT
+import numpy as np
 
 def rep_to_qmu_tokenwise(text):
     # replace standalone REP tokens with QMU (preserve delimiters)
@@ -149,7 +150,14 @@ class TrainInfo:
 
         # run ID 
         self.run = self.lineID.split('~', 1)[1][1:] if '~' in self.lineID else self.lineID
-    
+
+        # data from entries 
+        self.departures  = [e.attrib['departure'] for e in self.entries]
+        self.stop_times  = [int(e.attrib['stopTime']) if 'stopTime' in e.attrib else np.nan for e in self.entries]
+        self.station_ids = [e.attrib['stationID'] for e in self.entries]
+        self.track_ids   = [e.attrib['trackID'] for e in self.entries]
+        self.daycode     = ID_TO_SHORT[self.weekday]
+            
     @staticmethod
     def threecar_scalar(unit: str, cars: int) -> int:
         # Return the scalar (unit delta) used in SC 

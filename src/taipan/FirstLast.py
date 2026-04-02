@@ -11,10 +11,9 @@ import xml.etree.ElementTree as ET
 
 from tkinter import Tk     # from tkinter import Tk for Python 3.x
 from tkinter.filedialog import askopenfilename
-
+from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 import traceback
 import logging
-from MTP_constants import WEEKDAY_KEYS_MASTER
 
 
 
@@ -402,10 +401,6 @@ def TTS_FL(path, mypath = None):
                                 file2_startdict[k][i][1] = arr
                                 
                                 
-                            
-                    
-                                        
-                                        
                     for k,v in file2_enddict.items():
                         if 'BNC' in stations and entry.attrib['stationID'] == k:
                             if stations.index('BNC') > n and dep > v[i][0]:
@@ -413,7 +408,6 @@ def TTS_FL(path, mypath = None):
                             
                             if stations.index('BNC') < n and arr > v[i][1]:
                                 file2_enddict[k][i][1] = arr
-                                
                                 
             
         def cleanup(dictionary):
@@ -478,7 +472,7 @@ def TTS_FL(path, mypath = None):
             
             # daylist = 2*['120','4','2','1']
             for c,day in enumerate(2*daylist,1):
-                DoO = MTP_constants.WEEKDAYKEY.get(day)
+                DoO = ID_TO_SHORT[day]
                 col = 3*c
                 
                 sheet.write(1,col,  filename1,bold)

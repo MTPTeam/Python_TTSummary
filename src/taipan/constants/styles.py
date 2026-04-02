@@ -204,3 +204,17 @@ SLICER_CONFIGS = [
      150,
      190),
 ]
+
+
+
+# ── EXCEL CONSTANTS ───────────────────────────────────────────────────────────
+xlSrcRange             = 1
+xlCenter               = -4108
+xlLegendPositionBottom = -4107
+xlRowField             = 1
+xlPageField            = 3
+xlAverage              = -4106
+xlXYScatter            = 74
+xlOpenXMLWorkbook      = 51
+xlSheetVeryHidden      = 2
+xlMax = -4136
