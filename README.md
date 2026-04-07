@@ -3,13 +3,61 @@
 
 ## Changes to codebase
 
-- `SectoriseRSX.py` 
-- `StablingCountStepGraph.py` 
-- `constants/`
-- `xml_parser.py`
-- `xml_processor.py`
-- `utils.py`
-- `tests/`
+### Description of Structural Changes
+
+TAIPAN has been restructured to improve modularity, maintainability, and separation of concerns. Each top level directory of `taipan` now contains a distinct functional responsibility. 
+
+- `constants/` - contains all constants (train stations, stabling locations, colours), shared by all scripts. 
+- `core/` - contains all common functionality (parsing RSX file, utility functions, processing excel and styling)
+- `converters/` - contains all format converters (HASTUS, ITOPS)
+- `first_last/` - contains all first last outputs and logic. 
+- `gui/` - contains everything relating to UI (standard functions for popup boxes, specialised gui for slicer etc)
+- `plans/` - NGR daily plan etc
+- `reports/` - QA reports, tripcount, error checker
+- `rsx/` - functions that modify, extract or return specific parts of an RSX file (sectoriseRSX, slicer).
+- `run_renamer/` - all run renaming functionality 
+- `stabling/` - all outputs relating to stabling (stabling count/balance).
+- `timetables/` - all outputs relating to timetabling (public and working timetable).
+
+
+### Description of New Functionality
+
+**`core/xml_parser.py`**
+- Contains foundational functionality relied upon across the entire TAIPAN codebase.
+- Defines the core RSX data model, where each RSX `<train>` element is parsed and represented as a structured Python object (`TrainInfo`).
+- The `TrainInfo` object acts as the canonical representation of a train, exposing normalised and commonly used attributes such as weekday, lineID, origin/destination, station sequence, train type, empty/revenue status, sector, and connection information. More variables can be added to  `__init__` if new information from the RSX is needed, however, if any current variables are updated the changes will propagate across the codebase. 
+
+**`constants/`**
+- Updating one of these constants, such as adding a new train station to `STATIONS_MASTER` in `locations.py`, will propagate the change over the entire codebase. 
+- If a station/yard or location is missing from an output, check `locations.py`.
+
+**`rsx/SectoriseRSX.py`** 
+- Sectorises an RSX file by assigning a sector based pattern using origin and destination station codes. Outputs a modified RSX file which can be loaded into Railsys with a folder structure separating trains by sector.
+- Only applicable to CRR files; execution will fail if `RS` is present without a corresponding `RTL`
+- There may be some trains which are unable to be sectorised. They will be marked as **Unassigned** where a sector cannot be reliably determined due to conflicting or ambiguous sector mapping and will be required to be manually resolved in Railsys. 
+
+**`first_last/first_last_graph.py`**
+- Produces an interactive Excel report of first and last revenue departures by station, day, and direction.
+- Processes one or more RSX files and determines inbound/outbound direction based on core station logic.
+- For comparing multiple timetables select them when inputting the RSX files. 
+- Outputs a workbook with charts, pivot tables, and slicers for filtering and comparison across timetables.
+
+**`stabling/StablingCountStepGraph.py` and all files in `stabling/`**
+- `REP` has been changed to `QMU` to align with newer rollingstock naming convention. However the input RSX can contain both `REP` and `QMU` and they will be processed the same - the output file will just change it to `QMU`.
+- The step graph provides minute level resolution for each yard, with yard capacity overlaid to identify periods where stabling exceeds capacity.
+- Produces an Excel workbook containing one worksheet per yard with time‑series stabling graphs.
+- Overlays total stabled units, unit type breakdowns, and yard capacity to identify periods where capacity is exceeded.
+- Intended as a visual validation and analysis tool for stabling demand across the operating day.
+
+**`gui/`**
+- All user interface code been changed from Tkinter to PyQT5.
+- `base` contains all the standard functionality (e.g error boxes, warning boxes, inputting RSX files). Any other files in this directory contain specialised GUI functionality for specific functions. This structure should be maintained - if you expect to use a GUI across multiple files (in other words, if it's generic), it should be in base, or if it is specialised to one function, add a new file. 
+
+**`tests/`** 
+- A test suite containing unit tests for new and old functionality. 
+- When new functionality is added, this test suite should be run to ensure no breaking changes were introduced. 
+- To add new tests, add a new file in the folder with unit tests, and it will automatically be discovered by pytest (see Testing). 
+- So far contains tests for `xml_parser.py`, `TrainInfo`, `SectoriseRSX.py`, needs extending. 
 
 
 ## Testing
