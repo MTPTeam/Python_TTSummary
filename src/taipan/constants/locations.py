@@ -287,28 +287,42 @@ def station_lookup(code):
 
 
 #### STABLING YARDS DICTIONARY
+
 YARDS = {
-    'Wulkuraka':    {'capacity': 11,  'yards': ['WFE', 'WFW', 'FEE'], 'sector': 2,},
-    'Ipswich':      {'capacity': 7,   'yards': ['IPSS', 'IPS'], 'sector': 2 },
-    'Redbank':      {'capacity': 6,   'yards': ['RDKS'], 'sector': 2},
-    'Robina':       {'capacity': 11,  'yards': ['ROBS'], 'sector': 1},
-    'Manly':        {'capacity': 3,   'yards': ['MNY'], 'sector': 3},
-    'Beenleigh':    {'capacity': 8,   'yards': ['BNHS'], 'sector': 1 },
-    'Mayne West':   {'capacity': '/',  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI'],},
-    'Mayne North':  {'capacity': '/',  'yards': ['YN', 'MNS'], 'sector': 2},
-    'Mayne East':   {'capacity': '/',  'yards': ['MES'], 'sector': 1,},
-    'Petrie':       {'capacity': 1,   'yards': ['PETS'], 'sector': 1},
-    'Kippa-Ring':   {'capacity': 10,  'yards': ['KPRS'], 'sector': 1,},
-    'Caboolture':   {'capacity': 9,   'yards': ['CAE', 'CAW', 'CAB'], 'sector': 1 },
-    'Elimbah':      {'capacity': 8,   'yards': ['EMHS'], 'sector': 1},
-    'Woombye':      {'capacity': 4,   'yards': ['WOBS'], 'sector': 1,},
-    'Nambour':      {'capacity': 3,   'yards': ['NBR'], 'sector': 1 },
-    'Gympie North': {'capacity': 1,   'yards': ['GYN'], 'sector': 1},
-    'Banyo':        {'capacity': 4,   'yards': ['BQYS'], 'sector': 2},
-    'Clapham':      {'capacity': '/',  'yards': ['CPM'], 'sector': 1,},
-    'Ormeau':       {'capacity': '/',  'yards': ['ORMS'], 'sector': 1,},
-    'Beerwah South':{'capacity': 8,   'yards': ['BWHS'], 'sector': 1},
-    'Birtinya':     {'capacity': '/', 'yards': ['BIRS'], 'sector': 1}
+   # Mixed/shared yards — one total capacity, no fleet restriction
+   'Mayne West':    {'capacity': 29,  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI']},
+   'Mayne North':   {'capacity': 18,  'yards': ['YN', 'MNS'],         'sector': 2},
+   'Mayne East':    {'capacity': 17,  'yards': ['MES'],                'sector': 1},
+   'Clapham':       {'capacity': 15,  'yards': ['CPM'],                'sector': 1},
+   'Ormeau':        {'capacity': 20,  'yards': ['ORMS'],               'sector': 1},
+   # NGR-only yards
+   'Wulkuraka':     {'capacity': 8,   'ngr_only': True,  'yards': ['WFE', 'WFW', 'FEE'], 'sector': 2},
+   'Robina':        {'capacity': 11,  'ngr_only': True,  'yards': ['ROBS'],               'sector': 1},
+   'Kippa-Ring':    {'capacity': 10,  'ngr_only': True,  'yards': ['KPRS'],               'sector': 1},
+   'Elimbah':       {'capacity': 8,   'ngr_only': True,  'yards': ['EMHS'],               'sector': 1},
+   'Woombye':       {'capacity': 4,   'ngr_only': True,  'yards': ['WOBS'],               'sector': 1},
+   'Banyo':         {'capacity': 4,   'ngr_only': True,  'yards': ['BQYS'],               'sector': 2},
+   'Beerwah South': {'capacity': 8,   'ngr_only': True,  'yards': ['BWHS'],               'sector': 1},
+   # QR-only yards
+   'Ipswich':       {'capacity': 6.5, 'qr_only': True,   'yards': ['IPSS', 'IPS'],        'sector': 2},
+   'Redbank':       {'capacity': 6,   'qr_only': True,   'yards': ['RDKS'],               'sector': 2},
+   'Manly':         {'capacity': 3,   'qr_only': True,   'yards': ['MNY'],                'sector': 3},
+   'Beenleigh':     {'capacity': 8,   'qr_only': True,   'yards': ['BNHS'],               'sector': 1},
+   'Petrie':        {'capacity': 1,   'qr_only': True,   'yards': ['PETS'],               'sector': 1},
+   'Caboolture':    {'capacity': 10,  'qr_only': True,   'yards': ['CAE', 'CAW', 'CAB'],  'sector': 1},
+   'Nambour':       {'capacity': 3,   'qr_only': True,   'yards': ['NBR'],                'sector': 1},
+   'Gympie North':  {'capacity': 1,   'qr_only': True,   'yards': ['GYN'],                'sector': 1},
+   # Not yet online
+   'Birtinya':      {'capacity': None, 'yards': ['BIRS'], 'sector': 1},
+}
+
+
+# other locations that are not stations and not yards
+
+MISC_LOCATIONS = {
+    # turnbacks and other places 
+    'VYST': { 'name': 'Varsity Lakes Turnback', 'sector': 1 },
+    'BNT':  { 'name': 'Beenleigh Turnback',     'sector': 1 }, 
 }
 
 

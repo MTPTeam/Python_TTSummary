@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea, QTextEdit
 
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QFont
 from PyQt6.QtCore import Qt
@@ -31,6 +31,25 @@ def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = ""
     return files or []
 
 
+def show_info_scroll(title: str, message: str) -> None:
+    ensure_app()
+
+    
+    msg = QMessageBox()
+    msg.setWindowTitle(title)
+
+    text = QTextEdit()
+    text.setPlainText(message)
+    text.setReadOnly(True)
+    text.setMinimumWidth(700)      # ✅ control width
+    text.setMinimumHeight(300)     # ✅ prevent tiny box
+    text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
+
+    msg.layout().addWidget(text, 0, 0, 1, msg.layout().columnCount())
+
+    msg.exec()
+
+
 def show_info(title: str, message: str) -> None:
     ensure_app()
     box = QMessageBox()
@@ -39,7 +58,6 @@ def show_info(title: str, message: str) -> None:
     box.setText(message)
     box.setStandardButtons(QMessageBox.StandardButton.Ok)
     box.exec()
-
 
 def show_error(title: str, message: str) -> None:
     ensure_app()

@@ -138,3 +138,11 @@ def generate_colors(n, saturation=0.65, value=0.85):
         colors.append(rgb)
     return colors
 
+
+def hhmm_to_mins(t: str) -> int:
+    h, m = t.split(':')
+    return int(h) * 60 + int(m)
+
+
+def mins_to_excel_time(m: int) -> float:
+    return m / 1440

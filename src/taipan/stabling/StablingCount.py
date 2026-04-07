@@ -231,7 +231,7 @@ def TTS_SC(path, mypath = None):
             row += 2 + n
             Summary.write(1,row,uu,font)
         
-        stable_capacities = {yard: meta['capacity'] for yard, meta in YARDS.items()}
+        stable_capacities = {yard: meta.get('capacity') for yard, meta in YARDS.items()}
 
         stables_dict = {}
 

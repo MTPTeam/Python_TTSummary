@@ -1,11 +1,11 @@
 from taipan.core.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info_scroll
 import sys 
 
 from taipan.core.utils import get_weekday_short
 import os
 from collections import defaultdict
-from taipan.constants.locations import STATIONS_MASTER, YARDS
+from taipan.constants.locations import STATIONS_MASTER, YARDS, MISC_LOCATIONS
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, MON_THU_MASK
 
 from PyQt6.QtWidgets import QApplication
@@ -34,6 +34,11 @@ YARD_CODE_LOOKUP = build_yard_code_lookup(YARDS)
 
 def resolve_possible_sectors(code):
     code = code.upper()
+
+    if code in MISC_LOCATIONS:
+        sector = MISC_LOCATIONS[code].get('sector')
+        return {f"Sector{sector}"} if sector is not None else set()
+
 
     # if its a yard
     if code in YARD_CODE_LOOKUP:
@@ -265,24 +270,32 @@ if __name__ == "__main__":
         )
 
 
-    mixed_lineid_flags = 0
 
     #### GUI PRINT
 
-    """"
-    if mixed_lineid_flags:
-        for flag in mixed_lineid_flags:
+    if not mixed_lineid_flags:
+        show_info("Sectorisation", "No broken connections found ✅")
 
-            gui.show_info(
-                "Broken connections",
-                f"LineID {flag['line_id']} \n{flag['weekday']}\n"
-                f"Sectors: {', '.join(flag['sectors_seen'])}\n"
-                f"Unassigned: {flag['unassigned_count']} / {flag['total_trains']}"
-            )
+
     
-    """
+    if mixed_lineid_flags:
+        message_lines = []
 
+        for flag in mixed_lineid_flags:
+            message_lines.append(
+                f"LineID {flag['line_id']} | {flag['weekday']}\n"
+                f"  Sectors: {', '.join(flag['sectors_seen'])}\n"
+                f"  Unassigned: {flag['unassigned_count']} / {flag['total_trains']}\n"
+            )
 
+        message = "\n".join(message_lines)
+
+        show_info_scroll(
+            "Broken connections",
+            message
+        )
+
+    
     
     final_diff = set()
 
