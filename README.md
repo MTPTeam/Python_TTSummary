@@ -42,12 +42,20 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - For comparing multiple timetables select them when inputting the RSX files. 
 - Outputs a workbook with charts, pivot tables, and slicers for filtering and comparison across timetables.
 
-**`stabling/StablingCountStepGraph.py` and all files in `stabling/`**
-- `REP` has been changed to `QMU` to align with newer rollingstock naming convention. However the input RSX can contain both `REP` and `QMU` and they will be processed the same - the output file will just change it to `QMU`.
+
+**`stabling/StablingCountStepGraph.py`**
 - The step graph provides minute level resolution for each yard, with yard capacity overlaid to identify periods where stabling exceeds capacity.
 - Produces an Excel workbook containing one worksheet per yard with time‑series stabling graphs.
 - Overlays total stabled units, unit type breakdowns, and yard capacity to identify periods where capacity is exceeded.
 - Intended as a visual validation and analysis tool for stabling demand across the operating day.
+- Styling is done via changing `chart.ChartStyle = 240`, however there is no list of available styles. An easy way to find out what number  a chartstyle corresponds to is to record a macro -> change the chartstyle -> stop recording -> view macros -> select the macro and click edit -> see what number `ActiveChart.ChartStyle` and set the chartstyle in the code to that number. 
+- **Its important to note that many Excel chart formatting properties accessed via pywin32 / win32com (such as ChartStyle and ChartColor) are version dependent and may render differently across Excel releases. In some cases, styles that are unsupported in a given Excel version may raise COM runtime errors when applied. COM‑fragile properties are annotated in the code (search for COM‑fragile)**
+- New feature: a summary table identifying yards where incompatible rollingstock is stabled (e.g. NGR units stabled in QR only yards, and vice versa).
+
+
+**All files in `stabling/`**
+- `REP` has been changed to `QMU` to align with newer rollingstock naming convention. However the input RSX can contain both `REP` and `QMU` and they will be processed the same - the output file will just change it to `QMU`.
+
 
 **`gui/`**
 - All user interface code been changed from Tkinter to PyQT5.
@@ -116,8 +124,6 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - Install pywin32 (requires .whl file, cannot be downloaded manually)
 
     `.\venv\Scripts\python.exe -m pip install C:\Users\<username>\Downloads\pywin32-311-cp312-cp312-win_amd64.whl`
-
-
 
 - Now tell Python this code is a 'package':
 
