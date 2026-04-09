@@ -254,7 +254,7 @@ def add_chart_labels(ws_chart, co, chart, ay):
    tb1.Line.Visible                     = False
 
 def build_summary_table(wb, ws_chart, pc):
-   table_row = 28
+   table_row = 29
    pt2 = pc.CreatePivotTable(TableDestination=ws_chart.Range(f"Z{table_row}"),TableName="RsxPivotTable")
    pt2.PivotFields("Timetable").Orientation = xlRowField
    pt2.PivotFields("Timetable").Position    = 1

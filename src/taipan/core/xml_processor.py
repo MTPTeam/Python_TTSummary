@@ -20,18 +20,16 @@ def init_store(locations_dict, day_codes):
 def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge_for_count=False):
     DoO = resolve_DoO(wkdk)
 
-    # We preserve historical delta rules for each mode:
+    # OLD RULES preserve historical delta rules for each mode:
     # - balance: unit == 'NGR' -> 1; else 2 if cars==6 else 1
     # - count:   unit in ('NGR','NGRE') -> 1; else 2 if cars==6 else 1
 
+    ### NEW RULE - all trains 6 cars = 1, 3 cars = 0.5
+
     for k, v in run_dict.items():
         run, D_o_run = k
-        unit, cars, trips, start_sID, end_sID, start_t, finish_t, *_ = v
-
-        if count:
-            delta = 1 if unit in ('NGR', 'NGRE') else (2 if cars == 6 else 1)
-        else:
-            delta = 1 if unit == 'NGR' else (2 if cars == 6 else 1)
+        unit, cars, trips, start_sID, end_sID, start_t, finish_t, *_ = v        
+        delta = 0.5 if cars == 3 else 1
 
         if D_o_run in wkdk:
             # STARTS at a stable location
@@ -69,7 +67,6 @@ def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge
         # Sort combined the same way: time, then unit
         combined.sort(key=lambda v: v[7])
         combined.sort(key=lambda v: order.get(v[2], 999))
-
 
         return combined
 
@@ -265,10 +262,7 @@ def endofdayunitcount(daylist, u_list, change_matrix):
     
     
     for entry in daylist:
-        if entry[2] == 'NGR' or entry[2] == 'NGRE':
-            threecarscalar = 1
-        else:
-            threecarscalar = 2 if entry[3] == 6 else 1
+        threecarscalar = 0.5 if entry[3] == 3 else 1
 
         if entry[8] < 0:
             stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
@@ -296,16 +290,12 @@ def overnightstabling(daylist, u_list, change_matrix):
     stablechange = np.array(startcount)
     
     for entry in daylist:
-        if entry[2] == 'NGR' or entry[2] == 'NGRE':
-            threecarscalar = 1
-        else:
-            threecarscalar = 2 if entry[3] == 6 else 1
+        threecarscalar = 0.5 if entry[3] == 3 else 1
 
         if entry[8] < 0:
             stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
         else:
             stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-    
     
     
     if max(stablechange[0],startcount[0]) == stablechange[0]:
@@ -330,10 +320,9 @@ def interpeakstabling(daylist, u_list):
         if len(x[7]) == 4:
             x[7] = '0' + x[7]
             
-            
-        ip += x[8]
+        threecarscalar = 0.5 if x[3] == 3 else 1
+        ip += x[8] * threecarscalar
         if '09:00:00' < x[7] < '15:30:00':
-            
             
             while prepeak == True:
                 ip_tracker.append((daylist[t-1][7],ip-daylist[t][8]))
@@ -358,7 +347,7 @@ def interpeakstabling(daylist, u_list):
                 max_oclock
                 
                 if x[2] == u:
-                    unit_ip += x[8]
+                    unit_ip += x[8] * (0.5 if x[3] == 3 else 1)
                 if x[7] == max_oclock:
                     break
             except:

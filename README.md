@@ -55,7 +55,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 **All files in `stabling/`**
 - `REP` has been changed to `QMU` to align with newer rollingstock naming convention. However the input RSX can contain both `REP` and `QMU` and they will be processed the same - the output file will just change it to `QMU`.
-
+- Logic has been changed -> for all trains, 6 cars always count as 1 unit, and 3 cars count as 0.5. All calculations are done relative to 6 car sets. To get 3 car equivalent = 6 car equivalent * 2. This change means we can now directly compare stabling totals to the yard capacity. 
 
 **`gui/`**
 - All user interface code been changed from Tkinter to PyQT5.

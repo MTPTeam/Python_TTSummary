@@ -68,10 +68,13 @@ def extract_regular_series(daylist, u_list, change_matrix, interval_mins=1):
         delta = entry[8]
 
         # stabling footprint scalar (matches endofday / overnight logic)
-        if unit in ('NGR', 'NGRE'):
+        """if unit in ('NGR', 'NGRE'):
             scalar = 1
         else:
-            scalar = 2 if cars == 6 else 1
+            scalar = 2 if cars == 6 else 1"""
+
+
+        scalar = 0.5 if cars == 3 else 1
 
         cm = change_matrix[unit]
         diff = [delta * scalar * c for c in cm]

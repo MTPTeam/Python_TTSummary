@@ -29,6 +29,38 @@ ProcessDoneMessagebox = True
 CreateWorkbook = True 
 OpenWorkbook = True
 
+
+def capacity_exceeded(yard_name, meta, os_total, os_bkdwn, u_list):
+   """
+   Returns True if capacity is exceeded or wrong train type is stabled.
+   QMU is excluded from all counts.
+   """
+   capacity = meta.get('capacity')
+   ngr_only = meta.get('ngr_only', False)
+   qr_only  = meta.get('qr_only', False)
+   # build per-unit dict from breakdown, excluding QMU
+   unit_counts = {
+       u: float(v)
+       for u, v in zip(u_list, os_bkdwn)
+       if u != 'QMU'
+   }
+   ngr_count = unit_counts.get('NGR', 0) + unit_counts.get('NGRE', 0)
+   qr_count  = sum(v for u, v in unit_counts.items() if u not in ('NGR', 'NGRE'))
+   total     = ngr_count + qr_count
+   if ngr_only:
+       # red if any non-NGR present, or capacity exceeded
+       wrong_type = qr_count > 0
+       over_cap   = capacity is not None and ngr_count > capacity
+       return wrong_type or over_cap
+   if qr_only:
+       # red if any NGR present, or QR count exceeds capacity
+       wrong_type = ngr_count > 0
+       over_cap   = capacity is not None and qr_count > capacity
+       return wrong_type or over_cap
+   # mixed yard — one shared capacity, all trains (ex QMU)
+   over_cap = capacity is not None and os_total > capacity
+   return over_cap
+
 def TTS_SC(path, mypath = None):
 
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
@@ -48,8 +80,6 @@ def TTS_SC(path, mypath = None):
         want_duplicates=True)
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
-
-        print("printing run_dict\n", run_dict)
         
         filename = filename[:-4]
         filename_xlsx = f'StablingCount-{filename}.xlsx'
@@ -98,13 +128,8 @@ def TTS_SC(path, mypath = None):
                 for idx,entry in enumerate(daylist, row):
                     unit = entry[2]
                     cars = entry[3]
-                    
-                    if unit == 'NGR' or unit == 'NGRE':
-                        threecarscalar = 1
-                    else:
-                        threecarscalar = 2 if cars == 6 else 1
 
-                    
+                    threecarscalar = 0.5 if cars == 3 else 1
     
                     if entry[8] < 0:
 
@@ -168,6 +193,10 @@ def TTS_SC(path, mypath = None):
         boldleftvc            = workbook.add_format({'bold':True,'align':'left','valign':'vcenter'})
         boldleftvc_unbalanced = workbook.add_format({'bold':True,'align':'left','valign':'vcenter','bg_color':'#CC194C','font_color':'white'})
         boldcentervc14        = workbook.add_format({'bold':True,'align':'center','valign':'vcenter','font_size':14})
+        boldcentervc14_red = workbook.add_format({
+           'bold': True, 'align': 'center', 'valign': 'vcenter',
+           'font_size': 14, 'bg_color': '#FF0000', 'font_color': 'white'
+       })
         
         border                = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center','font_size':14})
         tborder               = workbook.add_format({'border':2, 'border_color':'#000000', 'align':'center','font_size':14})
@@ -250,6 +279,7 @@ def TTS_SC(path, mypath = None):
         
         # Loop through all stabling locations and write totals and unit subtotals to worksheet
         # Add unit subtotals for all days and write under 'total overnight stabling'
+        yard_summary_dicts = {}
         for i,(k,v) in enumerate(stables_dict.items()):
             firstrow = 2+(ndays+2)*i
             lastrow = firstrow + ndays - 1
@@ -267,6 +297,8 @@ def TTS_SC(path, mypath = None):
                 ip_total, ip_bkdwn = interpeakstabling(day, u_list)
 
                 summary_dict[dow] = (day, total, bkdwn, os_total, os_bkdwn, ip_total, ip_bkdwn)
+            
+            yard_summary_dicts[k] = summary_dict
 
 
             #Use a red font if the total is unbalanced at a stabling location at any point during the week
@@ -278,20 +310,33 @@ def TTS_SC(path, mypath = None):
             unbalanced_subtotals = any(any(summary_dict[d][2]) for d in summary_dict)
             stablefont = boldleftvc_unbalanced if unbalanced_subtotals else boldleftvc
 
-            if ndays == 1:
-                Summary.write(firstrow,3+n,None)
-                Summary.write(firstrow,6+2*n,None)
-                Summary.write(firstrow, 0,   k,                        stablefont)
-                Summary.write(firstrow, 4+n, stable_capacities.get(k), boldcentervc14  )
-            else:
-                Summary.merge_range(firstrow,3+n,lastrow,3+n,None)
-                Summary.merge_range(firstrow,6+2*n,lastrow,6+2*n,None)
-                Summary.merge_range(firstrow,0,   lastrow, 0,   k,                        stablefont)
-                Summary.merge_range(firstrow,4+n, lastrow, 4+n, stable_capacities.get(k), boldcentervc14)  
+            d_list_s = [str(d) for d in d_list]
 
+            cap_exceeded_any_day = any(
+               capacity_exceeded(
+                   k,
+                   YARDS[k],
+                   max(summary_dict[d][3], summary_dict[d][5]),
+                   summary_dict[d][4] if summary_dict[d][3] >= summary_dict[d][5] else summary_dict[d][6],  # os_bkdwn or ip_bkdwn
+                   u_list
+               )
+               for d in d_list_s
+               if d in summary_dict and summary_dict[d][0] is not None
+           )
+
+            cap_format = boldcentervc14_red if cap_exceeded_any_day else boldcentervc14
+            if ndays == 1:
+                Summary.write(firstrow, 3+n, None)
+                Summary.write(firstrow, 6+2*n, None)
+                Summary.write(firstrow, 0,   k,                        stablefont)
+                Summary.write(firstrow, 4+n, stable_capacities.get(k), cap_format)
+            else:
+                Summary.merge_range(firstrow, 3+n, lastrow, 3+n, None)
+                Summary.merge_range(firstrow, 6+2*n, lastrow, 6+2*n, None)
+                Summary.merge_range(firstrow, 0,    lastrow, 0,   k,                        stablefont)
+                Summary.merge_range(firstrow, 4+n,  lastrow, 4+n, stable_capacities.get(k), cap_format)
                 
             # Write days
-            # Old: [weekdaykey_dict.get(d) for d in d_list]
             Summary.write_column(firstrow,1,[WEEKDAY_KEYS_MASTER.get(d, {}).get('short') for d in d_list])
 
             row_ptr = firstrow # local pointer so we don't clobber firstrow used above
@@ -305,7 +350,7 @@ def TTS_SC(path, mypath = None):
                         continue
                 
                 day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_dict[DoW]
-
+        
                 # Render row if the day exists (unchanged)
                 if day_obj is not None:
                     Summary.write(row_ptr, 2, total, totals_font)
@@ -326,10 +371,36 @@ def TTS_SC(path, mypath = None):
                 )
                 if has_day and has_os:
                     for unit, cnt in zip(u_list, os_breakdown):
-                        overnight_totals[unit][DoW] += int(cnt)  # int() in case cnt is a numpy scalar
+                        overnight_totals[unit][DoW] += float(cnt)  # int() in case cnt is a numpy scalar
 
                 if DoW in d_list and day_obj is not None:
                     row_ptr += 1
+
+        for yard_name, ws in sheets.items():
+            summary_dict = yard_summary_dicts[yard_name]
+            d_list_s = [str(d) for d in d_list]
+
+
+            if yard_name == 'Clapham':
+                for d in d_list_s:
+                    if d in summary_dict and summary_dict[d][0] is not None:
+                        os_total = summary_dict[d][3]
+                        os_bkdwn = summary_dict[d][4]
+                        result = capacity_exceeded(yard_name, YARDS[yard_name], os_total, os_bkdwn, u_list)
+            tab_exceeded = any(
+               capacity_exceeded(
+                   yard_name,
+                   YARDS[yard_name],
+                   max(summary_dict[d][3], summary_dict[d][5]),
+                   summary_dict[d][4] if summary_dict[d][3] >= summary_dict[d][5] else summary_dict[d][6],
+                   u_list
+               )
+               for d in d_list_s
+               if d in summary_dict and summary_dict[d][0] is not None
+           )
+            
+            if tab_exceeded:
+                ws.set_tab_color('#FF0000')
 
 
         dailytotals_dict = {d: sum(overnight_totals[u].get(d, 0) for u in u_list) for d in SORT_ORDER_WEEK}
@@ -355,9 +426,52 @@ def TTS_SC(path, mypath = None):
         for unit in u_list:
             summary_totalheaders(unit, row, col, Summary, formats)    
             col += 1
+
+        row_start = row
         for day in d_list:
             summary_writetotals(day, row, d_list, Summary, totals_col, daylist_dict, boldcenter, centered, n)
             row += 1
+
+        # --- 3-car breakdown table ---
+        row_header = row_start
+        three_car_col_start = 2*n + 7  # starts right after the 6-car totals table
+
+        # Filter once and reuse everywhere
+        filtered_units = [u for u in u_list if u not in ('NGR', 'QMU')]
+        
+        total_3car = sum(v * 2 for u, v in zip(u_list, daylist_dict[day]) if u not in ('NGR', 'QMU'))
+        Summary.write(row_header - 1, three_car_col_start, '3-car')
+        Summary.write(row_header,     three_car_col_start,     'Day',   boldleft_bottom)
+        Summary.write(row_header,     three_car_col_start + 1, 'Total', boldcenter_bottom)
+
+        # ----- headers -----
+        three_car_col = three_car_col_start - 4
+        for unit in filtered_units:
+            summary_totalheaders(unit, row_header, three_car_col, Summary, formats)
+            three_car_col += 1
+
+        # ----- rows -----
+        row_ptr = row_header + 1
+        for day in d_list:
+            short = WEEKDAY_KEYS_MASTER.get(day, {}).get('short')
+            day_idx = d_list.index(day)
+
+            # filter breakdown values to match filtered_units
+            breakdown_3car = [
+                v * 2
+                for u, v in zip(u_list, daylist_dict[day])
+                if u not in ('NGR', 'QMU')
+            ]
+
+            total_3car = sum(breakdown_3car)
+
+
+            Summary.write(row_ptr, three_car_col_start,     short,      boldcenter)
+            Summary.write(row_ptr, three_car_col_start + 1, total_3car, boldcenter)
+            summary_writerow(row_ptr, three_car_col_start + 2, breakdown_3car, Summary, centered, greyedouttext)
+
+            row_ptr += 1
+        # --- end 3-car table ---
         
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']
         info_col2 = [filename,'',datetime.now().strftime("%d-%b-%Y %H:%M"),'Stabling count by run']
