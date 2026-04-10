@@ -244,8 +244,8 @@ STATIONS_MASTER = {
     'SBE':  {'name': 'South Brisbane',  'line': 'Inner City', 'sector': 3, 'non_revenue': False, 'byline_terminus': False},
 
     # --- Normanby / Exhibition --------------------------------------------
-    'ETS':  {'name': 'Exhibition Terminal South', 'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
-    'CAM':  {'name': 'Camera',                    'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
+    'ETS':  {'name': 'Electric Train South', 'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
+    'CAM':  {'name': 'Campbell St',                    'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
     'EXH':  {'name': 'Exhibition',                'line': 'Normanby', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
     'BOG':  {'name': 'Boggo Rd',                'line': 'Normanby', 'sector': 1, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
 
@@ -311,6 +311,7 @@ YARDS = {
    'Redbank':       {'capacity': 6,   'qr_only': True,   'yards': ['RDKS'],               'sector': 2},
    'Banyo':         {'capacity': 4,   'ngr_only': True,  'yards': ['BQYS'],               'sector': 2},
    'Manly':         {'capacity': 3,   'qr_only': True,   'yards': ['MNY'],                'sector': 3},
+
    
   
 }

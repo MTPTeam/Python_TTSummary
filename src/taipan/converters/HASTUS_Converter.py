@@ -697,9 +697,7 @@ def TTS_H(path, mypath = None):
                         # IF trains start/end at CPM then set to CPM_S or if they just pass through then set based on its trackID as usual
                         ### THIS NEEDS TO BE FIXED !!!!! BASED ON GEO
                         if sID == 'CPM' and n == 0 and oID == 'CPM':
-                            
                             lsID = 'CPM_S'
-                            
                         elif sID == 'CPM' and n == len(entries) - 1 and dID == 'CPM':
                             lsID = 'CPM_S'
                         

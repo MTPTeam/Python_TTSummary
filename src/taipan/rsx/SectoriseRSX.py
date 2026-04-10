@@ -310,8 +310,8 @@ if __name__ == "__main__":
                     break
 
 
-
-    print("different O/D sectors: ", diff_sector_list)
+    # print O/D unable to be sectorised even after inference step 
+    print("different O/D sectors: ", final_diff)
 
     
 

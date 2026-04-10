@@ -271,7 +271,7 @@ def resolve_DoO(wkdk):
     # wkdk is a tuple of strings like ('120','64')
     for day in DAY_PRIORITY:
         if day in wkdk:
-            print("DEBUG:", day, type(WEEKDAY_KEYS_MASTER[day]))
+            #print("DEBUG:", day, type(WEEKDAY_KEYS_MASTER[day]))
             return WEEKDAY_KEYS_MASTER[day]['short']   # or long/alias
     return None
 

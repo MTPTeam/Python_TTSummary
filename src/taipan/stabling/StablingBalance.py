@@ -64,7 +64,7 @@ def TTS_SB(path, mypath = None):
         filename_xlsx = f'StablingBalance-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         formats = build_excel_formats(workbook)
-        print(formats)
+        #print(formats)
 
 
         d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
@@ -73,12 +73,12 @@ def TTS_SB(path, mypath = None):
         ndays = len(d_list)
         n = len(u_list)
 
-        print(d_list)
+        #print(d_list)
         
         start_time = time.time()
         runs_without_stable = []
         store = init_store(YARDS, SORT_ORDER_WEEK)
-        print(store)
+        #print(store)
         
         
         def write_runs(sheet,daylist,r,c):
@@ -135,7 +135,7 @@ def TTS_SB(path, mypath = None):
             in_row = out_row = row
             for ttype in u_list:
 
-                print(ttype)
+                #print(ttype)
                 
                 n_unit_out   = BD_out[ttype][0] if BD_out.get(ttype) else 1
                 sum_unit_out = BD_out[ttype][1] if BD_out.get(ttype) else 0
@@ -268,7 +268,7 @@ def TTS_SB(path, mypath = None):
         
         stables_dict = make_legacy_stables_dict_from_store(store, SORT_ORDER_WEEK)
 
-        print(stables_dict)
+        #print(stables_dict)
 
         # Summary
         Summary.write('A1','Daily Difference',boldleft)
