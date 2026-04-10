@@ -13,10 +13,6 @@ import traceback
 import logging
 
 
-
-
-
-
 ### CreateFile toggles whether text files are generated on running the script
 ### OpenWorkbook will subsequently open the newly created files for the user
 ### ProcessDoneMessagebox toggles whether a dialogue box is created after script finishes running
@@ -30,9 +26,6 @@ ProcessDoneMessagebox = True
 CreateWorkbook = True
 OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
-
-
-
 
 
 
@@ -891,13 +884,7 @@ def TTS_PTT(path, mypath = None):
             return list(zip(stationNames,y))
         
         
-        
-        
-        
-        
-        
-        
-        
+
         ### These will be the row headers appearing in the worksheets - can be customised
         ### zip_stations will pair each location name up with a unique abbreviated station ID
         ###  these list of tuples will be fed into the write_workbook function to print the data for each station for each trip
@@ -1210,6 +1197,9 @@ def TTS_PTT(path, mypath = None):
                 # Write the station names and bold key stations
                 sheet.write_column('A6',stations_long,left)
                 for s in mainstations:
+                    if s not in stations_abr:
+                        print(f'Main station {s} not in station list for {line}')
+                        continue
                     ind = stations_abr.index(s)
                     row = 5 + ind
                     col = 0
@@ -1730,14 +1720,6 @@ def TTS_PTT(path, mypath = None):
                     write_workbook('Sunday', ['1'])
            
                 
-           
-            
-           
-            
-           
-            
-           
-            
            
         
         

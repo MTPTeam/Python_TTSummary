@@ -101,13 +101,6 @@ sun_rep_ew = iter([])
 
 
 
-
-
-
-
-
-
-
 ew_dict = {
     # ('REP','120'):   mth_rep_ew,
     # ('REP','4'):     fri_rep_ew,
