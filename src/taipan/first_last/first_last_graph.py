@@ -10,9 +10,9 @@ from taipan.gui.base import select_multi_rsx_files, show_error, show_info
 from taipan.core.utils import _time_key, timetrim, parseTimeDelta, minutes_to_time_format, timedeltatohhmmss, hhmm_to_excel_time, td_to_hhmm, generate_colors
 from PyQt6.QtWidgets import QApplication
 from taipan.core.xml_parser import TrainInfo, load_rsx, extract_trains
+from datetime import datetime
+import uuid 
 
-
-OUTPUT_PATH = os.path.abspath(os.path.join(os.path.expanduser("~"), "FirstLastGraph.xlsx"))
 CORE = {"RS", "RTL"}
 CITY = {'RS','BNC','BRC','BHI','EXH','ALB','RTL','WLG','BOG'}
 
@@ -26,6 +26,18 @@ nonrev_map = {
    for code, info in STATIONS_MASTER['stations'].items()
    if info.get('non_revenue', False)
 }
+
+
+def make_output_path(rsx_files: list[str]) -> str:
+    # Use folder of first selected RSX
+    base_dir = os.path.dirname(os.path.abspath(rsx_files[0]))
+
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M")
+    token     = uuid.uuid4().hex[:4].upper()
+
+    filename = f"FirstLastGraph-{timestamp}-{token}.xlsx"
+    return os.path.join(base_dir, filename)
+
 
 def trains_to_df(rsx_path: str) -> pd.DataFrame:
    root, _ = load_rsx(rsx_path)
@@ -318,13 +330,15 @@ def main():
    if not rsx_files:
        show_error("No RSX files selected", "You must select at least one RSX file to continue.")
        sys.exit(1)
+    
+   output_path = make_output_path(rsx_files)
 
    colors = generate_colors(len(rsx_files))
    timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in rsx_files])
    aa, default_station_name, default_day = build_combined_df(rsx_files, colors)
    print(f"Default filter: {default_station_name} / {default_day}")
    print(f"Data ready: {len(aa)} rows")
-   excel = win32.Dispatch("Excel.Application")
+   excel = win32.DispatchEx("Excel.Application")
    excel.Visible       = False
    excel.DisplayAlerts = False
 
@@ -335,13 +349,17 @@ def main():
        build_chart_sheet(wb, ws_pivot, pc, timetable_names, colors,
                          default_station_name, default_day, pt)
        excel.Calculate()
-       wb.Worksheets("Data").Activate()
-       wb.SaveAs(OUTPUT_PATH, FileFormat=xlOpenXMLWorkbook)
-       print(f"Saved to: {OUTPUT_PATH}")
-       show_info("Successful", f"First Last Graph saved to {OUTPUT_PATH}. Open Charts sheet and use slicers to filter")
+       wb.Worksheets("Charts").Activate()
+       
+       wb.SaveAs(output_path, FileFormat=xlOpenXMLWorkbook)
+       print(f"Saved to: {output_path}")
+       show_info("Successful",f"First Last Graph saved to:\n{output_path}\n\nOpening file now.")
+
        print("Open the 'Charts' sheet -> use the slicers to filter.")
    finally:
        wb.Close(SaveChanges=False)
+       os.startfile(output_path)
+       excel.visible = True
        excel.Quit()
 
 if __name__ == "__main__":

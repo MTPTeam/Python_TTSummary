@@ -61,17 +61,11 @@ def extract_regular_series(daylist, u_list, change_matrix, interval_mins=1):
 
     events = []
     for entry in daylist:
-        print(entry)
+        #print(entry)
         unit  = entry[2]
         cars  = entry[3]
         t_str = entry[7]
         delta = entry[8]
-
-        # stabling footprint scalar (matches endofday / overnight logic)
-        """if unit in ('NGR', 'NGRE'):
-            scalar = 1
-        else:
-            scalar = 2 if cars == 6 else 1"""
 
 
         scalar = 0.5 if cars == 3 else 1
@@ -191,7 +185,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d
 
 def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list, capacity_map):
    pythoncom.CoInitialize()
-   excel = win32com.client.Dispatch('Excel.Application')
+   excel = win32com.client.DispatchEx('Excel.Application')
    excel.Visible       = False
    excel.DisplayAlerts = False
 
