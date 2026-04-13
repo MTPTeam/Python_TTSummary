@@ -301,6 +301,8 @@ def TTS_SC(path, mypath = None):
             yard_summary_dicts[k] = summary_dict
 
 
+        
+
             #Use a red font if the total is unbalanced at a stabling location at any point during the week
             unbalanced_totals = any(summary_dict[d][1] for d in summary_dict)
             totals_font = boldborderred if unbalanced_totals else boldborder
@@ -311,6 +313,17 @@ def TTS_SC(path, mypath = None):
             stablefont = boldleftvc_unbalanced if unbalanced_subtotals else boldleftvc
 
             d_list_s = [str(d) for d in d_list]
+            WEEKDAY_KEYS = [d for d in d_list_s if WEEKDAY_KEYS_MASTER.get(d, {}).get('short') in ('Mon-Thu', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri')]
+            WEEKEND_KEYS = [d for d in d_list_s if WEEKDAY_KEYS_MASTER.get(d, {}).get('short') in ('Sat', 'Sun')]
+            weekday_max_total = max((summary_dict[d][3] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None),default=0)
+            weekday_max_by_unit = [max((summary_dict[d][4][i] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None),default=0) for i in range(n)]
+            weekday_max_breakdown = [max((summary_dict[d][2][i] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None),default=0) for i in range(n)]
+            weekday_max_diff_total = max((summary_dict[d][1] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None), default=0)
+
+            weekday_max_ip_total = max((summary_dict[d][5] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None), default=0)
+            weekday_max_ip_breakdown = [max((summary_dict[d][6][i] for d in WEEKDAY_KEYS if d in summary_dict and summary_dict[d][0] is not None),default=0) for i in range(n)]
+
+
 
             cap_exceeded_any_day = any(
                capacity_exceeded(
@@ -351,17 +364,56 @@ def TTS_SC(path, mypath = None):
                 
                 day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_dict[DoW]
         
-                # Render row if the day exists (unchanged)
+                # Render row if the day exists
                 if day_obj is not None:
-                    Summary.write(row_ptr, 2, total, totals_font)
-                    summary_writerow(row_ptr, 3, breakdown, Summary, centered, greyedouttext)
-                    Summary.write(row_ptr, 5 + n, os_total, boldborder)
-                    summary_writerow(row_ptr, 6 + n, os_breakdown, Summary, centered, greyedouttext)
-                    Summary.write(row_ptr, 7 + 2 * n, ip_total, boldborder)
-                    summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown, Summary, centered, greyedouttext)
+                    #Summary.write(row_ptr, 2, total, totals_font)
+                    #summary_writerow(row_ptr, 3, breakdown, Summary, centered, greyedouttext)
+                    #Summary.write(row_ptr, 5 + n, os_total, boldborder)
+                    #summary_writerow(row_ptr, 6 + n, os_breakdown, Summary, centered, greyedouttext)
+                    
+
+                    is_weekend = DoW in WEEKEND_KEYS
+
+
+                    # daily difference
+                    diff_total_fmt = boldborderred if (is_weekend and total > weekday_max_diff_total) else totals_font
+                    Summary.write(row_ptr, 2, total, diff_total_fmt)
+                    for ui in range(n):
+                       val = float(breakdown[ui])
+                       max_val = float(weekday_max_breakdown[ui])
+                       fmt = boldborderred if (is_weekend and val > max_val) else greyedouttext
+                       Summary.write(row_ptr, 3 + ui, val, fmt)
+
+                    # overnight stabling
+                    os_total_fmt = boldborderred if (is_weekend and os_total > weekday_max_total) else boldborder
+                    Summary.write(row_ptr, 5 + n, os_total, os_total_fmt)
+                    for ui, (unit_val, unit_max) in enumerate(zip(os_breakdown, weekday_max_by_unit)):
+                       unit_fmt = boldborderred if (is_weekend and unit_val > unit_max) else centered
+                       Summary.write(row_ptr, 6 + n + ui, unit_val, unit_fmt)
+                    if k == 'Mayne West':
+                       print(f"Mayne West {DoW}: is_weekend={is_weekend}, os_breakdown={os_breakdown}, weekday_max_by_unit={weekday_max_by_unit}, weekday_max_total={weekday_max_total}, os_total={os_total}")
+                    
+
+
+                    #Summary.write(row_ptr, 7 + 2 * n, ip_total, boldborder)
+                    #summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown, Summary, centered, greyedouttext)
+
+                    ip_total_fmt = boldborderred if (is_weekend and ip_total > weekday_max_ip_total) else boldborder
 
                     if ip_total > os_total:
-                        Summary.write(row_ptr, 7 + 2 * n, ip_total, interpeak_flag)
+                        ip_total_fmt = interpeak_flag
+                    Summary.write(row_ptr, 7 + 2 * n, ip_total, ip_total_fmt)
+                    
+                    for ui in range(n):  
+                        val = float(ip_breakdown[ui]) if ip_breakdown is not None and len(ip_breakdown) > ui else 0
+                        max_val = float(weekday_max_ip_breakdown[ui])
+                        if is_weekend and val > max_val:
+                            fmt = boldborderred
+                        elif val == 0:
+                            fmt = greyedouttext
+                        else:
+                            fmt = centered
+                        Summary.write(row_ptr, 8 + 2 * n + ui, val, fmt)
 
                 # Accumulate only if day exists AND breakdown has elements
                 has_day = day_obj is not None
