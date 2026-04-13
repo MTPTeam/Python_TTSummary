@@ -9,6 +9,11 @@ import os
 import platform
 import math 
 
+
+# disable native dialog since its too slow on windows
+_FAST_OPTIONS = QFileDialog.Option.DontUseNativeDialog
+
+
 def ensure_app() -> QApplication:
     app = QApplication.instance()
     if app is None:
@@ -16,19 +21,32 @@ def ensure_app() -> QApplication:
     return app
 
 
-def select_file(caption="Select a file", directory="", filter_str="All Files (*.*)") -> str:
+def select_file(caption: str = "Select a file",directory: str = "",filter_str: str = "All Files (*.*)") -> str:
     ensure_app()
+
     file_path, _ = QFileDialog.getOpenFileName(
-        None, caption, directory, filter_str
+        None,
+        caption,
+        directory,
+        filter_str,
+        options=_FAST_OPTIONS,
     )
     return file_path or ""
 
 
-def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = "") -> list[str]:
-    ensure_app()
 
-    files, _ = QFileDialog.getOpenFileNames(None,caption,directory,"RSX Files (*.rsx);;All Files (*.*)")
-    return files or []
+
+def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = "",) -> list[str]:
+    ensure_app()
+    files, _ = QFileDialog.getOpenFileNames(
+        None,
+        caption,
+        directory,
+        "RSX Files (*.rsx)",
+        options=_FAST_OPTIONS,
+    )
+    return files
+
 
 
 def show_info_scroll(title: str, message: str) -> None:
