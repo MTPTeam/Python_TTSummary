@@ -158,14 +158,7 @@ class TrainInfo:
         self.track_ids   = [e.attrib['trackID'] for e in self.entries]
         self.daycode     = ID_TO_SHORT[self.weekday]
             
-    @staticmethod
-    def threecar_scalar(unit: str, cars: int) -> int:
-        # Return the scalar (unit delta) used in SC 
-        # - NGR/NGRE are single consist (1), other are 2 if 6 cars, else 1)
-        
-        if unit in ('NGR', 'NGRE'):
-            return 1
-        return 2 if cars == 6 else 1
+
     
 
 
