@@ -6,9 +6,8 @@ import sys
 import xml.etree.ElementTree as ET
 import pandas as pd
 import math
-import tkinter as tk
-from tkinter import messagebox
-from tkinter.filedialog import askopenfilename
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+
 from dash import dcc, html, Input, Output, State, dash_table, ctx, no_update
 from dash_extensions.enrich import DashProxy, MultiplexerTransform
 import plotly.graph_objects as go
@@ -17,6 +16,8 @@ import threading
 import socket
 import ctypes
 from taipan.constants.days import ID_TO_LONG, ID_TO_SHORT
+from PyQt6.QtWidgets import QApplication
+
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -1273,13 +1274,10 @@ def runtime_dashboard(path, mypath=None):
             time.sleep(10)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
-    root.attributes('-topmost', True)  # Ensure dialogs stay on top
-    path = askopenfilename(title="Select your RSX", parent=root)
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select your RSX", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     if path:
         runtime_dashboard(path)
     else:
-        messagebox.showinfo('Runtime Dashboard', 'No file selected.', parent=root)
+        show_info('Runtime Dashboard', 'No file selected.', parent=None)
         time.sleep(10)
-    root.destroy()

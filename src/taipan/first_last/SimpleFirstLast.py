@@ -9,11 +9,12 @@ from datetime import datetime
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
-from tkinter.filedialog import askopenfilename
+
+from PyQt6.QtWidgets import QApplication
 
 import traceback
 import logging
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
 
 
 
@@ -275,8 +276,7 @@ def TTS_SFL(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('FirstLast','Process Done')
+            show_info('FirstLast','Process Done')
         
         
         
@@ -289,6 +289,6 @@ def TTS_SFL(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_SFL(path)

@@ -7,9 +7,6 @@ import os
 import sys
 import shutil
 
-from tkinter import Tk  
-from tkinter.filedialog import askopenfilename
- 
 import traceback
 import logging
 
@@ -20,6 +17,9 @@ CreateWorkbook = True
 OpenWorkbook = True
 
 from taipan.constants.days import ID_TO_SHORT
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+
+from PyQt6.QtWidgets import QApplication
 
 
 
@@ -1046,19 +1046,11 @@ def TTS_VAS(path, mypath = None):
             #         if copyfile:
             #             shutil.copy(filename_xlsx, mypath) 
             
-    
-            
-    
-        
-        
-        
-        
         
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('VAS Extract','Process Done')
+            show_info('VAS Extract','Process Done')
         
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -1066,6 +1058,6 @@ def TTS_VAS(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_VAS(path)

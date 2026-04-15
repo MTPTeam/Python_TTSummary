@@ -6,12 +6,10 @@ import xlsxwriter
 import time
 import shutil
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
-
 import traceback
 import logging
-
+from PyQt6.QtWidgets import QApplication
+from taipan.gui.base import select_file, show_info
 
 
 
@@ -1709,8 +1707,7 @@ def TTS_WTT(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('Working Timetable','Process Done')
+            show_info('Working Timetable','Process Done')
             
     
     except Exception as e:
@@ -1719,7 +1716,7 @@ def TTS_WTT(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_WTT(path)
         

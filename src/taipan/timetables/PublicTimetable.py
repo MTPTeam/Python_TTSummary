@@ -6,8 +6,9 @@ import xlsxwriter
 import time
 import shutil
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
+from PyQt6.QtWidgets import QApplication
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+
 
 import traceback
 import logging
@@ -1731,8 +1732,7 @@ def TTS_PTT(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('Public Timetable','Process Done')
+            show_info('Public Timetable','Process Done')
             
     
     except Exception as e:
@@ -1741,6 +1741,6 @@ def TTS_PTT(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_PTT(path)

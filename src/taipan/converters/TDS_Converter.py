@@ -7,11 +7,12 @@ import sys
 import time
 import shutil
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 
+
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
 import traceback
 import logging
+from PyQt6.QtWidgets import QApplication
 
 ProcessDoneMessagebox = False
 ProcessDoneMessagebox = True
@@ -44,10 +45,7 @@ def TTS_TDS(path, mypath = None):
     copyfile = dest_dir is not None and source_dir != dest_dir
 
     try:
-        
-        # Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-        # path = askopenfilename() 
-        
+                
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]
@@ -338,8 +336,7 @@ def TTS_TDS(path, mypath = None):
 
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('TDS Converter','Process Done')
+            show_info('TDS Converter','Process Done')
 
     
     except Exception as e:
@@ -348,6 +345,8 @@ def TTS_TDS(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
     TTS_TDS(path)

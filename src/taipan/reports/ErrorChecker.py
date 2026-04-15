@@ -6,9 +6,9 @@ import re
 import time
 import sys
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
 
+from PyQt6.QtWidgets import QApplication
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
 
 import traceback
 import logging
@@ -26,7 +26,8 @@ ProcessDoneMessagebox = True
 # Trains with train numbers that don\'t line up with their unit types
 # Trains with more than 1 unittype
 # Trains with duplicate train numbers
-# 
+# Check whether connecting trains share the same lineID on the same day (mismatched line IDs)
+# Check if connecting train is missing for the same day (missing connecting train)
 # ??? Less than 8min tb
 # 
 # 
@@ -86,11 +87,13 @@ stable_locations = ['WFE','WFW','IPSS','IPS','RDKS','ROBS','MNY','ORMS',
 
 
 try:
+
+    app = QApplication(sys.argv)
     
     
     
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
     
     directory = '\\'.join(path.split('/')[0:-1])
     os.chdir(directory)
@@ -941,8 +944,7 @@ try:
     print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
     
     if ProcessDoneMessagebox:
-        from tkinter import messagebox
-        messagebox.showinfo('Error Check and QA Process Done','Click OK to close python console')
+        show_info('Error Check and QA Process Done','Click OK to close python console')
         
 
 except Exception as e:

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea, QTextEdit
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea, QTextEdit, QSpacerItem, QSizePolicy, QGridLayout
 
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QFont
 from PyQt6.QtCore import Qt
@@ -53,6 +53,9 @@ def select_option(title: str, message: str, options: list[tuple[str, str]]) -> s
     dialog = QDialog()
     dialog.setWindowTitle(title)
 
+
+    
+
     layout = QVBoxLayout()
 
     label = QLabel(message)
@@ -83,6 +86,9 @@ def select_checkboxes(title: str, message: str, options: list[tuple[str, str]], 
 
     dialog = QDialog()
     dialog.setWindowTitle(title)
+
+    dialog.setMinimumWidth(450)  # wider
+    # dialog.setMinimumHeight(300) # taller
 
     layout = QVBoxLayout()
     layout.addWidget(QLabel(message))
@@ -136,6 +142,13 @@ def show_info(title: str, message: str) -> None:
     box.setWindowTitle(title)
     box.setText(message)
     box.setStandardButtons(QMessageBox.StandardButton.Ok)
+
+    # Force a minimum width using a spacer
+    spacer = QSpacerItem(400, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+    layout = box.layout()
+    if isinstance(layout, QGridLayout):
+        layout.addItem(spacer, layout.rowCount(), 0, 1, layout.columnCount())
+
     box.exec()
 
 def show_error(title: str, message: str) -> None:

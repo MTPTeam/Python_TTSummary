@@ -7,9 +7,6 @@ import sys
 import time
 import shutil  
 
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
-from tkinter.filedialog import askopenfilename
-
 import traceback
 import logging
 
@@ -1049,7 +1046,6 @@ def TTS_H(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    #Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
     app = QApplication(sys.argv)
 
     path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")

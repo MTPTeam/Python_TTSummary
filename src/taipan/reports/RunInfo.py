@@ -8,11 +8,12 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 from taipan.constants.days import ID_TO_SHORT
 
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+ 
 
 import traceback
 import logging
+from PyQt6.QtWidgets import QApplication
 
 
 OpenWorkbook = CreateWorkbook = ProcessDoneMessagebox = False
@@ -1335,8 +1336,7 @@ def TTS_RI(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('Run Information Report','Process Done')
+            show_info('Run Information Report','Process Done')
             
     
     except Exception as e:
@@ -1345,6 +1345,6 @@ def TTS_RI(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_RI(path)

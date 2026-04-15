@@ -9,8 +9,9 @@ from datetime import datetime
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
-from tkinter.filedialog import askopenfilename
+from PyQt6.QtWidgets import QApplication
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 import traceback
 import logging
@@ -228,8 +229,7 @@ def TTS_FL(path, mypath = None):
         
         ### File 1
         ###############################################################################################
-        # Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-        # path = askopenfilename() 
+
         
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
@@ -248,8 +248,8 @@ def TTS_FL(path, mypath = None):
         
         ### File 2
         ###############################################################################################
-        Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-        path = askopenfilename() 
+        app = QApplication(sys.argv)
+        path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
         tree2 = ET.parse(path)
         root2 = tree2.getroot()
         filename2 = path.split('/')[-1]
@@ -648,8 +648,7 @@ def TTS_FL(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('FirstLast','Process Done')
+            show_info('FirstLast','Process Done')
             
     
     except Exception as e:
@@ -658,7 +657,7 @@ def TTS_FL(path, mypath = None):
             time.sleep(15)
 
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
+    app = QApplication(sys.argv)
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_FL(path)
         
