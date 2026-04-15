@@ -67,6 +67,27 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - To add new tests, add a new file in the folder with unit tests, and it will automatically be discovered by pytest (see Testing). 
 - So far contains tests for `xml_parser.py`, `TrainInfo`, `SectoriseRSX.py`, needs extending. 
 
+**`run_renamers/run_renamer_new.py`**
+- Run renamer and block creator buttons (and their variants) in TAIPAN's excel file have been replaced with a single unified button/code file (button: Assign LineIDs -> `run_renamer_new.py`). Original code files have been retained and are available in the `run_renamers` folder 
+- new renamer automatically assigns and normalises LineIDs to trains in an RSX file based on (unit type, operating day, yard departure order, connecting trains).
+- Broadly the scripts steps are:
+> - parse all trains from rsx and filter to supported unit types (see LineID range table)
+> - build connection blocks - train chains via `<connection>`
+> - sort blocks by earliest yard departure. Fallback: use first timetabled departure 
+> - cross day matching -> match block between paired days (weekdays & weekend) using first stop signature. Where cross day matches exist force LineiDs to be reused. 
+> - rewrite RSX file 
+
+- **LineID range table** - these will need to be updated once new ranges are known. These ranges are a modified version of the RMC electric workings doc - since we don't have enough range to use the originals...
+
+
+    | Unit Type | LineID / Run Code Range                     |
+    |-----------|---------------------------------------------|
+    | EMU       | AA–EZ, IA–JZ, OA–PZ                          |
+    | IMU       | FA–GZ, KA–KZ, QA–QZ                          |
+    | NGR       | 01–499                                      |
+    | REP       | 500–999                                     |
+
+
 
 ## Testing
  - Run all tests; copy into cmd
@@ -93,10 +114,11 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 - Add instructions here (todo)
 
-### 4. Run the following commands in a Python Terminal located in the root directory. 
-- For all commands, replace the `<username>` part with your own username (e.g r123456)
+### 4. Setup the Python Virtual Environment
+- **Important**: For all commands, replace the `<username>` part with your own username (e.g r123456)
 
-- Open a Python terminal inside the `Python_TTSummary` folder (the repository you just cloned/downloaded). This is the 'root' directory. In the Python terminal run the following commands.
+- Open a powershell terminal inside the `Python_TTSummary` folder (the repository you just cloned/downloaded). 
+> - To do this, right click inside the folder -> select open in Terminal. This is the 'root' directory. In the terminal run the following commands.
 
 - Create a virtual environment:
 
@@ -121,7 +143,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
     ![package installer](/images/installing_packages.png "packages")
 
-- Install pywin32 (requires .whl file, cannot be downloaded manually)
+- Install pywin32 (requires .whl file, cannot be downloaded manually). This step can be skipped - however First Last Graph, Stabling Graph will not be available. 
 
     `.\venv\Scripts\python.exe -m pip install C:\Users\<username>\Downloads\pywin32-311-cp312-cp312-win_amd64.whl`
 
