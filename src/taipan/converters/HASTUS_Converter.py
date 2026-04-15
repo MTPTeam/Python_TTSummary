@@ -91,7 +91,9 @@ HASTUS_stableconverter = {
 
 def TTS_H(path, mypath = None):
     
-    copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
+    source_dir = os.path.abspath(os.path.dirname(path))
+    dest_dir = os.path.abspath(mypath) if mypath is not None else None
+    copyfile = dest_dir is not None and source_dir != dest_dir
     
     try:
         
@@ -1004,10 +1006,18 @@ def TTS_H(path, mypath = None):
                 # print('—————————————————————————————————————————————————————')
                 print('\n\n')
                 if hastuscopyfile:
-                    shutil.copy(filename_txt, myhastuspath) 
+                    destination = os.path.join(myhastuspath, os.path.basename(filename_txt))
+                    if os.path.abspath(filename_txt) != os.path.abspath(destination):
+                        shutil.copy(filename_txt, destination)
+                    else:
+                        print('Skipping copy because source and destination are the same file') 
                 else: 
                     if copyfile:
-                        shutil.copy(filename_txt, mypath) 
+                        destination = os.path.join(mypath, os.path.basename(filename_txt))
+                        if os.path.abspath(filename_txt) != os.path.abspath(destination):
+                            shutil.copy(filename_txt, destination)
+                        else:
+                            print('Skipping copy because source and destination are the same file') 
     
     
         ### Run the create_textfile function for every day present in the rsx

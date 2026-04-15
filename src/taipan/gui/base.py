@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea, QTextEdit
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QFileDialog, QMessageBox, QDialog, QDialogButtonBox, QVBoxLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QListWidget, QComboBox, QGridLayout, QListWidgetItem, QWidget, QScrollArea, QTextEdit
 
 from PyQt6.QtGui import QStandardItemModel, QStandardItem, QFont
 from PyQt6.QtCore import Qt
@@ -77,6 +77,37 @@ def select_option(title: str, message: str, options: list[tuple[str, str]]) -> s
     else:
         return None
 
+
+def select_checkboxes(title: str, message: str, options: list[tuple[str, str]], default_values: list[str] | None = None) -> list[str] | None:
+    ensure_app()
+
+    dialog = QDialog()
+    dialog.setWindowTitle(title)
+
+    layout = QVBoxLayout()
+    layout.addWidget(QLabel(message))
+
+    default_values = set(default_values or [])
+    checkboxes: list[tuple[QCheckBox, str]] = []
+    for display, value in options:
+        checkbox = QCheckBox(display)
+        if value in default_values:
+            checkbox.setChecked(True)
+        layout.addWidget(checkbox)
+        checkboxes.append((checkbox, value))
+
+    button_box = QDialogButtonBox(
+        QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+    )
+    button_box.accepted.connect(dialog.accept)
+    button_box.rejected.connect(dialog.reject)
+    layout.addWidget(button_box)
+
+    dialog.setLayout(layout)
+
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return [value for checkbox, value in checkboxes if checkbox.isChecked()]
+    return None
 
 
 def show_info_scroll(title: str, message: str) -> None:

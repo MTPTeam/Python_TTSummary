@@ -152,7 +152,9 @@ weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Th
 
 
 def TTS_TC(path, mypath = None):
-    copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
+    source_dir = os.path.abspath(os.path.dirname(path))
+    dest_dir = os.path.abspath(mypath) if mypath is not None else None
+    copyfile = dest_dir is not None and source_dir != dest_dir
     
     try:
 
@@ -1314,7 +1316,11 @@ def TTS_TC(path, mypath = None):
             workbook.close()
             print('Creating workbook')  
             if copyfile:
-                shutil.copy(filename_xlsx, mypath) 
+                destination = os.path.join(mypath, os.path.basename(filename_xlsx))
+                if os.path.abspath(filename_xlsx) != os.path.abspath(destination):
+                    shutil.copy(filename_xlsx, destination)
+                else:
+                    print('Skipping copy because source and destination are the same file')
             else:
                 if OpenWorkbook:
                     os.startfile(rf'{filename_xlsx}')

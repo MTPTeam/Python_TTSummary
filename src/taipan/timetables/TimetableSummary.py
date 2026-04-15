@@ -8,9 +8,8 @@ import shutil
 import traceback
 import logging
 
-import tkinter as tk
-from tkinter.filedialog import askopenfilename
 import xml.etree.ElementTree as ET
+from taipan.gui.base import select_file, select_option, select_checkboxes, show_info
 from taipan.reports.TripCount                 import TTS_TC
 from taipan.timetables.PublicTimetable           import TTS_PTT
 from taipan.timetables.WorkingTimetable          import TTS_WTT
@@ -25,6 +24,7 @@ from taipan.reports.TrainMovements            import TTS_TM
 from taipan.first_last.FirstLast                 import TTS_FL
 from taipan.first_last.SimpleFirstLast           import TTS_SFL
 from taipan.constants.days import ID_TO_SHORT
+
 from PyQt6.QtWidgets import QApplication
 ProcessDoneMessagebox = copyfile  = False
 ProcessDoneMessagebox = True
@@ -33,17 +33,6 @@ ProcessDoneMessagebox = True
 
 
 copyfile = True if os.path.basename(__file__) == 'TimetableSummary - Copy.py' else False
-
-
-
-
-
-
-
-
-
-
-
 
 
 name_dict = {
@@ -60,7 +49,6 @@ name_dict = {
     # TTS_TMFO: ('TMFO', 'Train Movements Table (Full Output)'),
     TTS_FL:   ('FL',   'FirstLast'),
     TTS_SFL:  ('SFL',  'Simple FirstLast')
-    
     }
 
 def reset_directory():
@@ -106,17 +94,17 @@ def run_report(script):
 
 try:
 
+
     app = QApplication(sys.argv)
-    
-    rsxselecta = tk.Tk()
-    rsxselecta.withdraw() # we don't want a full GUI, so keep the root window from appearing
-    rsxselecta.update()
-    path = askopenfilename() 
-    rsxselecta.destroy()
-    
-    directory = '\\'.join(path.split('/')[0:-1])
+
+    path = select_file("Select a timetable RSX file")
+    if not path:
+        print("No file selected. Exiting.")
+        sys.exit()
+
+    directory = os.path.dirname(path)
     os.chdir(directory)
-    filename = path.split('/')[-1]
+    filename = os.path.basename(path)
     print(filename,'\n')
     
     
@@ -142,117 +130,29 @@ try:
     
     
     
-    desired_reports = []
-    
-    count = 0
-    cb = tk.Tk()
-    cb.title('Choose Reports to Archive')
-    cb.geometry("330x360") # w x h (add 30 height for every box)
-    
-    var1  = tk.IntVar()
-    var2  = tk.IntVar()
-    var3  = tk.IntVar()
-    var4  = tk.IntVar()
-    var5  = tk.IntVar()
-    var6  = tk.IntVar()
-    var7  = tk.IntVar()
-    var8  = tk.IntVar()
-    var9  = tk.IntVar()
-    var10 = tk.IntVar()
-    var11 = tk.IntVar()
-    var12 = tk.IntVar()
-    var13 = tk.IntVar()
-            
-    
-    def Add_SimpleFirstLast():
-        Add_Checkbox(var13,'SFL')
-    
-    def Add_FirstLast():
-        Add_Checkbox(var12,'FL')
-    
-    # def Add_TrainMovementsFull():
-    #     Add_Checkbox(var11,'TMFO')
-        
-    def Add_TrainMovements():
-        Add_Checkbox(var10,'TM')
-        
-    def Add_VAS():
-        Add_Checkbox(var9,'VAS')
-        
-    def Add_TDSjourneyplanner():
-        Add_Checkbox(var8,'TDS')
-        
-    def Add_HASTUS():
-        Add_Checkbox(var7,'H')
-        
-    def Add_RunInfo():
-        Add_Checkbox(var6,'RI')
-        
-    def Add_StablingBalance():
-        Add_Checkbox(var5,'SB')
-    
-    def Add_StablingCount():
-        Add_Checkbox(var4,'SC')
-            
-    def Add_WTT():
-        Add_Checkbox(var3,'WTT')
-    
-    def Add_PTT():
-        Add_Checkbox(var2,'PTT')
-            
-    def Add_TripCount():
-        Add_Checkbox(var1,'TC')
-          
-    
-          
-            
-    
-        
-    
-    checkbox1  = tk.Checkbutton(cb, text='TripCount',                    variable=var1, onvalue=1, offvalue=0, command=Add_TripCount)
-    checkbox2  = tk.Checkbutton(cb, text='Public Timetable',             variable=var2, onvalue=1, offvalue=0, command=Add_PTT)
-    checkbox3  = tk.Checkbutton(cb, text='Working Timetable',            variable=var3, onvalue=1, offvalue=0, command=Add_WTT)
-    checkbox4  = tk.Checkbutton(cb, text='Stabling Count',               variable=var4, onvalue=1, offvalue=0, command=Add_StablingCount)
-    checkbox5  = tk.Checkbutton(cb, text='Stabling Balance',             variable=var5, onvalue=1, offvalue=0, command=Add_StablingBalance)
-    checkbox6  = tk.Checkbutton(cb, text='Run Info',                     variable=var6, onvalue=1, offvalue=0, command=Add_RunInfo)
-    checkbox7  = tk.Checkbutton(cb, text='HASTUS Export',                variable=var7, onvalue=1, offvalue=0, command=Add_HASTUS)
-    checkbox8  = tk.Checkbutton(cb, text='TDS // Journey Planner',       variable=var8, onvalue=1, offvalue=0, command=Add_TDSjourneyplanner)
-    checkbox9  = tk.Checkbutton(cb, text='VAS Extract',                  variable=var9, onvalue=1, offvalue=0, command=Add_VAS)
-    checkbox10 = tk.Checkbutton(cb, text='Train Movement Tables',        variable=var10, onvalue=1, offvalue=0, command=Add_TrainMovements)
-    # checkbox11 = tk.Checkbutton(cb, text='TrainMovements (Full Output)', variable=var11, onvalue=1, offvalue=0, command=Add_TrainMovementsFull)
-    checkbox12 = tk.Checkbutton(cb, text='First Last',                   variable=var12, onvalue=1, offvalue=0, command=Add_FirstLast)
-    checkbox13 = tk.Checkbutton(cb, text='Simple First Last',            variable=var13, onvalue=1, offvalue=0, command=Add_SimpleFirstLast)
-    
-    checkbox1.pack(anchor  = "w")
-    checkbox2.pack(anchor  = "w")
-    checkbox3.pack(anchor  = "w")
-    checkbox4.pack(anchor  = "w")
-    checkbox5.pack(anchor  = "w")
-    checkbox6.pack(anchor  = "w")
-    checkbox7.pack(anchor  = "w")
-    checkbox8.pack(anchor  = "w")
-    checkbox9.pack(anchor  = "w")
-    checkbox10.pack(anchor = "w")
-    # checkbox11.pack(anchor = "w")
-    checkbox12.pack(anchor = "w")
-    checkbox13.pack(anchor = "w")
-    
-    def close_window(): 
-        cb.quit()
-    
-    tk.Button(cb,width=20, padx=5, pady=5, text='OK',command=close_window).pack()
-    cb.mainloop()
-    cb.withdraw()
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    report_options = [
+        ('TripCount', 'TC'),
+        ('Public Timetable', 'PTT'),
+        ('Working Timetable', 'WTT'),
+        ('Stabling Count', 'SC'),
+        ('Stabling Balance', 'SB'),
+        ('Run Info', 'RI'),
+        ('HASTUS Export', 'H'),
+        ('TDS // Journey Planner', 'TDS'),
+        ('VAS Extract', 'VAS'),
+        ('Train Movement Tables', 'TM'),
+        ('First Last', 'FL'),
+        ('Simple First Last', 'SFL'),
+    ]
+    desired_reports = select_checkboxes(
+        'Choose Reports to Archive',
+        'Select one or more reports to run:',
+        report_options,
+    )
+    if not desired_reports:
+        print('No reports selected. Exiting.')
+        sys.exit()
+
     print('Timetable Summary\n')
     
     tts_start_time = time.time()
@@ -302,13 +202,16 @@ try:
     
     if copyfile:
         print('\nCopying RSX')
-        shutil.copy(filename, mypath)  
+        destination = os.path.join(mypath, os.path.basename(filename))
+        if os.path.abspath(filename) != os.path.abspath(destination):
+            shutil.copy(filename, destination)
+        else:
+            print('Skipping copy because source and destination are the same file')  
 
     
     if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-tts_start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('TimeTable Summary','Process Done')
+            show_info('TimeTable Summary', 'Process Done')
 except Exception as e:
     logging.error(traceback.format_exc())
     if ProcessDoneMessagebox:

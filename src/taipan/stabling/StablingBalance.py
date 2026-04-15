@@ -371,7 +371,11 @@ def TTS_SB(path, mypath = None):
             workbook.close()
             print('Creating workbook')  
             if copyfile:
-                shutil.copy(filename_xlsx, mypath) 
+                destination = os.path.join(mypath, os.path.basename(filename_xlsx))
+                if os.path.abspath(filename_xlsx) != os.path.abspath(destination):
+                    shutil.copy(filename_xlsx, destination)
+                else:
+                    print('Skipping copy because source and destination are the same file') 
             else:
                 if OpenWorkbook:
                     open_file_crossplatform(filename_xlsx)

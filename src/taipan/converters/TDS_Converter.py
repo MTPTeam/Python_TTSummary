@@ -39,7 +39,9 @@ sID_stableconverter = {
 
 def TTS_TDS(path, mypath = None):
     
-    copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
+    source_dir = os.path.abspath(os.path.dirname(path))
+    dest_dir = os.path.abspath(mypath) if mypath is not None else None
+    copyfile = dest_dir is not None and source_dir != dest_dir
 
     try:
         
@@ -320,7 +322,11 @@ def TTS_TDS(path, mypath = None):
                 o.close()
                 if __name__ != "__main__":
                     if copyfile:
-                        shutil.copy(filename_txt, mypath) 
+                        destination = os.path.join(mypath, os.path.basename(filename_txt))
+                        if os.path.abspath(filename_txt) != os.path.abspath(destination):
+                            shutil.copy(filename_txt, destination)
+                        else:
+                            print('Skipping copy because source and destination are the same file') 
                     
                 
         writesheet(['120'],             'JourneyPlanner',   jp_daycode_dict)
