@@ -11,7 +11,7 @@ import math
 
 
 # disable native dialog since its too slow on windows
-_FAST_OPTIONS = QFileDialog.Option.DontUseNativeDialog
+#_FAST_OPTIONS = QFileDialog.Option.DontUseNativeDialog
 
 
 def ensure_app() -> QApplication:
@@ -29,7 +29,6 @@ def select_file(caption: str = "Select a file",directory: str = "",filter_str: s
         caption,
         directory,
         filter_str,
-        options=_FAST_OPTIONS,
     )
     return file_path or ""
 
@@ -43,9 +42,40 @@ def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = ""
         caption,
         directory,
         "RSX Files (*.rsx)",
-        options=_FAST_OPTIONS,
     )
     return files
+
+
+
+def select_option(title: str, message: str, options: list[tuple[str, str]]) -> str | None:
+    ensure_app()
+
+    dialog = QDialog()
+    dialog.setWindowTitle(title)
+
+    layout = QVBoxLayout()
+
+    label = QLabel(message)
+    layout.addWidget(label)
+
+    selected = None
+
+    def on_click(value):
+        nonlocal selected
+        selected = value
+        dialog.accept()
+
+    for display, value in options:
+        btn = QPushButton(display)
+        btn.clicked.connect(lambda checked, v=value: on_click(v))
+        layout.addWidget(btn)
+
+    dialog.setLayout(layout)
+
+    if dialog.exec() == QDialog.DialogCode.Accepted:
+        return selected
+    else:
+        return None
 
 
 

@@ -1,5 +1,7 @@
 import os
 import sys
+
+
 import time
 import shutil  
 
@@ -23,8 +25,12 @@ from taipan.reports.TrainMovements            import TTS_TM
 from taipan.first_last.FirstLast                 import TTS_FL
 from taipan.first_last.SimpleFirstLast           import TTS_SFL
 from taipan.constants.days import ID_TO_SHORT
+from PyQt6.QtWidgets import QApplication
 ProcessDoneMessagebox = copyfile  = False
 ProcessDoneMessagebox = True
+
+
+
 
 copyfile = True if os.path.basename(__file__) == 'TimetableSummary - Copy.py' else False
 
@@ -99,6 +105,8 @@ def run_report(script):
 
 
 try:
+
+    app = QApplication(sys.argv)
     
     rsxselecta = tk.Tk()
     rsxselecta.withdraw() # we don't want a full GUI, so keep the root window from appearing
