@@ -325,7 +325,10 @@ def interpeakstabling(daylist, u_list):
         if '09:00:00' < x[7] < '15:30:00':
             
             while prepeak == True:
-                ip_tracker.append((daylist[t-1][7],ip-daylist[t][8]))
+                ip_tracker.append(
+                    (daylist[t-1][7], ip - daylist[t][8] * (0.5 if daylist[t][3] == 3 else 1))
+                )
+
                 
                 prepeak = False
             
