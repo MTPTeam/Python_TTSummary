@@ -255,19 +255,19 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
                ax.MaximumScale            = mins_to_excel_time(t_end)
                ax.MajorUnit               = mins_to_excel_time(60) # COM-fragile
                ax.TickLabels.NumberFormat = 'h:mm'
-               ax.TickLabels.Font.Size    = 8
+               ax.TickLabels.Font.Size    = 10
                ax.HasTitle                = False
                ay = chart.Axes(2)  # y
                ay.MinimumScale         = 0
                ay.HasTitle             = False
-               ay.TickLabels.Font.Size = 8
+               ay.TickLabels.Font.Size = 10
                chart.HasTitle  = True
                chart.ChartTitle.Text          = dow_label
-               chart.ChartTitle.Font.Size     = 12
+               chart.ChartTitle.Font.Size     = 16
                chart.ChartTitle.Font.Bold     = False
                chart.HasLegend           = True
                chart.Legend.Position     = -4107  # COM-fragile xlLegendPositionRight
-               chart.Legend.Font.Size    = 8
+               chart.Legend.Font.Size    = 12
                # apply style — works because COM owns the chart from creation
                chart.ChartStyle = 240  # COM-fragile
                #chart.ChartColor = 2
