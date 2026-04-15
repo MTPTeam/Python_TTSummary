@@ -209,7 +209,6 @@ def merge_out_in_per_day(out_list, in_list, sort_by_unit=True):
     return merged
 
 
-
 def startofdayunitcount(daylist, u_list):
     """ 
     Finds the minimum number of units stabled at each location at the start of the day
@@ -250,113 +249,84 @@ def startofdayunitcount(daylist, u_list):
     return [total_required] + per_unit_aligned
 
 
-
 def endofdayunitcount(daylist, u_list, change_matrix):
-    """ 
-    Finds the end of day balance between units at the start of the day and units at the end of the day
-    An output of zero means the stabling location is balanced for that day
-    """
-    
-    startcount = startofdayunitcount(daylist, u_list)
-    stablechange = np.array(startcount)
-    
-    
-    for entry in daylist:
-        threecarscalar = 0.5 if entry[3] == 3 else 1
-
-        if entry[8] < 0:
-            stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
-            
-        else:
-            stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-            
-            
-    total = stablechange[0]-startcount[0]
-    breakdown  = list(stablechange[1:]-np.array(startcount[1:]))
-    
-    return total,breakdown
+   """
+   Finds the end of day balance between units at the start of the day and units at the end of the day
+   An output of zero means the stabling location is balanced for that day
+   """
+   startcount = startofdayunitcount(daylist, u_list)
+   stablechange = np.array(startcount)
+   for entry in daylist:
+       if entry[8] < 0:
+           stablechange -= np.array(change_matrix.get(entry[2])) * abs(entry[8])
+       else:
+           stablechange += np.array(change_matrix.get(entry[2])) * abs(entry[8])
+   total = stablechange[0] - startcount[0]
+   breakdown = list(stablechange[1:] - np.array(startcount[1:]))
+   return total, breakdown
 
 
 
-        
 def overnightstabling(daylist, u_list, change_matrix):
-    """ 
-    Finds the number of units back in each location at the end of the day
-    Uses the startofdayunitcount function as a startpoint, minimum required units for that day
-    Could be other, unused units which never left
-    """
-    
-    startcount = startofdayunitcount(daylist, u_list)
-    stablechange = np.array(startcount)
-    
-    for entry in daylist:
-        threecarscalar = 0.5 if entry[3] == 3 else 1
-
-        if entry[8] < 0:
-            stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
-        else:
-            stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-    
-    
-    if max(stablechange[0],startcount[0]) == stablechange[0]:
-        return stablechange[0],stablechange[1:]
-    else:
-        return startcount[0],startcount[1:]
+   """
+   Finds the number of units back in each location at the end of the day
+   Uses the startofdayunitcount function as a startpoint, minimum required units for that day
+   Could be other, unused units which never left
+   """
+   startcount = startofdayunitcount(daylist, u_list)
+   stablechange = np.array(startcount)
+   for entry in daylist:
+       if entry[8] < 0:
+           stablechange -= np.array(change_matrix.get(entry[2])) * abs(entry[8])
+       else:
+           stablechange += np.array(change_matrix.get(entry[2])) * abs(entry[8])
+   if max(stablechange[0], startcount[0]) == stablechange[0]:
+       return stablechange[0], stablechange[1:]
+   else:
+       return startcount[0], startcount[1:]
     
 
 
     
 def interpeakstabling(daylist, u_list):
-    """ 
-    Finds the maximum number of trains stabled at each location during interpeak
-    Returns the total and the unit breakdown at that point in time
-    """
-    
-    ip_tracker = []
-    prepeak = True
-    ip = startofdayunitcount(daylist, u_list)[0]
-    for t,x in enumerate(daylist):
-        
-        if len(x[7]) == 4:
-            x[7] = '0' + x[7]
-            
-        threecarscalar = 0.5 if x[3] == 3 else 1
-        ip += x[8] * threecarscalar
-        if '09:00:00' < x[7] < '15:30:00':
-            
-            while prepeak == True:
-                ip_tracker.append(
-                    (daylist[t-1][7], ip - daylist[t][8] * (0.5 if daylist[t][3] == 3 else 1))
-                )
-
-                
-                prepeak = False
-            
-            ip_tracker.append((x[7],ip))
-    
-    if ip_tracker:
-        traincount = [x[1] for x in ip_tracker]
-        output_total = max(traincount)
-        idx = traincount.index(output_total)
-        max_oclock = ip_tracker[idx][0]
-    else:
-        output_total = 0
-        
-    unit_subtotals = []
-    for u in u_list:
-        unit_ip = startofdayunitcount(daylist, u_list)[1:][u_list.index(u)]
-        for x in daylist:
-            try: 
-                max_oclock
-                
-                if x[2] == u:
-                    unit_ip += x[8] * (0.5 if x[3] == 3 else 1)
-                if x[7] == max_oclock:
-                    break
-            except:
-                break
-        if output_total == 0:
-            unit_ip = 0
-        unit_subtotals.append(unit_ip)    
-
-    return output_total,unit_subtotals
+   """
+   Finds the maximum number of trains stabled at each location during interpeak
+   Returns the total and the unit breakdown at that point in time
+   """
+   ip_tracker = []
+   prepeak = True
+   ip = startofdayunitcount(daylist, u_list)[0]
+   for t, x in enumerate(daylist):
+       if len(x[7]) == 4:
+           x[7] = '0' + x[7]
+       ip += x[8]
+       if '09:00:00' < x[7] < '15:30:00':
+           while prepeak == True:
+               ip_tracker.append(
+                   (daylist[t-1][7], ip - daylist[t][8])
+               )
+               prepeak = False
+           ip_tracker.append((x[7], ip))
+   if ip_tracker:
+       traincount = [x[1] for x in ip_tracker]
+       output_total = max(traincount)
+       idx = traincount.index(output_total)
+       max_oclock = ip_tracker[idx][0]
+   else:
+       output_total = 0
+   unit_subtotals = []
+   for u in u_list:
+       unit_ip = startofdayunitcount(daylist, u_list)[1:][u_list.index(u)]
+       for x in daylist:
+           try:
+               max_oclock
+               if x[2] == u:
+                   unit_ip += x[8]
+               if x[7] == max_oclock:
+                   break
+           except:
+               break
+       if output_total == 0:
+           unit_ip = 0
+       unit_subtotals.append(unit_ip)
+   return output_total, unit_subtotals

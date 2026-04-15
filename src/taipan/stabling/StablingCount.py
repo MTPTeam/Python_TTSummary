@@ -117,56 +117,41 @@ def TTS_SC(path, mypath = None):
         store = init_store(YARDS, SORT_ORDER_WEEK)
             
     
-        def write_day(sheet,daylist,row):
+        def write_day(sheet, daylist, row):
             """ Prints each run to the workbook and updates the unit count, printing the subsequent balance of all units """
-            
             startcount = startofdayunitcount(daylist, u_list)
             if daylist:
-                sheet.write_column( row,0,['Start of Day Unit Count','End of Day Unit Count'], size14)
-                sheet.write(        row,9, startcount[0],      tborder)
-                sheet.write_row(    row,10,startcount[1:],     border)
+                sheet.write_column(row, 0, ['Start of Day Unit Count', 'End of Day Unit Count'], size14)
+                sheet.write(row, 9, startcount[0], tborder)
+                sheet.write_row(row, 10, startcount[1:], border)
                 row += 2
                 stablechange = np.array(startcount)
-                for idx,entry in enumerate(daylist, row):
-                    unit = entry[2]
-                    cars = entry[3]
-
-                    threecarscalar = 0.5 if cars == 3 else 1
-    
+                for idx, entry in enumerate(daylist, row):
                     if entry[8] < 0:
-
-                        stablechange -= np.array(change_matrix.get(entry[2]))*threecarscalar
-                        
+                        stablechange -= np.array(change_matrix.get(entry[2])) * abs(entry[8])
                     else:
-                        stablechange += np.array(change_matrix.get(entry[2]))*threecarscalar
-                    
+                        stablechange += np.array(change_matrix.get(entry[2])) * abs(entry[8])
                     stablechange = list(stablechange)
-                    for j,cell in enumerate(entry+stablechange):
+                    for j, cell in enumerate(entry + stablechange):
                         sheet.write(idx, j, cell, formats[entry[2]]["normal"])
-                       
-                    # sheet.write_row(idx,0,entry+stablechange,font_dict.get(entry[2])[0])
                     if entry[5] in NON_STABLE_LOCATIONS:
                         sheet.write(idx, 5, entry[5], formats[entry[2]]["boldred"])
                     if entry[6] in NON_STABLE_LOCATIONS:
                         sheet.write(idx, 6, entry[6], formats[entry[2]]["boldred"])
-                        
-                sheet.write(        row-1,9,  stablechange[0],      tborder)
-                sheet.write_row(    row-1,10, stablechange[1:],     border)
-                
+                sheet.write(row - 1, 9, stablechange[0], tborder)
+                sheet.write_row(row - 1, 10, stablechange[1:], border)
                 row += len(daylist)
-                total      = stablechange[0]-startcount[0]
-                breakdown  = stablechange[1:]-np.array(startcount[1:])
-                unbalanced = any([total]+breakdown)
+                total = stablechange[0] - startcount[0]
+                breakdown = stablechange[1:] - np.array(startcount[1:])
+                unbalanced = any([total] + list(breakdown))
                 if unbalanced:
-                    sheet.write(        row,9,  total,      rborder)
-                    sheet.write_row(    row,10, breakdown,  rborder)
+                    sheet.write(row, 9, total, rborder)
+                    sheet.write_row(row, 10, breakdown, rborder)
                     sheet.set_tab_color('#CC194C')
                 else:
-                    sheet.write(        row,9,  total,      tborder)
-                    sheet.write_row(    row,10, breakdown,  border)
-                    
-                sheet.write(            row,0,  'Daily Difference', size14)
-                # startrow += len(daylist) + 5
+                    sheet.write(row, 9, total, tborder)
+                    sheet.write_row(row, 10, breakdown, border)
+                sheet.write(row, 0, 'Daily Difference', size14)
             
         def write_sheet(sheet,mon,tue,wed,thu,mth,fri,sat,sun):
             """ Populates the sheet with runs and totals for the whole week """
