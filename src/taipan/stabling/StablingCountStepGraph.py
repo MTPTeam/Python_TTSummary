@@ -49,55 +49,38 @@ def detect_fleet_violations(stables_dict, yard_meta):
 
 
 def extract_regular_series(daylist, u_list, change_matrix, interval_mins=1):
-
     # this runs stabling count but at a finer resolution
     # change interval _mins to change the x axis (time) ticks for each stabling yard 
-    
-    if not daylist:
-        return [], {}
-
-    start        = startofdayunitcount(daylist, u_list)
-    stablechange = list(map(float, start))
-
-    events = []
-    for entry in daylist:
-        #print(entry)
-        unit  = entry[2]
-        cars  = entry[3]
-        t_str = entry[7]
-        delta = entry[8]
-
-
-        scalar = 0.5 if cars == 3 else 1
-
-        cm = change_matrix[unit]
-        diff = [delta * scalar * c for c in cm]
-        events.append((hhmm_to_mins(t_str), diff))
-
-    t_start = events[0][0]
-    t_end   = events[-1][0]
-
-    change_at = defaultdict(lambda: [0.0] * (len(u_list) + 1))
-    for t, diff in events:
-        existing  = change_at[t]
-        change_at[t] = [e + d for e, d in zip(existing, diff)]
-
-    ticks  = []
-    counts = defaultdict(list)
-    state  = list(stablechange)
-
-    for tick in range(t_start, t_end + interval_mins, interval_mins):
-        if tick in change_at:
-            diff  = change_at[tick]
-            state = [s + d for s, d in zip(state, diff)]
-
-        ticks.append(mins_to_excel_time(tick))
-        counts['Total'].append(int(state[0]))
-        for i, u in enumerate(u_list):
-            counts[u].append(int(state[i + 1]))
-
-    return ticks, dict(counts), t_start, t_end
-
+   if not daylist:
+       return [], {}
+   start        = startofdayunitcount(daylist, u_list)
+   stablechange = list(map(float, start))
+   events = []
+   for entry in daylist:
+       unit  = entry[2]
+       t_str = entry[7]
+       delta = entry[8]
+       cm = change_matrix[unit]
+       diff = [delta * c for c in cm]
+       events.append((hhmm_to_mins(t_str), diff))
+   t_start = events[0][0]
+   t_end   = events[-1][0]
+   change_at = defaultdict(lambda: [0.0] * (len(u_list) + 1))
+   for t, diff in events:
+       existing  = change_at[t]
+       change_at[t] = [e + d for e, d in zip(existing, diff)]
+   ticks  = []
+   counts = defaultdict(list)
+   state  = list(stablechange)
+   for tick in range(t_start, t_end + interval_mins, interval_mins):
+       if tick in change_at:
+           diff  = change_at[tick]
+           state = [s + d for s, d in zip(state, diff)]
+       ticks.append(mins_to_excel_time(tick))
+       counts['Total'].append(int(state[0]))
+       for i, u in enumerate(u_list):
+           counts[u].append(int(state[i + 1]))
+   return ticks, dict(counts), t_start, t_end
 
 
 def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d_list, capacity, filename, data_sheet, data_col_offset,violations=None): #by default no violations 
