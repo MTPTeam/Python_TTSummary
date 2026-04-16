@@ -151,9 +151,8 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
     ![package installer](/images/installing_packages.png "packages")
 
-- Install pywin32 (requires .whl file, cannot be downloaded manually). This step can be skipped - however First Last Graph, Stabling Graph will not be available. 
-
-    `.\venv\Scripts\python.exe -m pip install C:\Users\<username>\Downloads\pywin32-311-cp312-cp312-win_amd64.whl`
+- Install pywin32 (requires .whl file, installing manually)
+    `.\venv\Scripts\python.exe -m pip install "C:\Python_TTSummary\pywin32-311-cp312-cp312-win_amd64.whl"`
 
 - Now tell Python this code is a 'package':
 
