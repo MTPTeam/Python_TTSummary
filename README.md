@@ -50,7 +50,14 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - Intended as a visual validation and analysis tool for stabling demand across the operating day.
 - Styling is done via changing `chart.ChartStyle = 240`, however there is no list of available styles. An easy way to find out what number  a chartstyle corresponds to is to record a macro -> change the chartstyle -> stop recording -> view macros -> select the macro and click edit -> see what number `ActiveChart.ChartStyle` and set the chartstyle in the code to that number. 
 - **Its important to note that many Excel chart formatting properties accessed via pywin32 / win32com (such as ChartStyle and ChartColor) are version dependent and may render differently across Excel releases. In some cases, styles that are unsupported in a given Excel version may raise COM runtime errors when applied. COM‑fragile properties are annotated in the code (search for COM‑fragile)**
-- New feature: a summary table identifying yards where incompatible rollingstock is stabled (e.g. NGR units stabled in QR only yards, and vice versa).
+- New feature: a summary table identifying yards where incompatible rollingstock is stabled (e.g. NGR units stabled in QR only yards, and vice versa). Additional summary table where yards with capacity violations are recorded, along with peak stabled + time of first capacity breach.
+
+**`stabling/StablingCount.py`**
+- In summary, yard name will highlight dark red when the yard has imbalances.
+- When capacity is red, this indicates a stabling issue: 
+> - incorrect train type stabled at yard (NGR at QR only fleet or vice versa). At the moment QTMP/QMU/REP are caught as QR fleet in this check since capacity is unknown - intended to be an FYI.
+> - stabling capacity has been exceeded for a period/day 
+- If Sat/Sun uses more trains than weekdays, unit cells text colour will be red.
 
 
 **All files in `stabling/`**
@@ -77,17 +84,18 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 > - cross day matching -> match block between paired days (weekdays & weekend) using first stop signature. Where cross day matches exist force LineiDs to be reused. 
 > - rewrite RSX file 
 
-- **LineID range table** - these will need to be updated once new ranges are known. These ranges are a modified version of the RMC electric workings doc - since we don't have enough range to use the originals...
+
+- **LineID range table** - these will need to be updated once new ranges are known. These ranges are a modified version of the RMC electric workings document. 
 
 
-    | Unit Type | LineID / Run Code Range                     |
-    |-----------|---------------------------------------------|
-    | EMU       | AA–EZ, IA–JZ, OA–PZ                          |
-    | IMU       | FA–GZ, KA–KZ, QA–QZ                          |
-    | NGR       | 01–499                                      |
-    | REP       | 500–999                                     |
+| Unit Type | LineID / Run Code Range                     |
+|-----------|---------------------------------------------|
+| EMU       | AA–EZ, IA–JZ, OA–PZ                         |
+| IMU       | FA–GZ, KA–KZ, QA–QZ                         |
+| NGR       | 01–499                                      |
+| REP       | 500–999                                     |
 
-
+> - Note that we share IDs across days to account for the lack of IDs to assign to new trains. NGRs and REP have had their ranges expanded to account for the amount of trains. 
 
 ## Testing
  - Run all tests; copy into cmd
@@ -106,13 +114,13 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 - When the installer is finished, run it from your downloads folder. Leave everything as default and click skip/next.
 
-### 2. Clone the repository 
+### 2. Clone the repository OR Download the repository 
 
-- Add instructions here (todo)
+- To download: Code -> download zip
 
 ### 3. Downloading / Setup of IDE (skip if not developing)
 
-- Add instructions here (todo)
+- Install VSCode if needed
 
 ### 4. Setup the Python Virtual Environment
 - **Important**: For all commands, replace the `<username>` part with your own username (e.g r123456)

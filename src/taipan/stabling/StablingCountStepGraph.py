@@ -29,6 +29,7 @@ def build_change_matrix(u_list):
 
 
 def detect_fleet_violations(stables_dict, yard_meta):
+    # detects when NGR/NGRE units are stabled at yards that should only have QR units, and vice versa. Returns list of dicts with keys: yard, type ('ngr_only' | 'qr_only'), offending_units
     violations = []
 
     for yard_name, stables_tuple in stables_dict.items():
@@ -46,6 +47,31 @@ def detect_fleet_violations(stables_dict, yard_meta):
             violations.append({'yard': yard_name,'type': 'qr_only','offending_units': ngr_units})
 
     return violations
+
+
+def detect_capacity_violations(stables_dict, yard_meta, u_list, change_matrix):
+   # detects when stabling count breaches the yard capacity at any point in the day, returns list of dicts with keys: yard, dow, capacity, peak, breach_time
+   violations = []
+   for yard_name, stables_tuple in stables_dict.items():
+       capacity = yard_meta[yard_name].get('capacity')
+       if not isinstance(capacity, int):
+           continue
+       for dow, daylist in zip(SORT_ORDER_WEEK, stables_tuple):
+           if not daylist:
+               continue
+           ticks, counts, t_start, t_end = extract_regular_series(daylist, u_list, change_matrix)
+           if not ticks:
+               continue
+           max_count = max(counts['Total'])
+           if max_count > capacity:
+               # find the time it first breaches
+               breach_tick = next(
+                   i for i, v in enumerate(counts['Total']) if v > capacity
+               )
+               violations.append({'yard': yard_name,'dow': dow,'capacity': capacity,'peak': max_count,'breach_time': ticks[breach_tick],})
+   return violations
+
+
 
 
 def extract_regular_series(daylist, u_list, change_matrix, interval_mins=1):
@@ -83,7 +109,7 @@ def extract_regular_series(daylist, u_list, change_matrix, interval_mins=1):
    return ticks, dict(counts), t_start, t_end
 
 
-def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d_list, capacity, filename, data_sheet, data_col_offset,violations=None): #by default no violations 
+def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d_list, capacity, filename, data_sheet, data_col_offset,violations=None, cap_violations=None): #by default no violations 
    # write data + chart for a single yard 
    graph_sheet = workbook.add_worksheet(yard_name)
    graph_sheet.set_tab_color('#2563EB')
@@ -154,15 +180,13 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d
        banner_row = 30
        banner_last_col = 7
 
-       graph_sheet.merge_range(banner_row, 0, banner_row, banner_last_col, '⚠ Fleet violation — incorrect unit types stabled at this yard:', warn_fmt )
+       graph_sheet.merge_range(banner_row, 0, banner_row, banner_last_col, '⚠ Fleet violation -> incorrect unit types stabled at this yard:', warn_fmt )
        for i, v in enumerate(violations):
            
-        graph_sheet.merge_range(
-            banner_row + 1 + i, 0, banner_row + 1 + i, banner_last_col,
-            f"  {', '.join(v['offending_units'])} — "
-            f"{'QR' if v['type'] == 'ngr_only' else 'NGR'} units should not be here",
-            unit_fmt
-        )
+        graph_sheet.merge_range(banner_row + 1 + i, 0, banner_row + 1 + i, banner_last_col,f"  {', '.join(v['offending_units'])} — "f"{'QR' if v['type'] == 'ngr_only' else 'NGR'} units should not be here",unit_fmt)
+    
+   has_cap_breach = cap_violations and any(v['yard'] == yard_name for v in cap_violations)
+   graph_sheet.set_tab_color('#DC2626' if has_cap_breach else '#2563EB')
 
    return col
 
@@ -280,10 +304,12 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
        pythoncom.CoUninitialize()
 
 
-def write_summary_sheet(workbook, violations, filename):
+def write_summary_sheet(workbook, violations, cap_violations, filename):
    """
    violations: list of dicts with keys:
        yard, type ('ngr_only' | 'qr_only'), offending_units
+   cap_violations: list of dicts with keys:
+       yard, dow, capacity, peak, breach_time
    """
    sheet = workbook.add_worksheet('Summary')
    sheet.activate()
@@ -332,7 +358,6 @@ def write_summary_sheet(workbook, violations, filename):
    sheet.write(2, 3, 'Issue',            header_fmt)
    if not violations:
        sheet.write(3, 0, '✓ No violations found', ok_fmt)
-       return
    for i, v in enumerate(violations):
        row = 3 + i
        sheet.set_row(row, 16)
@@ -344,7 +369,45 @@ def write_summary_sheet(workbook, violations, filename):
        sheet.write(row, 1, expected,    warn_fmt)
        sheet.write(row, 2, units_str,   unit_fmt)
        sheet.write(row, 3, message,     warn_fmt)
-   sheet.write(4 + len(violations), 0, f'Generated: {filename}', note_fmt)
+   #sheet.write(4 + len(violations), 0, f'Generated: {filename}', note_fmt)
+
+
+   cap_start = len(violations) + 6
+
+   sheet.set_row(cap_start - 1, 18)
+   sheet.write(cap_start - 1, 0, 'Capacity Violations', header_fmt)
+
+   sheet.write(cap_start, 0, 'Yard',         header_fmt)
+   sheet.write(cap_start, 1, 'Day',          header_fmt)
+   sheet.write(cap_start, 2, 'Capacity',     header_fmt)
+   sheet.write(cap_start, 3, 'Peak Stabled', header_fmt)
+   sheet.write(cap_start, 4, 'First Breach', header_fmt)
+   sheet.set_column(4, 4, 15)
+
+
+
+   time_fmt = workbook.add_format({'num_format': '[h]:mm', 'font_name': 'Aptos',
+                                   'font_size': 12, 'bg_color': '#FEF2F2',
+                                   'border': 1, 'border_color': '#FECACA'})
+
+   if not cap_violations:
+       sheet.write(cap_start + 1, 0, '✓ No capacity breaches found', ok_fmt)
+   else:
+       for i, v in enumerate(cap_violations):
+           row = cap_start + 1 + i
+           dow_label = WEEKDAY_KEYS_MASTER.get(v['dow'], {}).get('long', v['dow'])
+           sheet.write(row, 0, v['yard'],       warn_fmt)
+           sheet.write(row, 1, dow_label,       warn_fmt)
+           sheet.write(row, 2, v['capacity'],   warn_fmt)
+           sheet.write(row, 3, v['peak'],       warn_fmt)
+           sheet.write(row, 4, v['breach_time'], time_fmt)
+   #sheet.write(cap_start + 2 + len(cap_violations), 0, f'Generated: {filename}', note_fmt)
+
+
+   final_row = cap_start + 2 + max(len(cap_violations), 1)
+   sheet.write(final_row, 0, f'Generated: {filename}', note_fmt)
+
+
 
 
 def TTS_Graph(path):
@@ -366,6 +429,7 @@ def TTS_Graph(path):
     
     # detect + store violations 
     violations = detect_fleet_violations(stables_dict, YARDS)
+    cap_violations = detect_capacity_violations(stables_dict, YARDS, u_list, change_matrix)
 
     # build workbook
     filename  = path.split('/')[-1].replace('.rsx', '')
@@ -373,7 +437,7 @@ def TTS_Graph(path):
     os.chdir('\\'.join(path.split('/')[0:-1]))
     workbook = xlsxwriter.Workbook(xlsx_path)
     # Summary is created first -> leftmost tab, activate() makes it open first
-    write_summary_sheet(workbook, violations, filename)
+    write_summary_sheet(workbook, violations, cap_violations, filename)  # pass both violation lists to summary sheet writer
     # Hidden data sheet second
     data_sheet = workbook.add_worksheet('_ChartData')
     #data_sheet.hide()  # to unhide data 
@@ -383,7 +447,7 @@ def TTS_Graph(path):
     for yard_name, stables_tuple in stables_dict.items():
         meta     = YARDS[yard_name]
         capacity = meta.get('capacity')
-        col_ptr  = write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix, d_list, capacity, filename,data_sheet, col_ptr, violations=[v for v in violations if v['yard'] == yard_name])
+        col_ptr  = write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix, d_list, capacity, filename,data_sheet, col_ptr, violations=[v for v in violations if v['yard'] == yard_name], cap_violations=[v for v in cap_violations if v['yard'] == yard_name])
     workbook.close()
     print(f'Saved: {xlsx_path}')
     print('Creating charts...')
