@@ -15,18 +15,21 @@
     <timetableentries>
       <entry stationID="ETF"
              departure="04:05:45"
-             trainTypeId="Empty_6-IMU100">
+             trainTypeId="Empty_6-IMU100"
+             trackID="1">
       </entry>
 
       <entry stationID="EDJ"
              departure="04:11:45"
-             trainTypeId="Empty_6-IMU100">
+             trainTypeId="Empty_6-IMU100"
+             trackID="1">
         <connection/>
       </entry>
 
       <entry stationID="PKR"
              departure="04:32:53"
-             trainTypeId="Empty_6-IMU100"/>
+             trainTypeId="Empty_6-IMU100"
+             trackID="1"/>
     </timetableentries>
 
   </train>
