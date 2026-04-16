@@ -375,7 +375,8 @@ def write_summary_sheet(workbook, violations, cap_violations, filename):
    cap_start = len(violations) + 6
 
    sheet.set_row(cap_start - 1, 18)
-   sheet.write(cap_start - 1, 0, 'Capacity Violations', header_fmt)
+   sheet.write(cap_start - 1, 0, 'Capacity Violations', header_fmt) # replace with merge_range
+   
 
    sheet.write(cap_start, 0, 'Yard',         header_fmt)
    sheet.write(cap_start, 1, 'Day',          header_fmt)
@@ -391,7 +392,11 @@ def write_summary_sheet(workbook, violations, cap_violations, filename):
                                    'border': 1, 'border_color': '#FECACA'})
 
    if not cap_violations:
-       sheet.write(cap_start + 1, 0, '✓ No capacity breaches found', ok_fmt)
+       sheet.merge_range(
+        cap_start + 1, 0,
+        cap_start + 1, 4,
+        '✓ No capacity breaches found',
+        ok_fmt)
    else:
        for i, v in enumerate(cap_violations):
            row = cap_start + 1 + i
