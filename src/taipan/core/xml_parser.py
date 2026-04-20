@@ -1,12 +1,18 @@
 from importlib.resources import path
 import os
+import sys
+import sys
 import xml.etree.ElementTree as ET
 import re
 import typing
-
 from taipan.constants.trains import SORT_ORDER_UNIT, TRAIN_TYPE_MASK
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, DAY_PRIORITY, SORT_ORDER_WEEK, ID_TO_SHORT
 import numpy as np
+from taipan.gui.base import show_info
+from PyQt6.QtWidgets import QApplication
+        
+# collect unknown units for reporting at the end of parsing (don't want to spam popups during parsing, but still want to know if we have unrecognised units)        
+UNKNOWN_UNITS = set()
 
 def rep_to_qmu_tokenwise(text):
     # replace standalone REP tokens with QMU (preserve delimiters)
@@ -52,8 +58,6 @@ def normalise_train_type(raw):
         # fall back - still allow AW enforcement + suffix strip in case mask value carries them
     # else: keep s as-is
 
-    
-
     s = rep_to_qmu_tokenwise(s)
 
     # detect AW state (without removing it yet)
@@ -89,9 +93,6 @@ def normalise_train_type(raw):
     return s
 
 
-
-
-
 class TrainInfo:
 
     def __init__(self, train):
@@ -100,7 +101,6 @@ class TrainInfo:
         # then add parsing logic function in this file and call it in parse_rsx 
 
         self.raw = train
-
         self.weekday = train[0][0][0].attrib['weekdayKey'] #extract weekdaykey
 
         # Basic metadata 
@@ -115,12 +115,16 @@ class TrainInfo:
         # train type ID + cars (NORMALISED)
         self.train_type_raw = self.origin.get('trainTypeId', '')
         self.train_type = normalise_train_type(self.train_type_raw)   # raw variant
+        
         #self.train_type_revenue = self.train_type.replace('Empty_', '') # revenue only train 
 
         self.is_empty_train = self.train_type.startswith('Empty_')
 
         self.unit = self._extract_unit_from_normalised(self.train_type)
         self.cars = self._extract_cars_from_normalised(self.train_type)
+
+        if self.unit not in SORT_ORDER_UNIT:
+            UNKNOWN_UNITS.add((self.unit, self.train_type, self.train_type_raw))
 
         # add upward/downward direction here
         
@@ -158,9 +162,6 @@ class TrainInfo:
         self.track_ids   = [e.attrib['trackID'] for e in self.entries]
         self.daycode     = ID_TO_SHORT[self.weekday]
             
-
-    
-
 
     @staticmethod
     def _extract_unit_from_normalised(train_type):
@@ -213,9 +214,6 @@ def detect_duplicates(trains):
     return dup
 
 
-#def extract_day_and_unit_lists(trains):
-
-
 def extract_day_and_unit_lists(trains):
     d_list = []
     u_list = []
@@ -226,8 +224,6 @@ def extract_day_and_unit_lists(trains):
         if t.unit not in u_list:
             u_list.append(t.unit)
     return d_list, u_list
-
-
 
 
 def build_run_dict(trains):
@@ -270,13 +266,22 @@ def resolve_DoO(wkdk):
 
 
 def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days = False, want_units = False, want_runs = False):
-    root , _ = load_rsx(path)
 
+    UNKNOWN_UNITS.clear()
+    root , _ = load_rsx(path)
 
     trains = extract_trains(root) if (want_trains or want_duplicates or want_days or want_units or want_runs) else None
     duplicates = detect_duplicates(trains) if want_duplicates else None
     d_list, u_list = extract_day_and_unit_lists(trains) if (want_days or want_units) else (None, None)
     run_dict = build_run_dict(trains) if want_runs else None
+
+    if UNKNOWN_UNITS:
+        msg = "Unrecognised train units found:\n\n"
+        for unit, norm, raw in sorted(UNKNOWN_UNITS):
+            msg += f"• {unit} (normalised: {norm}, raw: {raw})\n"
+
+        show_info("Unrecognised Units", msg)
+
 
     return root, trains, d_list, u_list, run_dict, duplicates
 
@@ -299,7 +304,6 @@ def normalise_days(days: typing.Iterable[str], *, collapse_mon_thu: bool = True)
         # if any explicit weekday exists and '120' is present then remove '120'. 
         if any(d in sorted_days for d in weekday_codes) and '120' in sorted_days:
             sorted_days = [d for d in sorted_days if d != '120']
-
     return sorted_days
 
 def load_rsx_with_tree(path):
