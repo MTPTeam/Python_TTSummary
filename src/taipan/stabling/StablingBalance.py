@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 import time
 
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.stabling.StablingCount import capacity_exceeded
 import traceback
 import logging
 
@@ -21,7 +22,6 @@ from taipan.constants.styles import STEPS_COL
 from taipan.core.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
 from taipan.core.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
 from taipan.core.ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
-
 
 from PyQt6.QtWidgets import QApplication
 
@@ -264,6 +264,32 @@ def TTS_SB(path, mypath = None):
                 SORT_ORDER_WEEK,
                 write_sheet_legacy=write_sheet
             )
+
+        
+
+        # wrong train type in yard 
+        for yard_name, ws in yard_sheets:
+            meta = YARDS[yard_name]
+            if not meta.get('ngr_only') and not meta.get('qr_only'):
+                continue
+            wrong_type_any_day = False
+            for dow in SORT_ORDER_WEEK:
+                day_store = store[yard_name].get(dow, {})
+                all_runs = day_store.get('out', []) + day_store.get('in', [])
+                for run in all_runs:
+                    unit = run[2]
+                    is_ngr = unit in ('NGR', 'NGRE')
+                    if meta.get('ngr_only') and not is_ngr:
+                        wrong_type_any_day = True
+                        break
+                    if meta.get('qr_only') and is_ngr:
+                        wrong_type_any_day = True
+                        break
+                if wrong_type_any_day:
+                    break
+            if wrong_type_any_day:
+                print(f"Warning: {yard_name} has a wrong train type on at least one day")
+                ws.set_tab_color('#FF0000')
 
         
         stables_dict = make_legacy_stables_dict_from_store(store, SORT_ORDER_WEEK)
