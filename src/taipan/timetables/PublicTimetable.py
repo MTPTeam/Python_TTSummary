@@ -7,11 +7,13 @@ import time
 import shutil
 
 from PyQt6.QtWidgets import QApplication
+from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 
 
 import traceback
 import logging
+
 
 
 ### CreateFile toggles whether text files are generated on running the script
@@ -301,39 +303,6 @@ stationmaster = {
 ### First or last station reassigned if a non-revenue location
 ### Code can be changed to iterate 'entries' over only revenue locations and skip this step but this method works fine too
 city = 'RS'
-stablingmaster = {
-    'ORMS':'ORM',
-    'CAW':'CAB',
-    'BNT':'BNH',
-    'BNHS':'BNH',
-    'IPSS':'IPS',
-    'VYST':'VYS',
-    'RKET':'RKE',
-    'KPRS':'KPR',
-    'ROBS':'ROB',
-    'BQYS':'BQY',
-    'EMHS':'EMH',
-    'RDKS':'RDK',
-    'WOBS':'WOB',
-    'PETS':'PET',
-    'MNS':city,
-    'MES':city,
-    'MWS':city,
-    'YN':city,
-    'YNA':city,
-    'MNE':city,
-    'ETF':city,
-    'ETS':city,
-    'ETB':city,
-    'NBY':city,
-    'MES':city,
-    'CAM':city,
-    'EXH':city,
-    'BHI':city,
-    'RS':city
-    }
-
-
 
 
 
@@ -798,26 +767,15 @@ def TTS_PTT(path, mypath = None):
             'Shorncliffe':                vrt_2Shorncliffe,
             'Springfield':                vrt_2Springfield
             }
+
         
-        
-        uniquestations_dict = {
-            'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','MBN','TNY','YLY','YRG','FFI','DUP'),
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
-            'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
-            'Doomben':                    ('CYF','HDR','ACO','DBN'),
-            'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
-            'Ipswich':                    ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
-            'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
-            'Ipswich - Rosewood':         ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
-            'Inner City':                 ('BHI','BRC','BNC','RS'),
-            'Inner North':                ('BHI','BRC','BNC','RS'), 
-            'Redcliffe':                  ('KGR','MRD','MGH','MGE','RWL','KPR','KPRS'),
-            'Shorncliffe':                ('BHA','BQY','BQYS','NUD','BZL','NBD','DEG','SGE','SHC'),
-            'Springfield':                ('RHD','SFD','SFC')
-            }
-        
-        
+        ALL_YARD_CODES = {yard for y in YARDS.values() for yard in y['yards']}
+        ALL_YARD_CODES.update(MISC_LOCATIONS.keys())
+        line_station_lookup = {
+        code: s['line']
+        for code, s in STATIONS_MASTER['stations'].items()
+        }
+                
         
         
         
@@ -845,13 +803,8 @@ def TTS_PTT(path, mypath = None):
                     stationmaster[name] = stID
             
     
-    
         
-        
-        
-        
-        
-        
+
         
         if newstations:
             print('Locations not recorded in station dictionary')
@@ -992,51 +945,26 @@ def TTS_PTT(path, mypath = None):
                 cbd = 'IPS' if line == 'Ipswich - Rosewood' else seqcbd
                 
                 vrt = network_vrt_dict.get(line)
-                line_stops = uniquestations_dict.get(line)
                 stationlist  = zipped_stations_dict.get(line)[1 if Outbound else 0]
                 last_listed_station = stationlist[-1][-1]
                 
                 entries = train[1].findall('entry')
                 stationIDs = [x.attrib['stationID'] for x in entries]
                 stops = {x.attrib['stationID'] for x in entries if x.attrib['type']=='stop'}
+
+
+
+                o_line = line_station_lookup.get(oID)
+                d_line = line_station_lookup.get(dID)
+                condition = (o_line == line or d_line == line)
+                if Outbound:
+                    condition = condition and (d_line == line)
+                else:
+                    condition = condition and (o_line == line)
+                                
+                                
+                                
                 
-                condition = stops.intersection(line_stops) 
-                
-                if line == 'Inner North':
-                    condition = condition and stops.intersection(['NTG','EGJ'])
-                    
-                elif line == 'Shorncliffe':
-                    condition = condition or ('NTG' in [oID,dID] and any([vrt.get(x) for x in stationIDs if x != 'NTG']))
-        
-                
-                
-                if condition:
-                    
-                    for n,entry in enumerate(train[1].iter('entry')):
-                        
-                        if entry.attrib['stationID'] in vrt:
-                            firstonline = entry.attrib['stationID']                  
-                            first_sIDinVRT = n
-                            break
-                    
-                    for n,entry in enumerate(train[1].iter('entry')):
-                        if n <= first_sIDinVRT:
-                            secondonline = firstonline
-                        else:
-                            if entry.attrib['stationID'] in vrt:
-                                secondonline = entry.attrib['stationID']
-                                break
-                        
-                    a = int(vrt.get(firstonline)[0])    
-                    b = int(vrt.get(secondonline)[0])
-                    increasing = b > a
-                    decreasing = b < a
-                    decreasing = decreasing or b == a
-                
-                    if Outbound:
-                        condition = condition and increasing
-                    else:
-                        condition = condition and decreasing 
                 
                 
                 if condition: 
@@ -1119,11 +1047,11 @@ def TTS_PTT(path, mypath = None):
                         
                     
                     # tripdict['DoO'] = 'M-Th' if WeekdayKey=='120' else 'Fri'
-                    tripdict['Comes From'] = stablingmaster.get(oID,oID)
-                    tripdict['Continues2'] = stablingmaster.get(dID,dID)
-                    
-                    
-        
+
+                    # use od to populate comes to and continues to since we previously filtered out the yards and misc locations 
+                    tripdict['Comes From'] = oID   
+                    tripdict['Continues2'] = dID
+
                     triplist.append(tripdict)
                 
         
@@ -1337,10 +1265,10 @@ def TTS_PTT(path, mypath = None):
                 tn = train.attrib['number']
                 WeekdayKey = train[0][0][0].attrib['weekdayKey']
                 entries = [x for x in train.iter('entry')]
-                origin = entries[0].attrib
-                destin = entries[-1].attrib
-                oID = origin['stationID']
-                dID = destin['stationID']
+                revenue_entries = [e for e in entries if e.attrib['stationID'] not in ALL_YARD_CODES]
+                oID = revenue_entries[0].attrib['stationID']
+                dID = revenue_entries[-1].attrib['stationID']
+                origin = revenue_entries[0].attrib
                 
                 
                 
