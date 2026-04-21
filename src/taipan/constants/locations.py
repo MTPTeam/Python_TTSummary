@@ -75,7 +75,7 @@ STATIONS_MASTER = {
     'BQO':  {'name': 'Banoon',             'line': 'Beenleigh', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
     'CEP':  {'name': 'Coopers Plains',     'line': 'Beenleigh', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
     'SLY':  {'name': 'Salisbury',          'line': 'Beenleigh', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
-    'RKE':  {'name': 'Rocklea',            'line': 'Beenleigh', 'sector': 1, 'non_revenue': True,  'byline_terminus': False},
+    'RKE':  {'name': 'Rocklea',            'line': 'Beenleigh', 'sector': 1, 'non_revenue': False,  'byline_terminus': False},
     'MQK':  {'name': 'Moorooka',           'line': 'Beenleigh', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
     'MBN':  {'name': 'Meeandah',           'line': 'Beenleigh', 'sector': 1, 'non_revenue': True,  'byline_terminus': False},
     'TNY':  {'name': 'Tennyson',           'line': 'Beenleigh', 'sector': 1, 'non_revenue': True,  'byline_terminus': False},
@@ -252,6 +252,11 @@ STATIONS_MASTER = {
     'CAM':  {'name': 'Campbell St',                    'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
     'EXH':  {'name': 'Exhibition',                'line': 'Inner City', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
     'BOG':  {'name': 'Boggo Rd',                'line': 'Inner City', 'sector': 1, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
+
+    ## crr stuff
+    'WLG':  {'name': 'Woollongabba',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
+    'ALB':  {'name': 'Albert St',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
+    'RTL':  {'name': 'Roma St',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
 
     'NBY':  {'name': 'Normanby',                  'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
     'RSF':  {'name': 'Roma Street Fork',          'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},

@@ -250,22 +250,28 @@ def TTS_PTT(path, mypath = None):
                     condition = condition and (o_line == line)
 
                 
-                if condition: 
+                if condition:
                     tripdict = {}
                     tripdict['Train ID'] = tn
                     tripdict['VirtualCBD'] = revenue_entries[0].attrib['departure']
-                                            
-                    
-                    for n,x in enumerate(entries):
-                        
+                    # determine split point for this specific train
+                    train_station_ids = {e.attrib['stationID'] for e in entries}
+                    corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
+                    if corridor:
+                        if 'RTL' in train_station_ids:
+                            train_split = CITY_TERMINUS[(corridor, True)]
+                        elif 'RS' in train_station_ids or 'BNC' in train_station_ids:
+                            train_split = CITY_TERMINUS[(corridor, False)]
+                        else:
+                            train_split = None
+                    else:
+                        train_split = None
+                    for n, x in enumerate(entries):
                         stationName = x.attrib['stationName']
                         stationID   = x.attrib['stationID']
                         stationType = x.attrib['type']
                         dwell       = int(x.attrib['stopTime']) if x.get('stopTime') else 0
-                        
                         (arrival, departure) = stoptime_info(n)
-                        
-                        
                         if stationType == 'pass':
                             tripdict[stationID] = 'exp'
                         elif stationID == last_listed_station:
@@ -274,21 +280,18 @@ def TTS_PTT(path, mypath = None):
                             tripdict[stationID] = arrival
                         else:
                             tripdict[stationID] = departure
-        
-                
-                            
                         if stationName == 'Roma Street':
                             tripdict['RSarr'] = arrival
                             tripdict['RSdep'] = departure
-        
-                            
                         if stationName == 'Brunswick Street':
                             tripdict['BRCarr'] = arrival
                             tripdict['BRCdep'] = departure
-                            
                         if stationName == 'Bowen Hills':
                             tripdict['BHIarr'] = arrival
                             tripdict['BHIdep'] = departure
+                        # stop writing at this train's split point
+                        if not Outbound and train_split and stationID == train_split:
+                            break
                             
                     tripdict['AM/PM'] = 'am' if origin['departure'] < '12:00:00' or origin['departure'] > '24:00:00' else 'pm'
                     tripdict['DoO'] = weekdaykey_dict2.get(WeekdayKey)
@@ -508,7 +511,9 @@ def TTS_PTT(path, mypath = None):
             
             print(f'all_entries count: {len(all_entries)}')
             print('Sample station IDs:', [e.attrib['stationID'] for e in all_entries[:10]])
-            line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+            
+            
+            """line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
 
             for e in all_entries:
                 code = e.attrib['stationID']
@@ -522,19 +527,65 @@ def TTS_PTT(path, mypath = None):
                 corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
                 split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
                 if split_at:
-                    print(split_at)
                     codes = [code for name, code in line_station_order[line]]
                     if split_at in codes:
-                        line_station_order[line] = line_station_order[line][:codes.index(split_at) + 1]
+                        line_station_order[line] = line_station_order[line][:codes.index(split_at) + 1]"""
+        
+
+
+            line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+            for train in root.iter('train'):
+                if 'Empty' in train[1][0].attrib['trainTypeId']:
+                    continue
+                if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
+                    continue
+
+                train_entries = [e for e in train.iter('entry')
+                                if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
+                                and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
+
+                if not train_entries:
+                    continue
+
+                o_line = line_station_lookup.get(train_entries[0].attrib['stationID'])
+                d_line = line_station_lookup.get(train_entries[-1].attrib['stationID'])
+                suburban_line = o_line if o_line not in ('Inner City', 'Normanby', None) else d_line
+
+                if not suburban_line or suburban_line not in line_station_order:
+                    continue
+
+                # only use inbound trains (origin is suburban line)
+
+                if o_line != suburban_line:
+                    continue
+
+                corridor = STATIONS_MASTER['lines'].get(suburban_line, {}).get('corridor')
+                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
+
+                for e in train_entries:
+                    code = e.attrib['stationID']
+                    name = e.attrib['stationName']
+
+                    if (name, code) not in line_station_order[suburban_line]:
+                        line_station_order[suburban_line].append((name, code))
+
+                    if split_at and code == split_at:
+                        break
+            
+
+
             # Build final station_lists dict
             station_lists = {}
             for line in STATIONS_MASTER['lines']:
-                ordered = list(reversed(line_station_order[line]))  # reverse once for inbound
-                inbound  = ordered + [('Continues To', 'CT')]
-                outbound = [('Comes From', 'CF')] + list(reversed(ordered))  # reverse again for outbound = original order
+
+
+                inbound  = [('Comes From', 'CF')] + line_station_order[line] + [('Continues To', 'CT')]
+                outbound = [('Comes From', 'CF')] + list(reversed(line_station_order[line])) + [('Continues To', 'CT')]
+                #inbound  = line_station_order[line] + [('Continues To', 'CT')]
+                #outbound = [('Comes From', 'CF')] + list(reversed(line_station_order[line]))
                 station_lists[(line, False)] = inbound
                 station_lists[(line, True)]  = outbound
-                                        
+                                                    
 
             for train in revenue:
                 tn = train.attrib['number']
