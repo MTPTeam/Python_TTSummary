@@ -9,12 +9,8 @@ import shutil
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
-
-
 import traceback
 import logging
-
-
 
 ### CreateFile toggles whether text files are generated on running the script
 ### OpenWorkbook will subsequently open the newly created files for the user
@@ -31,272 +27,9 @@ OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
 
-
 weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 ### Conversion between rsx weekdaykey and what this translate to in shorthand english
 weekdaykey_dict2 = {'120':'M-Th', '4':'Fri', '2':'Sat', '1':'Sun'}
-
-
-### Used for conversion between the name of each location and its abbreviated version
-stationmaster = {
-    'Fortitude Valley':'BRC',
-    'Electric Train South': 'ETS',
-    'Elec Train S': 'ETS',
-    'Campbell St': 'CAM',
-    'Exhibition ':'EXH',
-    'Exhibition': 'EXH',
-    'Normanby': 'NBY',
-    'Roma Street': 'RS',
-    'Central': 'BNC',
-    'Brunswick Street': 'BRC',
-    'Bowen Hills': 'BHI',
-    'Mayne': 'MNE',
-    'Albion': 'AIN',
-    'Wooloowin': 'WWI',
-    'Eagle Junction': 'EGJ',
-    'Toombul': 'TBU',
-    'Nundah': 'NND',
-    'Northgate': 'NTG',
-    'Bindha': 'BHA',
-    'Banyo': 'BQY',
-    'Nudgee': 'NUD',
-    'Boondall': 'BZL',
-    'North Boondall': 'NBD',
-    'Deagon': 'DEG',
-    'Sandgate': 'SGE',
-    'Shorncliffe': 'SHC',
-    'Caboolture East Yard': 'CAE',
-    'Caboolture': 'CAB',
-    'Caboolture North': 'CEN',
-    'Elimbah Stabling Yard': 'EMHS',
-    'Kippa-Ring Stabling Yard': 'KPRS',
-    'Kippa-Ring': 'KPR',
-    'Airport Junction': 'AJN',
-    'Virginia': 'VGI',
-    'Sunshine': 'SSN',
-    'Geebung': 'GEB',
-    'Zillmere': 'ZLL',
-    'Carseldine': 'CDE',
-    'Bald Hills': 'BDS',
-    'Strathpine': 'SPN',
-    'Bray Park': 'BPR',
-    'Lawnton': 'LWO',
-    'Petrie': 'PET',
-    'Dakabin': 'DKB',
-    'Narangba': 'NRB',
-    'Burpengary': 'BPY',
-    'Morayfield': 'MYE',
-    'Mayne North Yard': 'YN',
-    'Mayne North':'YN', #!!!
-    'Mayne Yard Arrival': 'YNA',
-    'Roma St West Junction': 'RSWJ',
-    'South Brisbane': 'SBE',
-    'South Bank': 'SBA',
-    'Park Road': 'PKR',
-    'Dutton Park': 'DUP',
-    'Fairfield': 'FFI',
-    'Yeronga': 'YRG',
-    'Yeerongpilly': 'YLY',
-    'Moorooka': 'MQK',
-    'Rocklea': 'RKE',
-    'Salisbury': 'SLY',
-    'Coopers Plains': 'CEP',
-    'Banoon': 'BQO',
-    'Sunnybank': 'SYK',
-    'Altandi': 'ATI',
-    'Runcorn': 'RUC',
-    'Fruitgrove': 'FTG',
-    'Kuraby': 'KRY',
-    'Trinder Park': 'TDP',
-    'Woodridge': 'WOI',
-    'Kingston': 'KGT',
-    'Loganlea': 'LGL',
-    'Bethania': 'BTI',
-    'Edens Landing': 'EDL',
-    'Eden\'s Landing': 'EDL',
-    'Eden’s Landing': 'EDL',
-    'Holmview': 'HVW',
-    'Beenleigh': 'BNH',
-    'Beenleigh Turnback': 'BNT',
-    'Electric Train Flyover': 'ETF',
-    'Elec Train Flyover':'ETF',
-    'Electric Depot Junction': 'EDJ',
-    'Ipswich Stabling':'IPSS',
-    'Ipswich Stabling Yard': 'IPSS',
-    'Ipswich Stable':'IPSS',
-    'Ipswich': 'IPS',
-    'Milton': 'MTZ',
-    'Auchenflower': 'AHF',
-    'Toowong': 'TWG',
-    'Taringa': 'TIQ',
-    'Indooroopilly': 'IDP',
-    'Chelmer': 'CMZ',
-    'Graceville': 'GVQ',
-    'Sherwood': 'SHW',
-    'Corinda': 'CQD',
-    'Oxley': 'OXL',
-    'Darra': 'DAR',
-    'Wacol': 'WAC',
-    'Gailes': 'GAI',
-    'Goodna': 'GDQ',
-    'Redbank': 'RDK',
-    'Riverview': 'RVV',
-    'Dinmore': 'DIR',
-    'Ebbw Vale': 'EBV',
-    'Bundamba': 'BDX',
-    'Booval': 'BOV',
-    'East Ipswich': 'EIP',
-    'Rothwell': 'RWL',
-    'Mango Hill East': 'MGE',
-    'Mango Hill': 'MGH',
-    'Murrumba Downs': 'MRD',
-    'Kallangur': 'KGR',
-    'Richlands': 'RHD',
-    'Springfield': 'SFD',
-    'Springfield Central': 'SFC',
-    'Thomas Street': 'THS',
-    'Wulkuraka': 'WUL',
-    'Karrabin': 'KRA',
-    'Walloon': 'WOQ',
-    'Thagoona': 'TAO',
-    'Yarrowlea': 'YLE',
-    'Rosewood': 'RSW',
-    'Buranda': 'BRD',
-    'Coorparoo': 'CRO',
-    'Norman Park': 'NPR',
-    'Morningside': 'MGS',
-    'Cannon Hill': 'CNQ',
-    'Murarrie': 'MJE',
-    'Hemmant': 'HMM',
-    'Lindum': 'LDM',
-    'Lytton Junction': 'LJN',
-    'Wynnum North': 'WYH',
-    'Wynnum': 'WNM',
-    'Wynnum Central': 'WNC',
-    'Manly': 'MNY',
-    'Lota': 'LOT',
-    'Thorneside': 'TNS',
-    'Birkdale': 'BDE',
-    'Wellington Point': 'WPT',
-    'Ormiston': 'ORO',
-    'Cleveland': 'CVN',
-    'Elimbah': 'EMH',
-    'Beerburrum': 'BEB',
-    'Glasshouse Mountains': 'GSS',
-    'Beerwah': 'BWH',
-    'Landsborough': 'LSH',
-    'Mooloolah': 'MOH',
-    'Eudlo': 'EUD',
-    'Palmwoods': 'PAL',
-    'Woombye': 'WOB',
-    'Nambour': 'NBR',
-    'Mayne Junction': 'MYJ',
-    'Windsor': 'WID',
-    'Wilston': 'WLQ',
-    'Newmarket': 'NWM',
-    'Alderley': 'ADY',
-    'Enoggera': 'EGG',
-    'Gaythorne': 'GAO',
-    'Mitchelton': 'MHQ',
-    'Oxford Park': 'OXP',
-    'Grovely': 'GOQ',
-    'Keperra': 'KEP',
-    'Ferny Grove': 'FYG',
-    'Robina Stabling Yard': 'ROBS',
-    'Robina': 'ROB',
-    'Varsity Lakes': 'VYS',
-    'Caboolture West Yard': 'CAW',
-    'International Airport': 'BIT',
-    'Domestic Airport': 'BDT',
-    'Ormeau': 'ORM',
-    'Coomera': 'CXM',
-    'Helensvale': 'HLN',
-    'Nerang': 'NRG',
-    'Beenleigh Stabling Yard': 'BNHS',
-    'Beenleigh Stable': 'BNHS',
-    'Banyo Stabling Yard': 'BQYS',
-    'Wulkuraka Service Centre East': 'WFE',
-    'WSC East Entrance': 'FEE',
-    'Redbank Stabling Yard': 'RDKS',
-    'Redbank Stabling':'RDKS',
-    'Roma St Fork': 'RSF',
-    'Clayfield': 'CYF',
-    'Hendra': 'HDR',
-    'Ascot': 'ACO',
-    'Doomben': 'DBN',
-    'Clapham Yard': 'CPM',
-    'Varsity Lakes Turnback': 'VYST',
-    'Varsity Lakes TB': 'VYST',
-    'Woombye Stabling Yard': 'WOBS',
-    'Gympie North': 'GYN',
-    'Glanmire': 'GMR',
-    'Woondum': 'WOO',
-    'Traveston': 'TRA',
-    'Cooran': 'COZ',
-    'Pomona': 'PMQ',
-    'Cooroy': 'COO',
-    'Sunrise': 'SSE',
-    'Eumundi': 'EUM',
-    'North Arm': 'NHR',
-    'Yandina': 'YAN',
-    'Wulkuraka Service Centre West': 'WFW',
-    'WSC West Entrance': 'FWE',
-    'Tennyson': 'TNY',
-    'Moolabin': 'MBN',
-    'Rocklea sidings': 'RKET',
-    'Rocklea Sidings': 'RKET',
-    'Electric Train Balloon': 'ETB',
-    'Elec Train Balloon': 'ETB',
-    'Petrie Stabling Yard': 'PETS',
-    'Petrie Eastern Sdgs': 'PETS',
-    'Mayne East Stabling Yard':'MES',
-    'Mayne North Stabling':'MNS',
-    'Mayne 2':'MNE2',
-    'Ormeau Stabling':'ORMS',
-    'Pimpama':'PPA',
-    'Hope Island':'HID',
-    'Merrimac':'MRC',
-    
-    'Boggo Road':'BOG',
-    'Boggo Road station':'BOG',
-    'Albert Street':'ALB',
-    'Woolloongabba':'WLG',
-    
-    'Mayne North Stabling':'MNS',
-    'Mayne East':'MES',
-    'Mayne East Stabling':'MES',
-    'Clapham Yard':'CPM',
-    
-    'Beerwah Junction': 'BWJ', 
-    'Beewah East Junction': 'BEJ', 
-    'Aura': 'AUR', 
-    'Caloundra Road': 'CRD', 
-    'Mayne North Yard Entrance': 'MNYE', 
-    'Bowen Hills North Jn': 'BHNJ', 
-    'Signal 10 Departure': 'SIG10D', 
-    'Kippa-Ring Stable': 'KPRS', 
-    'Ormeau Junction': 'ORMJ', 
-    'Salisbury Junction': 'SLYJ', 
-    'Yeerongpilly Junction': 'YLYJ', 
-    'Southern Tunnel Portal': 'STP', 
-    'Northern Tunnel Portal': 'NTP', 
-    'Land Bridge': 'LBR', 
-    'Tunnel Jn': 'ZZZTJN', 
-    'Mayne East Junction': 'MEJ', 
-    'Clapham Yard Junction': 'CYJ', 
-    'Signal 9 Arrival': 'SIG9A', 
-    'Mayne East Yard': 'MES', 
-    'Fork Timing Point': 'FRK', 
-    'Tennyson Branch Junction': 'TNYBCHJ', 
-
-    'Comes From': 'CF',
-    'Continues To': 'CT',
-    
-    
-    
-  }
-
-
 
 
 ### Used for 'Comes From' or 'Continues To' rows to avoid having stabling locations in the public timetable
@@ -304,41 +37,7 @@ stationmaster = {
 ### Code can be changed to iterate 'entries' over only revenue locations and skip this step but this method works fine too
 city = 'RS'
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+name_to_code = { s['name']: code for code, s in STATIONS_MASTER['stations'].items()}
 
 def TTS_PTT(path, mypath = None):
 
@@ -358,13 +57,14 @@ def TTS_PTT(path, mypath = None):
         tree = ET.parse(filename)
         root = tree.getroot()
         
-        entryelems = entryelems = root.findall('.//entry')
-        if 'RTL' in list(set([x.attrib['stationID'] for x in entryelems])):
-            TTfile = '3STT'
-        else: 
-            stationmaster.pop('Boggo Road', None)
-            stationmaster['Boggo Road'] = stationmaster.get('Park Road', 'PKR')
-        
+        entryelems = root.findall('.//entry')
+        tunnel = 'RTL' in {x.attrib['stationID'] for x in entryelems}
+        CITY_TERMINUS = {
+            ('south', False): 'BHI',
+            ('south', True):  'EXH',
+            ('north', False): 'RS',
+            ('north', True):  'BOG',
+            }
 
         filename = filename[:-4]
         
@@ -383,9 +83,6 @@ def TTS_PTT(path, mypath = None):
         sundayworkbook =   xlsxwriter.Workbook(sundayfilename_xlsx)
         
         
-        
-        
-        
         ### If in future, the MTP team may only require let's say a weekend timetable and a weekday timetable to be created,
         ###  this code will allow easy toggling of how many reports get generated for the user
         ### In the meantime, all useful combinations of reports will be created if the day_of_operation exists in the rsx.
@@ -397,9 +94,6 @@ def TTS_PTT(path, mypath = None):
         Friday = True
         Saturday = True
         Sunday = True
-        
-        
-        
         workbooks = []
         
         Weekday =  124 if Weekday  else False
@@ -423,10 +117,7 @@ def TTS_PTT(path, mypath = None):
             if day:
                 workbooks.append(daysheet)
                 
-                
-                
-                
-        
+              
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
@@ -444,341 +135,24 @@ def TTS_PTT(path, mypath = None):
             sys.exit() 
         
         start_time = time.time()
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
            
         ### uniquestations_dict and network_vrt_dict are used to determine what Line that trip belongs to
         ### Virtual run time (vrt) dictionaries for each line are used to order trips chronologically 
         ###  due to some trips not running through the city making sorting trips by Central arrival unavailable
-        vrt_2Beenleigh = {
-            'BNH':     (25, 2879),
-            'HVW':     (24, 2745),
-            'EDL':     (23, 2624),
-            'BTI':     (22, 2518),
-            'LGL':     (21, 2353),
-            'KGT':     (20, 2208),
-            'WOI':     (19, 2027),
-            'TDP':     (18, 1951),
-            'KRY':     (17, 2070), 
-            'FTG':     (16, 1636),
-            'RUC':     (15, 1556),
-            'ATI':     (14, 1463),
-            'SYK':     (13, 1368),
-            'BQO':     (12, 1279),
-            'CEP':     (11, 1600),
-            'SLY':     (10, 1039),
-            'RKE':     (9, 949),
-            'MQK':     (8, 869),
-            'YLY':     (7,  779),
-            'YRG':     (6,  707),
-            'FFI':     (5,  603),
-            'DUP':     (4,  519),
-            'PKR':     (3,  441),
-            'SBA':     (2,  286),
-            'SBE':     (1,  205),
-            'RS':      (0,  0)
-            }
+       
         
-        
-        vrt_2GympieNth = {
-            # 'CRD': (),
-            # 'AUR': (),
-            'GYN':     (35, 10613),
-            'GMR':     (34, 9187),
-            'WOO':     (33, 8811),
-            'TRA':     (32, 8393),
-            'COZ':     (31, 8163),
-            'PMQ':     (30, 7673),
-            'COO':     (29, 7223),
-            'SSE':     (28, 6978),
-            'EUM':     (27, 6893),
-            'NHR':     (26, 4300),
-            'YAN':     (25, 6503),
-            'NBR':     (24, 7000), 
-            'WOB':     (23, 5693),
-            'PAL':     (22, 5483),
-            'EUD':     (21, 5153),
-            'MOH':     (20, 4763),
-            'LSH':     (19, 4433),
-            'BWH':     (18, 4163),
-            'GSS':     (17, 3893),
-            'BEB':     (16, 3413),
-            'EMH':     (15, 3143),
-            'CAB':     (14, 3218), 
-            'MYE':     (13, 2636),
-            'BPY':     (12, 2414),
-            'NRB':     (11, 2653),
-            'DKB':     (10, 1880),
-            'PET':     (9,  1853),
-            'LWO':     (7,  1757),
-            'VGI':     (6,  1300),
-            'NTG':     (5,  1082),
-            'EGJ':     (4,  713),
-            'BHI':     (3,  500),
-            'BRC':     (2,  0),
-            'BNC':     (1,  0),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Cleveland = {
-            'CVN':     (21, 2875),
-            'ORO':     (20, 2743),
-            'WPT':     (19, 2592),
-            'BDE':     (18, 2436),
-            'TNS':     (17, 2285),
-            'LOT':     (16, 2156),
-            'MNY':     (15, 1814),
-            'WNC':     (14, 1863),
-            'WNM':     (13, 1781),
-            'WYH':     (12, 1691),
-            'LDM':     (11, 1528),
-            'HMM':     (10, 1414),
-            'MJE':     (9,  1203),
-            'CNQ':     (8,  1053),
-            'MGS':     (7,  921),
-            'NPR':     (6,  769),
-            'CRO':     (5,  680),
-            'BRD':     (4,  574),
-            'PKR':     (3,  700),
-            'SBA':     (2,  316),
-            'SBE':     (1,  226),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Doomben = {
-            'DBN':     (10, 1165),
-            'ACO':     (9,  1016),
-            'HDR':     (8,  928),
-            'CYF':     (7,  867),
-            'EGJ':     (6,  759),
-            'WWI':     (5,  676),
-            'AIN':     (4,  676),
-            'BHI':     (3,  398),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2FernyGrove = {
-            'FYG':     (15, 1445),
-            'KEP':     (14, 1260),
-            'GOQ':     (13, 1190),
-            'OXP':     (12, 1118),
-            'MHQ':     (11, 1038),
-            'GAO':     (10, 941),
-            'EGG':     (9,  873),
-            'ADY':     (8,  800),
-            'NWM':     (7,  701),
-            'WLQ':     (6,  617),
-            'WID':     (5,  537),
-            'EDJ':     (4,  470),
-            'BHI':     (3,  537),
-            'BRC':     (2,  257),
-            'BNC':     (1,  107),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2VarsityLs = {
-            'VYST':    (17,  4086),
-            'VYS':     (16,  3996),
-            'ROB':     (15,  3822),
-            'ROBS':    (14,  4542),
-            'MRC':     (13,  3686),
-            'NRG':     (12,  3524),
-            'HLN':     (11,  3242),
-            'HID':     (10,  3094),
-            'CXM':     (9,   2962),
-            'PPA':     (8,   2846),
-            'ORM':     (7,   2728),
-            'BNH':     (6,   2336),
-            'LGL':     (5,   1903),
-            'ATI':     (4,   1194),
-            'PKR':     (3,   431),
-            'SBA':     (2,   278),
-            'SBE':     (1,   198),
-            'RS':      (0,   0),
-            'BNC':     (-1, -127),
-            'BRC':     (-2, -244),
-            'BHI':     (-3, -341),
-            'AIN':     (-4, -532),
-            'WWI':     (-5, -614),
-            'EGJ':     (-6, -696),
-            'BIT':     (-7, -1092),
-            'BDT':     (-8, -1248)
-            }
-        
-        
-        vrt_2InnerCity = {
-            'NTG':     (9,   1350), 
-            'NND':     (8,   903),
-            'TBU':     (7,   834),
-            'EGJ':     (6,   714), 
-            'WWI':     (5,   631),
-            'AIN':     (4,   551),
-            'BHI':     (3,   324 ),
-            'BRC':     (2,   264 ),
-            'BNC':     (1,   140 ),
-            'RS':      (0,   0 ),
-            'SBE':     (-1, -226 ),
-            'SBA':     (-2, -316 ),
-            'PKR':     (-3, -447 ),
-            }
-        
-        
-        vrt_2InnerNorth = {
-            'NTG':     (9, 1350), 
-            'NND':     (8, 903),
-            'TBU':     (7, 834),
-            'EGJ':     (6, 714), 
-            'WWI':     (5, 631),
-            'AIN':     (4, 551),
-            'BHI':     (3, 324 ),
-            'BRC':     (2, 264 ),
-            'BNC':     (1, 140 ),
-            'RS':      (0, 0 ),
-            }
-        
-        
-        vrt_2Rosewood = {
-            'RSW':     (29, 4025),
-            'YLE':     (28, 3422),
-            'TAO':     (27, 3367),
-            'WOQ':     (26, 3138),
-            'KRA':     (25, 3380),
-            'WUL':     (24, 2762),
-            'THS':     (23, 2682),
-            'IPS':     (22, 2940), 
-            'EIP':     (21, 2436),
-            'BOV':     (20, 2343),
-            'BDX':     (19, 2244), 
-            'EBV':     (18, 2117),
-            'DIR':     (17, 2024),
-            'RVV':     (16, 1918),
-            'RDK':     (15, 1960),
-            'GDQ':     (14, 1588),
-            'GAI':     (13, 1464),
-            'WAC':     (12, 1366),
-            'DAR':     (11, 1475),
-            'OXL':     (10, 993),
-            'CQD':     (9,  900),
-            'SHW':     (8,  780),    
-            'GVQ':     (7,  696),
-            'CMZ':     (6,  619),
-            'IDP':     (5,  526),
-            'TIQ':     (4,  417),
-            'TWG':     (3,  309),
-            'AHF':     (2,  231),
-            'MTZ':     (1,  138),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2KippaRing = {
-            'KPR':     (21, 2850),
-            'RWL':     (20, 2640),
-            'MGE':     (19, 2550),
-            'MGH':     (18, 2400),
-            'MRD':     (17, 2310),
-            'KGR':     (16, 2220),
-            'PET':     (15, 2070),
-            'LWO':     (14, 2400),
-            'BPR':     (13, 1830),
-            'SPN':     (12, 1740),
-            'BDS':     (11, 1590),
-            'CDE':     (10, 1380),
-            'ZLL':     (9,  1290),
-            'GEB':     (8,  1200),
-            'SSN':     (7,  1110),
-            'VGI':     (6,  1020),
-            'NTG':     (5,  870),
-            'EGJ':     (4,  660),
-            'BHI':     (3,  510),
-            'BRC':     (2,  240),
-            'BNC':     (1,  120),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Shorncliffe = {
-            'SHC':     (17, 2290),
-            'SGE':     (16, 2025),
-            'DEG':     (15, 1586),
-            'NBD':     (14, 1499),
-            'BZL':     (13, 1422),
-            'NUD':     (12, 1261),
-            'BQY':     (11, 1182),
-            'BHA':     (10, 1106),
-            'NTG':     (9,  1350), 
-            'NND':     (8,  903),
-            'TBU':     (7,  834),
-            'EGJ':     (6,  714), 
-            'WWI':     (5,  631),
-            'AIN':     (4,  551),
-            'BHI':     (3,  520),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Springfield = {
-            'SFC':     (14, 1920),
-            'SFD':     (13, 1770),
-            'RHD':     (12, 1440),
-            'DAR':     (11, 1230),
-            'OXL':     (10, 1080),
-            'CQD':     (9,  930),
-            'SHW':     (8,  840),
-            'GVQ':     (7,  750),
-            'CMZ':     (6,  660),
-            'IDP':     (5,  570),
-            'TIQ':     (4,  480),
-            'TWG':     (3,  330),
-            'AHF':     (2,  240),
-            'MTZ':     (1,  150),
-            'RS':      (0,  0)
-            }
-        
-        
-        
-        network_vrt_dict = {
-            'Beenleigh':                  vrt_2Beenleigh,
-            'Caboolture - Gympie North':  vrt_2GympieNth,
-            'Cleveland':                  vrt_2Cleveland,
-            'Doomben':                    vrt_2Doomben,
-            'Ferny Grove':                vrt_2FernyGrove,
-            'Varsity Lakes - Airport':    vrt_2VarsityLs,               
-            'Inner North':                vrt_2InnerNorth,
-            'Inner City':                 vrt_2InnerCity,  
-            'Ipswich - Rosewood':         vrt_2Rosewood,
-            'Redcliffe':                  vrt_2KippaRing,
-            'Shorncliffe':                vrt_2Shorncliffe,
-            'Springfield':                vrt_2Springfield
-            }
-
-        
-        ALL_YARD_CODES = {yard for y in YARDS.values() for yard in y['yards']}
-        ALL_YARD_CODES.update(MISC_LOCATIONS.keys())
         line_station_lookup = {
         code: s['line']
         for code, s in STATIONS_MASTER['stations'].items()
         }
-                
-        
-        
-        
+        name_to_code = {
+        s['name']: code
+        for code, s in STATIONS_MASTER['stations'].items()
+        }
+        name_to_code['Comes From'] = 'CF'
+        name_to_code['Continues To'] = 'CT'
+
         
         ### d_list      tracks the days present in the rsx
         ### newstations tracks if new locations have been added to the geography that haven't yet been added to stationmaster
@@ -786,6 +160,7 @@ def TTS_PTT(path, mypath = None):
         d_list = []
         newstations = []
         revtrains = [x for x in root.iter('train') if 'Empty' not in x[1][0].attrib['trainTypeId']]
+        
         for train in revtrains:
             tn  = train.attrib['number']
             WeekdayKey = train[0][0][0].attrib['weekdayKey']
@@ -798,14 +173,12 @@ def TTS_PTT(path, mypath = None):
                 stID = entry.attrib['stationID']
                 name = entry.attrib['stationName']
                 
-                if name not in stationmaster:
+                if name not in name_to_code:
                     newstations.append(name)
-                    stationmaster[name] = stID
+                    # optionally add to name_to_code so script continues without erroring
+                    name_to_code[name] = stID
             
     
-        
-
-        
         if newstations:
             print('Locations not recorded in station dictionary')
             print('--------------------------------------------')
@@ -813,92 +186,11 @@ def TTS_PTT(path, mypath = None):
                 print(x)
             print('--------------------------------------------')
         
-        
-        
-        
-        
-        
-        
-        
-        
-        def zip_stations(stationNames):
-            """ Creates a list of tuples with the station station names and their abreviations """
-            
-            y = []
-            for x in stationNames:
-                if stationmaster.get(x):
-                    y.append(stationmaster.get(x))
-                elif 'arrive' in x:
-                    y.append(stationmaster.get(x[:-7])+'arr')
-                elif 'depart' in x:
-                    y.append(stationmaster.get(x[:-7])+'dep')
-                # elif 'platform' in x:
-                #     y.append(stationmaster.get(x[:-9])+'pfm')
-                else:
-                    print(f'Undocumented station: {x}')
-                    y.append(None)
-            return list(zip(stationNames,y))
-        
-        
 
         ### These will be the row headers appearing in the worksheets - can be customised
         ### zip_stations will pair each location name up with a unique abbreviated station ID
         ###  these list of tuples will be fed into the write_workbook function to print the data for each station for each trip
-        bnh_in  = zip_stations(['Beenleigh','Holmview','Eden\'s Landing','Bethania','Loganlea','Kingston','Woodridge','Trinder Park','Kuraby','Fruitgrove','Runcorn','Altandi','Sunnybank','Banoon','Coopers Plains','Salisbury','Rocklea','Moorooka','Yeerongpilly','Yeronga','Fairfield','Dutton Park','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Continues To'])
-        bnh_out = zip_stations(['Comes From','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Dutton Park','Fairfield','Yeronga','Yeerongpilly','Moorooka','Rocklea','Salisbury','Coopers Plains','Banoon','Sunnybank','Altandi','Runcorn','Fruitgrove','Kuraby','Trinder Park','Woodridge','Kingston','Loganlea','Bethania','Eden\'s Landing','Holmview','Beenleigh'])
-        
-        cab_in  = zip_stations(['Gympie North','Traveston','Cooran','Pomona','Cooroy','Eumundi','Yandina','Nambour','Woombye','Palmwoods','Eudlo','Mooloolah','Landsborough','Beerwah','Glasshouse Mountains','Beerburrum','Elimbah','Caboolture','Morayfield','Burpengary','Narangba','Dakabin','Petrie','Northgate','Eagle Junction','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','Continues To'])
-        cab_out = zip_stations(['Comes From','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Petrie','Dakabin','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Mooloolah','Eudlo','Palmwoods','Woombye','Nambour','Yandina','Eumundi','Cooroy','Pomona','Cooran','Traveston','Gympie North'])
-        cab_out_wknd = zip_stations(['Comes From','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','Toombul','Nundah','Northgate','Virginia','Sunshine','Geebung','Zillmere','Carseldine','Bald Hills','Strathpine','Bray Park','Lawnton','Petrie','Dakabin','Narangba','Burpengary','Morayfield','Caboolture','Elimbah','Beerburrum','Glasshouse Mountains','Beerwah','Landsborough','Mooloolah','Eudlo','Palmwoods','Woombye','Nambour','Yandina','Eumundi','Cooroy','Pomona','Cooran','Traveston','Gympie North']) 
-        
-        cvn_in  = zip_stations(['Cleveland','Ormiston','Wellington Point','Birkdale','Thorneside','Lota','Manly','Wynnum Central','Wynnum','Wynnum North','Lindum','Hemmant','Murarrie','Cannon Hill','Morningside','Norman Park','Coorparoo','Buranda','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Continues To'])
-        cvn_out = zip_stations(['Comes From','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Buranda','Coorparoo','Norman Park','Morningside','Cannon Hill','Murarrie','Hemmant','Lindum','Wynnum North','Wynnum','Wynnum Central','Manly','Lota','Thorneside','Birkdale','Wellington Point','Ormiston','Cleveland'])
-        
-        dbn_in  = zip_stations(['Doomben','Ascot','Hendra','Clayfield','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Continues To'])
-        dbn_out = zip_stations(['Comes From','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','Clayfield','Hendra','Ascot','Doomben'])
-        
-        fyg_in  = zip_stations(['Ferny Grove','Keperra','Grovely','Oxford Park','Mitchelton','Gaythorne','Enoggera','Alderley','Newmarket','Wilston','Windsor','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Continues To'])
-        fyg_out = zip_stations(['Comes From','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Windsor','Wilston','Newmarket','Alderley','Enoggera','Gaythorne','Mitchelton','Oxford Park','Grovely','Keperra','Ferny Grove'])
-        
-        vys_in  = zip_stations(['Varsity Lakes','Robina','Merrimac','Nerang','Helensvale','Hope Island','Coomera','Pimpama','Ormeau','Beenleigh','Loganlea','Altandi','Boggo Road','South Bank','South Brisbane','Roma Street arrive','Roma Street depart','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','International Airport','Domestic Airport','Continues To'])
-        vys_out = zip_stations(['Domestic Airport','International Airport','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street arrive','Roma Street depart','South Brisbane','South Bank','Boggo Road','Altandi','Loganlea','Beenleigh','Ormeau','Pimpama','Coomera','Hope Island','Helensvale','Nerang','Merrimac','Robina','Varsity Lakes'])
-        
-        ips_in  = zip_stations(['Rosewood','Thagoona','Walloon','Karrabin','Wulkuraka','Thomas Street','Ipswich arrive','Ipswich depart','East Ipswich','Booval','Bundamba','Ebbw Vale','Dinmore','Riverview','Redbank','Goodna','Gailes','Wacol','Darra','Oxley','Corinda','Sherwood','Graceville','Chelmer','Indooroopilly','Taringa','Toowong','Auchenflower','Milton','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Continues To']) 
-        ips_out = zip_stations(['Comes From','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Wacol','Gailes','Goodna','Redbank','Riverview','Dinmore','Ebbw Vale','Bundamba','Booval','East Ipswich','Ipswich arrive','Ipswich depart','Thomas Street','Wulkuraka','Karrabin','Walloon','Thagoona','Rosewood'])
-        
-        inn_in  = zip_stations(['Comes From','Northgate','Nundah','Toombul','Eagle Junction','Wooloowin','Albion','Bowen Hills arrive','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley depart','Central arrive','Central depart','Roma Street arrive','Continues To'])
-        inn_out = zip_stations(['Comes From','Roma Street depart','Central arrive','Central depart','Fortitude Valley arrive','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills depart','Albion','Wooloowin','Eagle Junction','Toombul','Nundah','Northgate','Continues To'])
-        
-        inc_in  = zip_stations(['Comes From','Northgate','Nundah','Toombul','Eagle Junction','Wooloowin','Albion','Bowen Hills arrive','Bowen Hills depart','Fortitude Valley arrive','Fortitude Valley depart','Central arrive','Central depart','Roma Street arrive','Roma Street depart','South Brisbane','South Bank','Boggo Road','Continues To'])
-        inc_out = zip_stations(['Comes From','Boggo Road','South Bank','South Brisbane','Roma Street arrive','Roma Street depart','Central arrive','Central depart','Fortitude Valley arrive','Fortitude Valley depart','Bowen Hills arrive','Bowen Hills depart','Albion','Wooloowin','Eagle Junction','Toombul','Nundah','Northgate','Continues To'])
-        
-        rdp_in  = zip_stations(['Kippa-Ring','Rothwell','Mango Hill East','Mango Hill','Murrumba Downs','Kallangur','Petrie','Lawnton','Bray Park','Strathpine','Bald Hills','Carseldine','Zillmere','Geebung','Sunshine','Virginia','Northgate','Eagle Junction','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','Milton','Continues To'])
-        rdp_out = zip_stations(['Comes From','Milton','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Eagle Junction','Northgate','Virginia','Sunshine','Geebung','Zillmere','Carseldine','Bald Hills','Strathpine','Bray Park','Lawnton','Petrie','Kallangur','Murrumba Downs','Mango Hill','Mango Hill East','Rothwell','Kippa-Ring'])
-        
-        shc_in  = zip_stations(['Shorncliffe','Sandgate','Deagon','North Boondall','Boondall','Nudgee','Banyo','Bindha','Northgate','Nundah','Toombul','Eagle Junction','Wooloowin','Albion','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','South Brisbane','South Bank','Boggo Road','Continues To'])
-        shc_out = zip_stations(['Comes From','Boggo Road','South Bank','South Brisbane','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Albion','Wooloowin','Eagle Junction','Toombul','Nundah','Northgate','Bindha','Banyo','Nudgee','Boondall','North Boondall','Deagon','Sandgate','Shorncliffe'])
-        
-        sfc_in  = zip_stations(['Springfield Central','Springfield','Richlands','Darra','Oxley','Corinda','Sherwood','Graceville','Chelmer','Indooroopilly','Taringa','Toowong','Auchenflower','Milton','Roma Street','Central arrive','Central depart','Fortitude Valley','Bowen Hills','Continues To'])
-        sfc_out = zip_stations(['Comes From','Bowen Hills','Fortitude Valley','Central arrive','Central depart','Roma Street','Milton','Auchenflower','Toowong','Taringa','Indooroopilly','Chelmer','Graceville','Sherwood','Corinda','Oxley','Darra','Richlands','Springfield','Springfield Central'])
-        
-        
-        zipped_stations_dict = {
-            'Beenleigh':                  (bnh_in, bnh_out),
-            'Caboolture - Gympie North':  (cab_in, cab_out),
-            'Cleveland':                  (cvn_in, cvn_out),
-            'Doomben':                    (dbn_in, dbn_out),
-            'Ferny Grove':                (fyg_in, fyg_out),
-            'Varsity Lakes - Airport':    (vys_in, vys_out),               
-            'Inner North':                (inn_in, inn_out),
-            'Inner City':                 (inc_in, inc_out),  
-            'Ipswich - Rosewood':         (ips_in, ips_out),
-            'Redcliffe':                  (rdp_in, rdp_out),
-            'Shorncliffe':                (shc_in, shc_out),
-            'Springfield':                (sfc_in, sfc_out)
-            }
-        
-        
-        
+    
         
         def write_workbook(daycode, weekdaykeys):
             """ 
@@ -935,25 +227,20 @@ def TTS_PTT(path, mypath = None):
                     timestring = timestring[1:-3]
                 else: timestring = timestring[:-3]
                 return timestring
+
             
             def build_triplist(triplist, line, Outbound=False):
                 """ 
                 Fills an empty list with trips that match conditions for each line
                 Info for each trip, including DoO and departure times, are contained in a dictionary - tripdict
                 """
-                seqcbd = 'BNC'
-                cbd = 'IPS' if line == 'Ipswich - Rosewood' else seqcbd
-                
-                vrt = network_vrt_dict.get(line)
-                stationlist  = zipped_stations_dict.get(line)[1 if Outbound else 0]
-                last_listed_station = stationlist[-1][-1]
-                
+                # get last listed station from dynamic list instead of zipped_stations_dict
+                station_list = station_lists[(line, Outbound)]
+                #print(station_list)
+                if station_list:
+                    last_listed_station = station_list[-1][1]
+               
                 entries = train[1].findall('entry')
-                stationIDs = [x.attrib['stationID'] for x in entries]
-                stops = {x.attrib['stationID'] for x in entries if x.attrib['type']=='stop'}
-
-
-
                 o_line = line_station_lookup.get(oID)
                 d_line = line_station_lookup.get(dID)
                 condition = (o_line == line or d_line == line)
@@ -961,41 +248,13 @@ def TTS_PTT(path, mypath = None):
                     condition = condition and (d_line == line)
                 else:
                     condition = condition and (o_line == line)
-                                
-                                
-                                
-                
-                
+
                 
                 if condition: 
                     tripdict = {}
-                    
                     tripdict['Train ID'] = tn
-                    
-                    #!!! vrt introduce rs/rst sorting
-                    if cbd not in stationIDs:
-                        # print(f'{tn} does not run to either IPS or {seqcbd}, sort trip in the schedule using virtual run times to Central')
-                        for entry in train[1].iter('entry'):
-                            
-                            if entry.attrib['stationID'] in vrt:
-                                firstinline       = entry.attrib['stationID']
-                                firstdeparture    = entry.attrib['departure']
-                                firstinline_vrt   = vrt.get(firstinline)[-1]
-                                
-                                if Outbound:
-                                    vcbd = str(pd.Timedelta(firstdeparture) - pd.Timedelta(seconds=firstinline_vrt))
-                                else:
-                                    vcbd = str(pd.Timedelta(firstdeparture) + pd.Timedelta(seconds=firstinline_vrt))
-                                
-                                
-                                
-                                
-                                if vcbd[:6] == '1 days':
-                                    vcbd = str(24 + int(vcbd[7:9])) + str(vcbd[9:])
-                                else: vcbd = vcbd[7:]
-                                tripdict['VirtualCBD'] = vcbd
-                                break
-                        
+                    tripdict['VirtualCBD'] = revenue_entries[0].attrib['departure']
+                                            
                     
                     for n,x in enumerate(entries):
                         
@@ -1007,7 +266,6 @@ def TTS_PTT(path, mypath = None):
                         (arrival, departure) = stoptime_info(n)
                         
                         
-                        
                         if stationType == 'pass':
                             tripdict[stationID] = 'exp'
                         elif stationID == last_listed_station:
@@ -1017,11 +275,7 @@ def TTS_PTT(path, mypath = None):
                         else:
                             tripdict[stationID] = departure
         
-                        if stationName == 'Central':
-                            tripdict['BNCarr'] = arrival
-                            tripdict['BNCdep'] = departure
-                            if cbd == 'BNC':
-                                tripdict['VirtualCBD'] = departure
+                
                             
                         if stationName == 'Roma Street':
                             tripdict['RSarr'] = arrival
@@ -1031,12 +285,6 @@ def TTS_PTT(path, mypath = None):
                         if stationName == 'Brunswick Street':
                             tripdict['BRCarr'] = arrival
                             tripdict['BRCdep'] = departure
-                            
-                        if stationName == 'Ipswich':
-                            tripdict['IPSarr'] = arrival
-                            tripdict['IPSdep'] = departure
-                            if cbd == 'IPS':
-                                tripdict['VirtualCBD'] = departure
                             
                         if stationName == 'Bowen Hills':
                             tripdict['BHIarr'] = arrival
@@ -1052,72 +300,65 @@ def TTS_PTT(path, mypath = None):
                     tripdict['Comes From'] = oID   
                     tripdict['Continues2'] = dID
 
+
+                    if 'VirtualCBD' not in tripdict:
+                        print(f'{tn} missing VirtualCBD, skipping')
+                        return
+
                     triplist.append(tripdict)
                 
         
             def refine_triplist(triplist, stations):
-                """ 
+                """
                 Given a list for a line in a particular direction,
                 Sort the list chronologically and merge trips that run on multiple days
                 """
-        
                 SORT_ORDER = {'M-Th': 0, 'Fri': 1, 'Sat': 2, 'Sun':3}
                 triplist.sort(key=lambda x: SORT_ORDER[x['DoO']])
                 triplist.sort(key=lambda x: x['VirtualCBD'])
-        
                 DELIMITER = '|'
                 refinedtriplist = []
-                
                 for tripdict in triplist:
-                    
-    
                     if tripdict == triplist[0]:
                         refinedtriplist.append(tripdict)
-                        
-                    else:    
-                        
-                        ### Initialise bool variable to keep track of whether the current train is a duplicate
+                    else:
                         same_train = False
-                        
-                        ### Check n previous trips
+                        idx = None
                         n = 3
-                        
                         end_idx = len(refinedtriplist) - 1
-                        
-                        for i,rtd in enumerate(refinedtriplist):
-                            
+                        for i, rtd in enumerate(refinedtriplist):
                             if end_idx - i <= n:
                                 same_train_list = []
                                 for s in stations:
                                     same_station = timetrim(tripdict.get(s)) == timetrim(rtd.get(s))
                                     same_train_list.append(same_station)
-                                same_train_list.append( tripdict.get('Comes From') == rtd.get('Comes From') )
-                                same_train_list.append( tripdict.get('Continues2') == rtd.get('Continues2') )
-                                
+                                same_train_list.append(tripdict.get('Comes From') == rtd.get('Comes From'))
+                                same_train_list.append(tripdict.get('Continues2') == rtd.get('Continues2'))
                                 same_train = all(same_train_list)
                                 if same_train and rtd['DoO'] != tripdict['DoO']:
                                     idx = i
                                     break
-                            
-                            
-                        if same_train:
+                        if same_train and idx is not None:
                             refinedtriplist[idx]['DoO'] = 'M-F' if book == weekdayworkbook else 'WE'
                             if refinedtriplist[idx]['Train ID'] != tripdict['Train ID']:
-                                refinedtriplist[idx]['Train ID'] = DELIMITER.join( [refinedtriplist[idx]['Train ID'], tripdict['Train ID']] )
+                                refinedtriplist[idx]['Train ID'] = DELIMITER.join([refinedtriplist[idx]['Train ID'], tripdict['Train ID']])
                         else:
                             refinedtriplist.append(tripdict)
-                
                 return refinedtriplist
         
         
         
             def write_timetable(sheet, triplist, stations, line):
                 """ Write the data to the worksheet, including train ID, DoO and departure times for each station """
+
+                if not stations:
+                    return
                 
                 (title, font1, boldfont1, font2, boldfont2, mainstations) = lineinfo_dict.get(line)
-                stations_long = list(zip(*stations))[0]
-                stations_abr  = list(zip(*stations))[1]
-                triplist = refine_triplist(triplist, stations_abr)
+                if stations:
+                    stations_long = list(zip(*stations))[0]
+                    stations_abr  = list(zip(*stations))[1]
+                    triplist = refine_triplist(triplist, stations_abr)
                 
                 sheet.write_column('A2', ['Days of Operation','Train ID','Station'], boldleft)
                 sheet.freeze_panes(5, 1)
@@ -1226,13 +467,6 @@ def TTS_PTT(path, mypath = None):
                          
                     sheet.set_column(i,i,6.3)
                         
-            
-            
-            
-            
-            
-            
-            
             ### Initialise two lists for each line - one inbound, one outbound
             list1  = []
             list2  = []
@@ -1261,91 +495,111 @@ def TTS_PTT(path, mypath = None):
             
             # Generate a iterable of all revenue services 
             revenue = (x for x in root.iter('train') if x[0][0][0].attrib['weekdayKey'] in weekdaykeys and 'Empty' not in x[1][0].attrib['trainTypeId'])
+            all_entries = [
+                e
+                for train in root.iter('train')
+                if train[0][0][0].attrib['weekdayKey'] in weekdaykeys
+                and 'Empty' not in train[1][0].attrib['trainTypeId']
+                for e in train.iter('entry')
+                if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
+                and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
+                ]
+
+            
+            print(f'all_entries count: {len(all_entries)}')
+            print('Sample station IDs:', [e.attrib['stationID'] for e in all_entries[:10]])
+            line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+
+            for e in all_entries:
+                code = e.attrib['stationID']
+                line = line_station_lookup.get(code)
+                if line and line in line_station_order:
+                    name = e.attrib['stationName']
+                    if (name, code) not in line_station_order[line]:
+                        line_station_order[line].append((name, code))
+            # Apply corridor split point
+            for line in line_station_order:
+                corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
+                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
+                if split_at:
+                    print(split_at)
+                    codes = [code for name, code in line_station_order[line]]
+                    if split_at in codes:
+                        line_station_order[line] = line_station_order[line][:codes.index(split_at) + 1]
+            # Build final station_lists dict
+            station_lists = {}
+            for line in STATIONS_MASTER['lines']:
+                ordered = list(reversed(line_station_order[line]))  # reverse once for inbound
+                inbound  = ordered + [('Continues To', 'CT')]
+                outbound = [('Comes From', 'CF')] + list(reversed(ordered))  # reverse again for outbound = original order
+                station_lists[(line, False)] = inbound
+                station_lists[(line, True)]  = outbound
+                                        
+
             for train in revenue:
                 tn = train.attrib['number']
                 WeekdayKey = train[0][0][0].attrib['weekdayKey']
                 entries = [x for x in train.iter('entry')]
-                revenue_entries = [e for e in entries if e.attrib['stationID'] not in ALL_YARD_CODES]
+                revenue_entries = [
+                e for e in entries
+                if STATIONS_MASTER['stations'].get(e.attrib['stationID']) and
+                not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
+                ]
                 oID = revenue_entries[0].attrib['stationID']
                 dID = revenue_entries[-1].attrib['stationID']
                 origin = revenue_entries[0].attrib
-                
-                
+
                 
                 build_triplist( list1,  'Beenleigh'                                )
                 build_triplist( list2,  'Beenleigh',                 Outbound=True )
-                
                 build_triplist( list3,  'Caboolture - Gympie North'                ) 
                 build_triplist( list4,  'Caboolture - Gympie North', Outbound=True )
-                
                 build_triplist( list5,  'Cleveland'                                )
                 build_triplist( list6,  'Cleveland',                 Outbound=True )
-                
                 build_triplist( list7,  'Doomben'                                  )
                 build_triplist( list8,  'Doomben',                   Outbound=True )
-                
                 build_triplist( list9,  'Ferny Grove'                              )
                 build_triplist( list10, 'Ferny Grove',               Outbound=True )
-                
                 build_triplist( list11, 'Varsity Lakes - Airport'                  )
                 build_triplist( list12, 'Varsity Lakes - Airport',   Outbound=True )
-                
                 build_triplist( list15, 'Inner North'                              )
                 build_triplist( list16, 'Inner North',               Outbound=True )
-                
                 build_triplist( list17, 'Inner City'                               )
                 build_triplist( list18, 'Inner City',                Outbound=True )
-                
                 build_triplist( list13, 'Ipswich - Rosewood'                       )
                 build_triplist( list14, 'Ipswich - Rosewood',        Outbound=True )
-                
                 build_triplist( list19, 'Redcliffe'                                )
                 build_triplist( list20, 'Redcliffe',                 Outbound=True )
-                
                 build_triplist( list21, 'Shorncliffe'                              )
                 build_triplist( list22, 'Shorncliffe',               Outbound=True )
-                
                 build_triplist( list23, 'Springfield'                              )
                 build_triplist( list24, 'Springfield',               Outbound=True )
         
             
-            write_timetable( BNH_in,      list1,  bnh_in,   'Beenleigh' )  
-            write_timetable( BNH_out,     list2,  bnh_out,  'Beenleigh' )     
-            
-            cab_stops = cab_out if book == weekdayworkbook else cab_out_wknd
-            write_timetable( CAB_GYN_in,  list3,  cab_in,   'Caboolture - Gympie North' ) 
-            write_timetable( CAB_GYN_out, list4,  cab_stops,'Caboolture - Gympie North' )
-        
-            write_timetable( CVN_in,      list5,  cvn_in,   'Cleveland' )   
-            write_timetable( CVN_out,     list6,  cvn_out,  'Cleveland' ) 
-         
-            write_timetable( DBN_in,      list7,  dbn_in,   'Doomben' )   
-            write_timetable( DBN_out,     list8,  dbn_out,  'Doomben' )
-        
-            write_timetable( FYG_in,      list9,  fyg_in,   'Ferny Grove' )   
-            write_timetable( FYG_out,     list10, fyg_out,  'Ferny Grove' ) 
-        
-            write_timetable( VYS_in,      list11, vys_in,   'Varsity Lakes - Airport' )   
-            write_timetable( VYS_out,     list12, vys_out,  'Varsity Lakes - Airport' )
-            
-            write_timetable( INN_in,      list15, inn_in,   'Inner North' )   
-            write_timetable( INN_out,     list16, inn_out,  'Inner North' ) 
-        
-            write_timetable( INC_in,      list17, inc_in,   'Inner City' )   
-            write_timetable( INC_out,     list18, inc_out,  'Inner City' ) 
-            
-            write_timetable( IPS_RSW_in,  list13, ips_in,   'Ipswich - Rosewood' )   
-            write_timetable( IPS_RSW_out, list14, ips_out,  'Ipswich - Rosewood' )       
-        
-            write_timetable( RDP_in,      list19, rdp_in,   'Redcliffe' )   
-            write_timetable( RDP_out,     list20, rdp_out,  'Redcliffe' ) 
-        
-            write_timetable( SHC_in,      list21, shc_in,   'Shorncliffe' )   
-            write_timetable( SHC_out,     list22, shc_out,  'Shorncliffe' ) 
-        
-            write_timetable( SFC_in,      list23, sfc_in,   'Springfield' )   
-            write_timetable( SFC_out,     list24, sfc_out,  'Springfield' ) 
-            
+            write_timetable(BNH_in,      list1,  station_lists[('Beenleigh', False)],                'Beenleigh')
+            write_timetable(BNH_out,     list2,  station_lists[('Beenleigh', True)],                 'Beenleigh')
+            write_timetable(CAB_GYN_in,  list3,  station_lists[('Caboolture - Gympie North', False)], 'Caboolture - Gympie North')
+            write_timetable(CAB_GYN_out, list4,  station_lists[('Caboolture - Gympie North', True)],  'Caboolture - Gympie North')
+            write_timetable(CVN_in,      list5,  station_lists[('Cleveland', False)],                'Cleveland')
+            write_timetable(CVN_out,     list6,  station_lists[('Cleveland', True)],                 'Cleveland')
+            write_timetable(DBN_in,      list7,  station_lists[('Doomben', False)],                  'Doomben')
+            write_timetable(DBN_out,     list8,  station_lists[('Doomben', True)],                   'Doomben')
+            write_timetable(FYG_in,      list9,  station_lists[('Ferny Grove', False)],              'Ferny Grove')
+            write_timetable(FYG_out,     list10, station_lists[('Ferny Grove', True)],               'Ferny Grove')
+            write_timetable(VYS_in,      list11, station_lists[('Varsity Lakes - Airport', False)],  'Varsity Lakes - Airport')
+            write_timetable(VYS_out,     list12, station_lists[('Varsity Lakes - Airport', True)],   'Varsity Lakes - Airport')
+            write_timetable(INN_in,      list15, station_lists[('Inner North', False)],              'Inner North')
+            write_timetable(INN_out,     list16, station_lists[('Inner North', True)],               'Inner North')
+            write_timetable(INC_in,      list17, station_lists[('Inner City', False)],               'Inner City')
+            write_timetable(INC_out,     list18, station_lists[('Inner City', True)],                'Inner City')
+            write_timetable(IPS_RSW_in,  list13, station_lists[('Ipswich - Rosewood', False)],       'Ipswich - Rosewood')
+            write_timetable(IPS_RSW_out, list14, station_lists[('Ipswich - Rosewood', True)],        'Ipswich - Rosewood')
+            write_timetable(RDP_in,      list19, station_lists[('Redcliffe', False)],                'Redcliffe')
+            write_timetable(RDP_out,     list20, station_lists[('Redcliffe', True)],                 'Redcliffe')
+            write_timetable(SHC_in,      list21, station_lists[('Shorncliffe', False)],              'Shorncliffe')
+            write_timetable(SHC_out,     list22, station_lists[('Shorncliffe', True)],               'Shorncliffe')
+            write_timetable(SFC_in,      list23, station_lists[('Springfield', False)],              'Springfield')
+            write_timetable(SFC_out,     list24, station_lists[('Springfield', True)],               'Springfield')
             titles(daycode)
             
             # IPS_RSW_in.activate()
@@ -1379,55 +633,8 @@ def TTS_PTT(path, mypath = None):
                     if OpenWorkbook:
                         os.startfile(rf'{filename_xlsx}')
                         print(f'Opening {dayname} workbook')
-            
-            # ###########################################################
-            # dayofop_dict = {
-            #     weekdayworkbook:  (weekdayfilename_xlsx, 'weekday'),
-            #     weekendworkbook:  (weekendfilename_xlsx, 'weekend'),
-            #     monthuworkbook:   (monthufilename_xlsx,  'Mon-Thurs'),
-            #     fridayworkbook:   (fridayfilename_xlsx,  'Friday'),
-            #     saturdayworkbook: (saturdayfilename_xlsx,'Saturday'),
-            #     sundayworkbook:   (sundayfilename_xlsx,  'Sunday')
-            #     }
-            
-            # filename_xlsx,dayname = dayofop_dict.get(book)
-            
-            # if OpenWorkbook and __name__ == "__main__":
-            #     os.startfile(rf'{filename_xlsx}')
-            #     print(f'Opening {dayname} workbook')
-            # else:
-            #     if copyfile:
-            #         shutil.copy(filename_xlsx, mypath) 
-            # ###########################################################
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
         ### Create the worksheets
         ### Format the broadsheet
         ### Print the data
@@ -1461,9 +668,7 @@ def TTS_PTT(path, mypath = None):
             
             book.formats[0].set_align('center')
             book.formats[0].set_font_size(9)
-            
-            
-            
+        
             #Workbook formats
             default             = book.add_format({'align':'center','font_size':9})
             left                = book.add_format({'align':'left','font_size':9})
@@ -1473,8 +678,7 @@ def TTS_PTT(path, mypath = None):
             express             = book.add_format({'align':'center','font_size':9,             'bg_color':'#FFEBBE'})
             expressbold         = book.add_format({'align':'center','font_size':9,'bold':True, 'bg_color':'#FFEBBE'})
             
-            
-            
+        
             #Worksheet title formats
             redtitle            = book.add_format({'align':'left','font_size':14,'bold':True, 'font_color':'white','bg_color':'#D10019'})
             greentitle          = book.add_format({'align':'left','font_size':14,'bold':True, 'font_color':'white','bg_color':'#007D45'})
@@ -1569,7 +773,7 @@ def TTS_PTT(path, mypath = None):
                 'Redcliffe':                  (bluetitle,     thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         rdp_capitalstops),
                 'Shorncliffe':                (darkbluetitle, thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         shc_capitalstops),
                 'Springfield':                (bluetitle,     thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         sfc_capitalstops)
-                    }
+            }
             
             linefont_dict = {
                 BNH_in:       redtitle,
@@ -1654,10 +858,6 @@ def TTS_PTT(path, mypath = None):
                 if '1' in d_list:
                     write_workbook('Sunday', ['1'])
            
-                
-           
-        
-        
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             show_info('Public Timetable','Process Done')

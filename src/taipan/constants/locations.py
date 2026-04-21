@@ -10,7 +10,7 @@
 # all non-revenue:       [c for c,s in network['stations'].items() if s['non_revenue']]
 # all stations on line:  [c for c,s in network['stations'].items() if s['line'] == 'Beenleigh']
 # byline termini:        [c for c,s in network['stations'].items() if s['byline_terminus']]
-# VRT for a station:     network['stations']['BNH']['vrt']
+# VRT for a station:     network['stations']['BNH']['vrt']  
 # VRT for a line:        get_vrt_for_line('Beenleigh')
 
 # =============================================================================
@@ -19,20 +19,24 @@ STATIONS_MASTER = {
 # -------------------------------------------------------------------------
 # LINES  - metadata only
 # -------------------------------------------------------------------------
+
+
 'lines': {
-    'Beenleigh':                 {'sector': 1,    'terminus': 'BNH'},
-    'Caboolture - Gympie North': {'sector': 1,    'terminus': 'GYN'},
-    'Cleveland':                 {'sector': 3,    'terminus': 'CVN'},
-    'Doomben':                   {'sector': 2,    'terminus': 'DBN'},
-    'Ferny Grove':               {'sector': 3,    'terminus': 'FYG'},
-    'Varsity Lakes - Airport':   {'sector': 1,    'terminus': 'VYS'},
-    'Ipswich - Rosewood':        {'sector': 2,    'terminus': 'IPS'},
-    'Redcliffe':                 {'sector': 1,    'terminus': 'KPR'},
-    'Shorncliffe':               {'sector': 2,    'terminus': 'SHC'},
-    'Springfield':               {'sector': 2,    'terminus': 'SFC'},
+    'Beenleigh':                 {'sector': 1, 'terminus': 'BNH', 'corridor': 'south'},
+    'Caboolture - Gympie North': {'sector': 1, 'terminus': 'GYN', 'corridor': 'north'},
+    'Cleveland':                 {'sector': 3, 'terminus': 'CVN', 'corridor': 'south'},
+    'Doomben':                   {'sector': 2, 'terminus': 'DBN', 'corridor': 'north'},
+    'Ferny Grove':               {'sector': 3, 'terminus': 'FYG', 'corridor': 'north'},
+    'Varsity Lakes - Airport':   {'sector': 1, 'terminus': 'VYS', 'corridor': 'north'},
+    'Ipswich - Rosewood':        {'sector': 2, 'terminus': 'IPS', 'corridor': 'south'},
+    'Redcliffe':                 {'sector': 1, 'terminus': 'KPR', 'corridor': 'north'},
+    'Shorncliffe':               {'sector': 2, 'terminus': 'SHC', 'corridor': 'north'},
+    'Springfield':               {'sector': 2, 'terminus': 'SFC', 'corridor': 'south'},
     'Inner City':                {'sector': None, 'terminus': 'RS'},
     'Normanby':                  {'sector': None, 'terminus': 'ETS'},
+    'Inner North': {'sector': None, 'terminus': 'NTG', 'corridor': 'north'},
 },
+ 
 
 # -------------------------------------------------------------------------
 # STATIONS - all network-relevant locations (revenue + routing/VRT)
@@ -246,8 +250,8 @@ STATIONS_MASTER = {
     # --- Normanby / Exhibition --------------------------------------------
     'ETS':  {'name': 'Electric Train South', 'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
     'CAM':  {'name': 'Campbell St',                    'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
-    'EXH':  {'name': 'Exhibition',                'line': 'Normanby', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
-    'BOG':  {'name': 'Boggo Rd',                'line': 'Normanby', 'sector': 1, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
+    'EXH':  {'name': 'Exhibition',                'line': 'Inner City', 'sector': 1, 'non_revenue': False, 'byline_terminus': False},
+    'BOG':  {'name': 'Boggo Rd',                'line': 'Inner City', 'sector': 1, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
 
     'NBY':  {'name': 'Normanby',                  'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
     'RSF':  {'name': 'Roma Street Fork',          'line': 'Normanby', 'sector': None, 'non_revenue': True,  'byline_terminus': False},
@@ -311,9 +315,6 @@ YARDS = {
    'Redbank':       {'capacity': 6,   'qr_only': True,   'yards': ['RDKS'],               'sector': 2},
    'Banyo':         {'capacity': 4,   'ngr_only': True,  'yards': ['BQYS'],               'sector': 2},
    'Manly':         {'capacity': 3,   'qr_only': True,   'yards': ['MNY'],                'sector': 3},
-
-   
-  
 }
 
 
