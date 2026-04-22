@@ -97,6 +97,22 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 > - Note that we share IDs across days to account for the lack of IDs to assign to new trains. NGRs and REP have had their ranges expanded to account for the amount of trains. 
 
+
+**`publictimetable/PublicTimetable.py`**
+- Logic has been updated to make it independent of O/D pairs - only uses O or D to determine line 
+- For writing station-times, there is additional logic introduced for new timetables:
+
+> - If RS exists:
+>> - AND origin station is Southern lines then Bowen Hills is last revenue station
+>> - AND origin station is Northern lines then Roma Street is last revenue station
+> - If RTL exists:
+>> - AND origin station is Southern lines then Exhibition is the last revenue station
+>> - AND origin station is Northern Lines Boggo road is the last revenue station 
+
+- There is a new 'shuttle' sheet which has trains with no RS or RTL stations in their `entries` but contain revenue stations. There will be a separate sheet for each day in the RSX if 'shuttles' are detected. 
+- All the data structures have been removed and refactored (vrt, unique stations, stablingmaster, stationsmaster etc) and will only rely on a single source to receive station and line metadata (`STATIONS_MASTER` in `constants/locations.py`). If you find a missing station / and or line in the output, `STATION_MASTER` would be the place to update. 
+
+
 ## Testing
  - Run all tests; copy into cmd
 
@@ -116,7 +132,23 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 ### 2. Clone the repository OR Download the repository 
 
+
+#### Cloning 
+- Cloning is recommended so you can keep updated with files instantaneously rather than having to manually update the code files every time an update is pushed.
+- For this method - you need to do two additional steps before you can proceed with Step 4.
+> - Create a Github account (use QR email to sign up) 
+> -  Download Github Desktop (from here https://desktop.github.com/download/)
+- Clone the repository into your C drive
+
+
+
+#### Non cloning way (manual)
+
 - To download: Code -> download zip
+- Create a new folder in your C drive called "Python_TTSummary" (MUST be exactly this capitalisation/spelling/etc)
+> - C-drive is `C:\` in the path bar
+- Place the contents of the zip you downloaded into Python_TTSummary. Full path should look like `"C:\Python_TTSummary"` with src, tests, etc in the folder.
+
 
 ### 3. Downloading / Setup of IDE (skip if not developing)
 
@@ -137,7 +169,6 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
     `.\venv\Scripts\activate`
 
     After running the previous two steps, you see something that looks like the below image, note the green (venv) to the left of the folder structure. 
-
 
     ![venv](/images/activating_venv.png "venv")
 
@@ -164,6 +195,5 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
     `.\venv\Scripts\python.exe -c "import taipan"`
 
     If an error popped up, ask for help. Otherwise, you’re good to go 🚀
-
 
 

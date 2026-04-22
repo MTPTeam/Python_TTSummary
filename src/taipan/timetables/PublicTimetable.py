@@ -257,15 +257,20 @@ def TTS_PTT(path, mypath = None):
                     # determine split point for this specific train
                     train_station_ids = {e.attrib['stationID'] for e in entries}
                     corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
-                    if corridor:
-                        if 'RTL' in train_station_ids:
-                            train_split = CITY_TERMINUS[(corridor, True)]
-                        elif 'RS' in train_station_ids or 'BNC' in train_station_ids:
-                            train_split = CITY_TERMINUS[(corridor, False)]
+                    if 'RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids:
+                        if corridor:
+                            if 'RTL' in train_station_ids:
+                                train_split = CITY_TERMINUS[(corridor, True)]
+                            else:
+                                train_split = CITY_TERMINUS[(corridor, False)]
                         else:
-                            train_split = None
+                            train_split = 'RS'
                     else:
                         train_split = None
+
+                    
+                    
+
                     for n, x in enumerate(entries):
                         stationName = x.attrib['stationName']
                         stationID   = x.attrib['stationID']
@@ -302,6 +307,16 @@ def TTS_PTT(path, mypath = None):
                     # use od to populate comes to and continues to since we previously filtered out the yards and misc locations 
                     tripdict['Comes From'] = oID   
                     tripdict['Continues2'] = dID
+
+
+                    if train_split is None:
+                        #print(f'Train {tn} shuttle - has RS: {"RS" in train_station_ids}, has RTL: {"RTL" in train_station_ids}, has BNC: {"BNC" in train_station_ids}')
+                        #print(f'Station IDs: {train_station_ids}')
+                        shuttle_key = f'{oID}-{dID}'
+                        if shuttle_key not in shuttle_trips:
+                            shuttle_trips[shuttle_key] = []
+                        shuttle_trips[shuttle_key].append(tripdict)
+                        return
 
 
                     if 'VirtualCBD' not in tripdict:
@@ -495,6 +510,8 @@ def TTS_PTT(path, mypath = None):
             list22 = []
             list23 = []
             list24 = []
+
+            shuttle_trips = {}
             
             # Generate a iterable of all revenue services 
             revenue = (x for x in root.iter('train') if x[0][0][0].attrib['weekdayKey'] in weekdaykeys and 'Empty' not in x[1][0].attrib['trainTypeId'])
@@ -512,26 +529,8 @@ def TTS_PTT(path, mypath = None):
             print(f'all_entries count: {len(all_entries)}')
             print('Sample station IDs:', [e.attrib['stationID'] for e in all_entries[:10]])
             
-            
-            """line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
-
-            for e in all_entries:
-                code = e.attrib['stationID']
-                line = line_station_lookup.get(code)
-                if line and line in line_station_order:
-                    name = e.attrib['stationName']
-                    if (name, code) not in line_station_order[line]:
-                        line_station_order[line].append((name, code))
-            # Apply corridor split point
-            for line in line_station_order:
-                corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
-                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
-                if split_at:
-                    codes = [code for name, code in line_station_order[line]]
-                    if split_at in codes:
-                        line_station_order[line] = line_station_order[line][:codes.index(split_at) + 1]"""
         
-
+    
 
             line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
             for train in root.iter('train'):
@@ -572,7 +571,6 @@ def TTS_PTT(path, mypath = None):
                     if split_at and code == split_at:
                         break
             
-
 
             # Build final station_lists dict
             station_lists = {}
@@ -653,6 +651,7 @@ def TTS_PTT(path, mypath = None):
             write_timetable(SFC_out,     list24, station_lists[('Springfield', True)],               'Springfield')
             titles(daycode)
             
+        
             # IPS_RSW_in.activate()
             # CAB_GYN_in.activate()
             # SHC_in.activate()
@@ -660,7 +659,46 @@ def TTS_PTT(path, mypath = None):
             BNH_in.activate() 
             
             print(f'\nAll trains with weekdayKey {" or ".join(weekdaykeys)} have been processed')
-            
+
+            shuttleworkbook = xlsxwriter.Workbook(f'PublicTimetable-{filename}-{daycode}-Shuttles.xlsx')
+            s_default  = shuttleworkbook.add_format({'align':'center','font_size':9})
+            s_left     = shuttleworkbook.add_format({'align':'left','font_size':9})
+            s_bold     = shuttleworkbook.add_format({'align':'center','font_size':9,'bold':True})
+            s_boldleft = shuttleworkbook.add_format({'align':'left','font_size':9,'bold':True})
+            for i, (shuttle_key, trips) in enumerate(shuttle_trips.items()):
+                sheet_name = f'{shuttle_key}-{i}'[:31]
+                sheet = shuttleworkbook.add_worksheet(sheet_name)
+                trips.sort(key=lambda x: x['VirtualCBD'])
+                shuttle_stations = []
+                for trip in trips:
+                    for code in trip:
+                        if code not in ('Train ID', 'VirtualCBD', 'AM/PM', 'DoO', 'Comes From', 'Continues2'):
+                            station = STATIONS_MASTER['stations'].get(code)
+                            if station and not station['non_revenue']:
+                                name = station['name']
+                                if (name, code) not in shuttle_stations:
+                                    shuttle_stations.append((name, code))
+                shuttle_stations = [('Comes From', 'CF')] + shuttle_stations + [('Continues To', 'CT')]
+                stations_long = [s[0] for s in shuttle_stations]
+                stations_abr  = [s[1] for s in shuttle_stations]
+                sheet.write_column('A2', ['Days of Operation', 'Train ID', 'AM/PM', 'Station'], s_boldleft)
+                sheet.freeze_panes(5, 1)
+                for j in range(1, len(shuttle_stations) + 5):
+                    sheet.set_row(j, 14.5)
+                sheet.write_column('A6', stations_long, s_left)
+                for col, trip in enumerate(trips, 1):
+                    sheet.write(1, col, trip.get('DoO'), s_default)
+                    sheet.write(2, col, trip.get('Train ID'), s_default)
+                    sheet.write(3, col, trip.get('AM/PM'), s_default)
+                    sheet.write(4, col, '', s_default)
+                    for row, code in enumerate(stations_abr, 5):
+                        val = timetrim(trip.get(code))
+                        if val is not None:
+                            sheet.write(row, col, val, s_default)
+                    sheet.set_column(col, col, 6.3)
+            shuttleworkbook.close()
+            shuttle_trips.clear()
+                        
             dayofop_dict = {
                 weekdayworkbook:  (weekdayfilename_xlsx, 'weekday'),
                 weekendworkbook:  (weekendfilename_xlsx, 'weekend'),
