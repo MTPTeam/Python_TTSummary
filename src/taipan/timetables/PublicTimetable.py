@@ -27,6 +27,7 @@ OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
 
+
 weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
 ### Conversion between rsx weekdaykey and what this translate to in shorthand english
 weekdaykey_dict2 = {'120':'M-Th', '4':'Fri', '2':'Sat', '1':'Sun'}
@@ -269,14 +270,23 @@ def TTS_PTT(path, mypath = None):
                         train_split = None
 
                     
-                    
-
+                    reached_split = False if Outbound else True
+       
                     for n, x in enumerate(entries):
                         stationName = x.attrib['stationName']
                         stationID   = x.attrib['stationID']
                         stationType = x.attrib['type']
                         dwell       = int(x.attrib['stopTime']) if x.get('stopTime') else 0
                         (arrival, departure) = stoptime_info(n)
+
+
+                        # for outbound start writing from split point
+                        if Outbound and train_split and stationID == train_split:
+                            reached_split = True
+
+                        if not reached_split:
+                            continue
+
                         if stationType == 'pass':
                             tripdict[stationID] = 'exp'
                         elif stationID == last_listed_station:
@@ -285,6 +295,8 @@ def TTS_PTT(path, mypath = None):
                             tripdict[stationID] = arrival
                         else:
                             tripdict[stationID] = departure
+
+
                         if stationName == 'Roma Street':
                             tripdict['RSarr'] = arrival
                             tripdict['RSdep'] = departure
