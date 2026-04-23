@@ -159,7 +159,7 @@ def TTS_PTT(path, mypath = None):
         ### newstations tracks if new locations have been added to the geography that haven't yet been added to stationmaster
         ###              will allow the code to continue without erroring, stationmaster should then be amended 
         d_list = []
-        newstations = []
+        newstations = set()
         revtrains = [x for x in root.iter('train') if 'Empty' not in x[1][0].attrib['trainTypeId']]
         
         for train in revtrains:
@@ -173,10 +173,9 @@ def TTS_PTT(path, mypath = None):
             for entry in entries:
                 stID = entry.attrib['stationID']
                 name = entry.attrib['stationName']
-                
-                if name not in name_to_code:
-                    newstations.append(name)
-                    # optionally add to name_to_code so script continues without erroring
+
+                if stID not in STATIONS_MASTER['stations']:
+                    newstations.add(name)
                     name_to_code[name] = stID
             
     
@@ -389,6 +388,17 @@ def TTS_PTT(path, mypath = None):
                     stations_long = list(zip(*stations))[0]
                     stations_abr  = list(zip(*stations))[1]
                     triplist = refine_triplist(triplist, stations_abr)
+                    active_stations = [
+                    (name, code) for name, code in zip(stations_long, stations_abr)
+                    if code in ('CF', 'CT') or any(trip.get(code) for trip in triplist)
+                    ]
+
+                    if not active_stations:
+                        return
+
+                    stations_long = tuple(s[0] for s in active_stations)
+                    stations_abr  = tuple(s[1] for s in active_stations)
+
                 
                 sheet.write_column('A2', ['Days of Operation','Train ID','Station'], boldleft)
                 sheet.freeze_panes(5, 1)
@@ -543,8 +553,39 @@ def TTS_PTT(path, mypath = None):
             
         
     
-
             line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+            for train in root.iter('train'):
+                if 'Empty' in train[1][0].attrib['trainTypeId']:
+                    continue
+                if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
+                    continue
+                train_entries = [e for e in train.iter('entry')
+                                if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
+                                and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
+                if not train_entries:
+                    continue
+                o_line = line_station_lookup.get(train_entries[0].attrib['stationID'])
+                d_line = line_station_lookup.get(train_entries[-1].attrib['stationID'])
+                suburban_line = o_line if o_line not in ('Inner City', 'Normanby', None) else d_line
+                if not suburban_line or suburban_line not in line_station_order:
+                    continue
+                if o_line != suburban_line:
+                    continue
+                corridor = STATIONS_MASTER['lines'].get(suburban_line, {}).get('corridor')
+                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
+                # build candidate list for this train
+                candidate = []
+                for e in train_entries:
+                    code = e.attrib['stationID']
+                    name = e.attrib['stationName']
+                    candidate.append((name, code))
+                    if split_at and code == split_at:
+                        break
+                # only update if this train covers more stations
+                if len(candidate) > len(line_station_order[suburban_line]):
+                    line_station_order[suburban_line] = candidate
+
+            """line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
             for train in root.iter('train'):
                 if 'Empty' in train[1][0].attrib['trainTypeId']:
                     continue
@@ -581,8 +622,9 @@ def TTS_PTT(path, mypath = None):
                         line_station_order[suburban_line].append((name, code))
 
                     if split_at and code == split_at:
-                        break
-            
+                        break"""
+
+
 
             # Build final station_lists dict
             station_lists = {}
@@ -693,6 +735,10 @@ def TTS_PTT(path, mypath = None):
                 shuttle_stations = [('Comes From', 'CF')] + shuttle_stations + [('Continues To', 'CT')]
                 stations_long = [s[0] for s in shuttle_stations]
                 stations_abr  = [s[1] for s in shuttle_stations]
+
+
+
+
                 sheet.write_column('A2', ['Days of Operation', 'Train ID', 'AM/PM', 'Station'], s_boldleft)
                 sheet.freeze_panes(5, 1)
                 for j in range(1, len(shuttle_stations) + 5):
