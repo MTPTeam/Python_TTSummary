@@ -201,6 +201,9 @@ def TTS_PTT(path, mypath = None):
 
             AIRPORT_STATIONS = {'BDT', 'BIT', 'AJN'}
             VARSITY_STATIONS = {'VYS', 'ROB', 'MRC', 'NRG', 'HLN', 'HID', 'CXM', 'PPA', 'ORM', 'ROBS', 'VYST'}
+            INNER_NORTH_STATIONS = {'NTG', 'NND', 'TBU', 'EGJ', 'WWI', 'AIN'}
+
+            
         
             def stoptime_info(entry):
                 departure = entry.attrib['departure']
@@ -259,6 +262,13 @@ def TTS_PTT(path, mypath = None):
                         condition = condition and dID in AIRPORT_STATIONS
                     else:
                         condition = condition and oID in AIRPORT_STATIONS
+
+                elif line == 'Inner North':                                          # add here
+                    condition = oID in INNER_NORTH_STATIONS or dID in INNER_NORTH_STATIONS
+                    if Outbound:
+                        condition = condition and dID in INNER_NORTH_STATIONS
+                    else:
+                        condition = condition and oID in INNER_NORTH_STATIONS
                 else:
                     condition = (o_line == line or d_line == line)
                     if Outbound:
@@ -584,79 +594,37 @@ def TTS_PTT(path, mypath = None):
                                 and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
                 if not train_entries:
                     continue
-                o_line = line_station_lookup.get(train_entries[0].attrib['stationID'])
-                d_line = line_station_lookup.get(train_entries[-1].attrib['stationID'])
-                suburban_line = o_line if o_line not in ('Inner City', 'Normanby', None) else d_line
-                if not suburban_line or suburban_line not in line_station_order:
+                oID_t = train_entries[0].attrib['stationID']
+                dID_t = train_entries[-1].attrib['stationID']
+                o_line = line_station_lookup.get(oID_t)
+                d_line = line_station_lookup.get(dID_t)
+                # determine suburban line
+                if oID_t in VARSITY_STATIONS:
+                    suburban_line = 'Varsity Lakes'
+                elif oID_t in AIRPORT_STATIONS:
+                    suburban_line = 'Airport'
+                elif oID_t in INNER_NORTH_STATIONS:
+                    suburban_line = 'Inner North'
+
+                elif o_line in ('Inner City', 'Normanby') and d_line in ('Inner City', 'Normanby'):
+                    suburban_line = 'Inner City'
+                elif o_line not in ('Inner City', 'Normanby', None):
+                    suburban_line = o_line
+                else:
                     continue
-                if o_line != suburban_line:
+                if suburban_line not in line_station_order:
                     continue
+                train_ids = {e.attrib['stationID'] for e in train_entries}
+                has_tunnel = 'RTL' in train_ids
                 corridor = STATIONS_MASTER['lines'].get(suburban_line, {}).get('corridor')
-                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
-                # build candidate list for this train
-                candidate = []
+                split_at = CITY_TERMINUS.get((corridor, has_tunnel)) if corridor else None
                 for e in train_entries:
                     code = e.attrib['stationID']
                     name = e.attrib['stationName']
-                    candidate.append((name, code))
+                    if (name, code) not in line_station_order[suburban_line]:
+                        line_station_order[suburban_line].append((name, code))
                     if split_at and code == split_at:
                         break
-                # only update if this train covers more stations
-                if len(candidate) > len(line_station_order[suburban_line]):
-                    line_station_order[suburban_line] = candidate
-
-
- 
-
-
-            varsity_order = []
-            airport_order = []
-            for train in root.iter('train'):
-                if 'Empty' in train[1][0].attrib['trainTypeId']:
-                    continue
-                if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
-                    continue
-                train_entries = [e for e in train.iter('entry')
-                                if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
-                                and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
-                if not train_entries:
-                    continue
-                oID_t = train_entries[0].attrib['stationID']
-                # Varsity inbound trains
-                if oID_t in VARSITY_STATIONS:
-                    corridor = STATIONS_MASTER['lines'].get('Varsity Lakes', {}).get('corridor')
-                    split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
-                    candidate = []
-                    for e in train_entries:
-                        code = e.attrib['stationID']
-                        name = e.attrib['stationName']
-                        candidate.append((name, code))
-                        if split_at and code == split_at:
-                            break
-                    if len(candidate) > len(varsity_order):
-                        varsity_order = candidate
-                # Airport inbound trains
-                elif oID_t in AIRPORT_STATIONS:
-                    corridor = STATIONS_MASTER['lines'].get('Airport', {}).get('corridor')
-                    split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
-                    candidate = []
-                    for e in train_entries:
-                        code = e.attrib['stationID']
-                        name = e.attrib['stationName']
-                        candidate.append((name, code))
-                        if split_at and code == split_at:
-                            break
-                    if len(candidate) > len(airport_order):
-                        airport_order = candidate
-            line_station_order['Varsity Lakes'] = varsity_order
-            line_station_order['Airport'] = airport_order
-
-            
-            if len(candidate) > len(varsity_order):
-                varsity_order = candidate
-
-                print(f'Varsity station list updated: {[c[1] for c in varsity_order]}')
-
 
 
             # Build final station_lists dict

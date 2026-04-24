@@ -32,7 +32,7 @@ STATIONS_MASTER = {
     'Redcliffe':                 {'sector': 1, 'terminus': 'KPR', 'corridor': 'north'},
     'Shorncliffe':               {'sector': 2, 'terminus': 'SHC', 'corridor': 'north'},
     'Springfield':               {'sector': 2, 'terminus': 'SFC', 'corridor': 'south'},
-    'Inner City':                {'sector': None, 'terminus': 'RS'},
+    'Inner City':                {'sector': None, 'terminus': 'RS', 'corridor': None},
     'Normanby':                  {'sector': None, 'terminus': 'ETS'},
     'Inner North': {'sector': None, 'terminus': 'NTG', 'corridor': 'north'},
     'Varsity Lakes': {'sector': 1, 'terminus': 'VYS', 'corridor': 'south'},
