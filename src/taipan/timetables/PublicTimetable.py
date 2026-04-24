@@ -197,23 +197,23 @@ def TTS_PTT(path, mypath = None):
             The use of a master function to write a workbook with all other functions nested within
             Run twice, one for school days and one for weekends
             """
+
+
+            AIRPORT_STATIONS = {'BDT', 'BIT', 'AJN'}
+            VARSITY_STATIONS = {'VYS', 'ROB', 'MRC', 'NRG', 'HLN', 'HID', 'CXM', 'PPA', 'ORM', 'ROBS', 'VYST'}
         
-            def stoptime_info(entry_index): 
-                """ Returns the arrival and departure times for the nth stop in a trip """
-                
-                x = entry_index
-                departure = train[1][x].attrib['departure'] 
-                
-                stoptime = int(train[1][x].attrib.get('stopTime',0))
+            def stoptime_info(entry):
+                departure = entry.attrib['departure']
+                stoptime = int(entry.attrib.get('stopTime', 0))
                 if stoptime == 1:
                     stoptime = 0
-                    
-                arrival = str(pd.Timedelta(departure) - pd.Timedelta(seconds=stoptime))  
+                arrival = str(pd.Timedelta(departure) - pd.Timedelta(seconds=stoptime))
                 if arrival[:6] == '1 days':
                     arrival = str(24 + int(arrival[7:9])) + str(arrival[9:])
-                else: arrival = arrival[7:]
-        
-                return (arrival,departure)
+                else:
+                    arrival = arrival[7:]
+                return (arrival, departure)
+
         
             def timetrim(timestring):
                 """ Format converter from hh:mm:ss to [h]:mm """
@@ -241,13 +241,31 @@ def TTS_PTT(path, mypath = None):
                     last_listed_station = station_list[-1][1]
                
                 entries = train[1].findall('entry')
+                entries = revenue_entries
                 o_line = line_station_lookup.get(oID)
                 d_line = line_station_lookup.get(dID)
-                condition = (o_line == line or d_line == line)
-                if Outbound:
-                    condition = condition and (d_line == line)
+
+
+                
+                if line == 'Varsity Lakes':
+                    condition = oID in VARSITY_STATIONS or dID in VARSITY_STATIONS
+                    if Outbound:
+                        condition = condition and dID in VARSITY_STATIONS
+                    else:
+                        condition = condition and oID in VARSITY_STATIONS
+                elif line == 'Airport':
+                    condition = oID in AIRPORT_STATIONS or dID in AIRPORT_STATIONS
+                    if Outbound:
+                        condition = condition and dID in AIRPORT_STATIONS
+                    else:
+                        condition = condition and oID in AIRPORT_STATIONS
                 else:
-                    condition = condition and (o_line == line)
+                    condition = (o_line == line or d_line == line)
+                    if Outbound:
+                        condition = condition and (d_line == line)
+                    else:
+                        condition = condition and (o_line == line)
+
 
                 
                 if condition:
@@ -276,7 +294,7 @@ def TTS_PTT(path, mypath = None):
                         stationID   = x.attrib['stationID']
                         stationType = x.attrib['type']
                         dwell       = int(x.attrib['stopTime']) if x.get('stopTime') else 0
-                        (arrival, departure) = stoptime_info(n)
+                        (arrival, departure) = stoptime_info(x)
 
 
                         # for outbound start writing from split point
@@ -518,8 +536,10 @@ def TTS_PTT(path, mypath = None):
             list8  = []
             list9  = []
             list10 = []
-            list11 = []
-            list12 = []
+            list11  = []  # Varsity inbound
+            list12  = []  # Varsity outbound
+            list11b = []  # Airport inbound
+            list12b = []  # Airport outbound
             list13 = []
             list14 = []
             list15 = []
@@ -585,44 +605,57 @@ def TTS_PTT(path, mypath = None):
                 if len(candidate) > len(line_station_order[suburban_line]):
                     line_station_order[suburban_line] = candidate
 
-            """line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+
+ 
+
+
+            varsity_order = []
+            airport_order = []
             for train in root.iter('train'):
                 if 'Empty' in train[1][0].attrib['trainTypeId']:
                     continue
                 if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
                     continue
-
                 train_entries = [e for e in train.iter('entry')
                                 if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
                                 and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
-
                 if not train_entries:
                     continue
+                oID_t = train_entries[0].attrib['stationID']
+                # Varsity inbound trains
+                if oID_t in VARSITY_STATIONS:
+                    corridor = STATIONS_MASTER['lines'].get('Varsity Lakes', {}).get('corridor')
+                    split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
+                    candidate = []
+                    for e in train_entries:
+                        code = e.attrib['stationID']
+                        name = e.attrib['stationName']
+                        candidate.append((name, code))
+                        if split_at and code == split_at:
+                            break
+                    if len(candidate) > len(varsity_order):
+                        varsity_order = candidate
+                # Airport inbound trains
+                elif oID_t in AIRPORT_STATIONS:
+                    corridor = STATIONS_MASTER['lines'].get('Airport', {}).get('corridor')
+                    split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
+                    candidate = []
+                    for e in train_entries:
+                        code = e.attrib['stationID']
+                        name = e.attrib['stationName']
+                        candidate.append((name, code))
+                        if split_at and code == split_at:
+                            break
+                    if len(candidate) > len(airport_order):
+                        airport_order = candidate
+            line_station_order['Varsity Lakes'] = varsity_order
+            line_station_order['Airport'] = airport_order
 
-                o_line = line_station_lookup.get(train_entries[0].attrib['stationID'])
-                d_line = line_station_lookup.get(train_entries[-1].attrib['stationID'])
-                suburban_line = o_line if o_line not in ('Inner City', 'Normanby', None) else d_line
+            
+            if len(candidate) > len(varsity_order):
+                varsity_order = candidate
 
-                if not suburban_line or suburban_line not in line_station_order:
-                    continue
-
-                # only use inbound trains (origin is suburban line)
-
-                if o_line != suburban_line:
-                    continue
-
-                corridor = STATIONS_MASTER['lines'].get(suburban_line, {}).get('corridor')
-                split_at = CITY_TERMINUS.get((corridor, tunnel)) if corridor else None
-
-                for e in train_entries:
-                    code = e.attrib['stationID']
-                    name = e.attrib['stationName']
-
-                    if (name, code) not in line_station_order[suburban_line]:
-                        line_station_order[suburban_line].append((name, code))
-
-                    if split_at and code == split_at:
-                        break"""
+                print(f'Varsity station list updated: {[c[1] for c in varsity_order]}')
 
 
 
@@ -663,8 +696,10 @@ def TTS_PTT(path, mypath = None):
                 build_triplist( list8,  'Doomben',                   Outbound=True )
                 build_triplist( list9,  'Ferny Grove'                              )
                 build_triplist( list10, 'Ferny Grove',               Outbound=True )
-                build_triplist( list11, 'Varsity Lakes - Airport'                  )
-                build_triplist( list12, 'Varsity Lakes - Airport',   Outbound=True )
+                build_triplist(list11,  'Varsity Lakes')
+                build_triplist(list12,  'Varsity Lakes',  Outbound=True)
+                build_triplist(list11b, 'Airport')
+                build_triplist(list12b, 'Airport',        Outbound=True)
                 build_triplist( list15, 'Inner North'                              )
                 build_triplist( list16, 'Inner North',               Outbound=True )
                 build_triplist( list17, 'Inner City'                               )
@@ -689,8 +724,11 @@ def TTS_PTT(path, mypath = None):
             write_timetable(DBN_out,     list8,  station_lists[('Doomben', True)],                   'Doomben')
             write_timetable(FYG_in,      list9,  station_lists[('Ferny Grove', False)],              'Ferny Grove')
             write_timetable(FYG_out,     list10, station_lists[('Ferny Grove', True)],               'Ferny Grove')
-            write_timetable(VYS_in,      list11, station_lists[('Varsity Lakes - Airport', False)],  'Varsity Lakes - Airport')
-            write_timetable(VYS_out,     list12, station_lists[('Varsity Lakes - Airport', True)],   'Varsity Lakes - Airport')
+            write_timetable(VYS_in,  list11,  station_lists[('Varsity Lakes', False)], 'Varsity Lakes')
+            write_timetable(VYS_out, list12,  station_lists[('Varsity Lakes', True)],  'Varsity Lakes')
+            write_timetable(BDT_in,  list11b, station_lists[('Airport', False)],       'Airport')
+            write_timetable(BDT_out, list12b, station_lists[('Airport', True)],        'Airport')
+
             write_timetable(INN_in,      list15, station_lists[('Inner North', False)],              'Inner North')
             write_timetable(INN_out,     list16, station_lists[('Inner North', True)],               'Inner North')
             write_timetable(INC_in,      list17, station_lists[('Inner City', False)],               'Inner City')
@@ -798,8 +836,10 @@ def TTS_PTT(path, mypath = None):
             DBN_out       = book.add_worksheet('DBN-Out')
             FYG_in        = book.add_worksheet('FYG-In')
             FYG_out       = book.add_worksheet('FYG-Out')
-            VYS_in        = book.add_worksheet('VYS+BDT-In')
-            VYS_out       = book.add_worksheet('VYS+BDT-Out')
+            VYS_in  = book.add_worksheet('VYS-In')
+            VYS_out = book.add_worksheet('VYS-Out')
+            BDT_in  = book.add_worksheet('BDT-In')
+            BDT_out = book.add_worksheet('BDT-Out')
             INN_in        = book.add_worksheet('INN-In')
             INN_out       = book.add_worksheet('INN-Out')
             INC_in        = book.add_worksheet('INC-In')
@@ -913,7 +953,8 @@ def TTS_PTT(path, mypath = None):
                 'Cleveland':                  (darkbluetitle, thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         cvn_capitalstops),
                 'Doomben':                    (purpletitle,   thursdaypurple, thursdaypurplebold, fridaypurple, fridaypurplebold, dbn_capitalstops),
                 'Ferny Grove':                (redtitle,      thursdayred, thursdayredbold, fridayred, fridayredbold,             fyg_capitalstops),
-                'Varsity Lakes - Airport':    (yellowtitle,   thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, vys_capitalstops),
+                'Varsity Lakes': (yellowtitle, thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, ['VYS','PKR','BHI']),
+                'Airport':       (bluetitle,   thursdayblue,   thursdaybluebold,   fridayblue,   fridaybluebold,   ['BDT','BIT','RS']),
                 'Inner North':                (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inn_capitalstops),
                 'Inner City':                 (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inc_capitalstops),
                 'Ipswich - Rosewood':         (greentitle,    thursdaygreen, thursdaygreenbold, fridaygreen, fridaygreenbold,     ips_capitalstops),
@@ -933,8 +974,10 @@ def TTS_PTT(path, mypath = None):
                 DBN_out:      purpletitle,
                 FYG_in:       redtitle,
                 FYG_out:      redtitle,
-                VYS_in:       yellowtitle,
-                VYS_out:      yellowtitle,
+                VYS_in:  yellowtitle,
+                VYS_out: yellowtitle,
+                BDT_in:  bluetitle,
+                BDT_out: bluetitle,
                 INN_in:       greytitle,
                 INN_out:      greytitle,
                 INC_in:       greytitle,
@@ -966,8 +1009,10 @@ def TTS_PTT(path, mypath = None):
                 title(DBN_out,      'City to Doomben - Outbound')
                 title(FYG_in,       'Ferny Grove to City - Inbound')
                 title(FYG_out,      'City to Ferny Grove - Outbound')
-                title(VYS_in,       'Varsity Lakes/Airport to City - Inbound')
-                title(VYS_out,      'City to Varsity Lakes/Airport - Outbound')
+                title(VYS_in, 'Varsity Lakes to City - Inbound')
+                title(VYS_out, 'City to Varsity Lakes - Outbound')
+                title(BDT_in, 'Airport to City - Inbound')
+                title(BDT_out, 'City to Airport - Outbound')
                 title(INN_in,       'Inner North to City - Inbound')
                 title(INN_out,      'City to Inner North - Outbound')
                 title(INC_in,       'Inner City to City - Inbound')

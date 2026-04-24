@@ -27,7 +27,7 @@ STATIONS_MASTER = {
     'Cleveland':                 {'sector': 3, 'terminus': 'CVN', 'corridor': 'south'},
     'Doomben':                   {'sector': 2, 'terminus': 'DBN', 'corridor': 'north'},
     'Ferny Grove':               {'sector': 3, 'terminus': 'FYG', 'corridor': 'north'},
-    'Varsity Lakes - Airport':   {'sector': 1, 'terminus': 'VYS', 'corridor': 'north'},
+    #'Varsity Lakes - Airport':   {'sector': 1, 'terminus': 'VYS', 'corridor': 'north'},
     'Ipswich - Rosewood':        {'sector': 2, 'terminus': 'IPS', 'corridor': 'south'},
     'Redcliffe':                 {'sector': 1, 'terminus': 'KPR', 'corridor': 'north'},
     'Shorncliffe':               {'sector': 2, 'terminus': 'SHC', 'corridor': 'north'},
@@ -35,6 +35,9 @@ STATIONS_MASTER = {
     'Inner City':                {'sector': None, 'terminus': 'RS'},
     'Normanby':                  {'sector': None, 'terminus': 'ETS'},
     'Inner North': {'sector': None, 'terminus': 'NTG', 'corridor': 'north'},
+    'Varsity Lakes': {'sector': 1, 'terminus': 'VYS', 'corridor': 'south'},
+    'Airport':       {'sector': 1, 'terminus': 'BDT', 'corridor': 'north'},
+
 },
  
 
@@ -254,7 +257,7 @@ STATIONS_MASTER = {
     'BOG':  {'name': 'Boggo Rd',                'line': 'Inner City', 'sector': 1, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
 
     ## crr stuff
-    'WLG':  {'name': 'Woollongabba',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
+    'WLG':  {'name': 'Woolloongabba',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
     'ALB':  {'name': 'Albert St',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
     'RTL':  {'name': 'Roma St',                'line': 'Inner City', 'sector': None, 'non_revenue': False, 'byline_terminus': False, 'vrt': None},
 
