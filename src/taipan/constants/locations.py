@@ -24,6 +24,8 @@ STATIONS_MASTER = {
 'lines': {
     'Beenleigh':                 {'sector': 1, 'terminus': 'BNH', 'corridor': 'south'},
     'Caboolture - Gympie North': {'sector': 1, 'terminus': 'GYN', 'corridor': 'north'},
+    'Caboolture':    {'sector': 1, 'terminus': 'CAB', 'corridor': 'north'},
+    'Gympie North':  {'sector': 1, 'terminus': 'GYN', 'corridor': 'north'},
     'Cleveland':                 {'sector': 3, 'terminus': 'CVN', 'corridor': 'south'},
     'Doomben':                   {'sector': 2, 'terminus': 'DBN', 'corridor': 'north'},
     'Ferny Grove':               {'sector': 3, 'terminus': 'FYG', 'corridor': 'north'},

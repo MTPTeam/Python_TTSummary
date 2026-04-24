@@ -8,6 +8,7 @@ import shutil
 
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
+from taipan.constants.days import ID_TO_SHORT, ID_TO_ALIAS, NAME_TO_ID, DAY_PRIORITY, SORT_ORDER_WEEK
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 import traceback
 import logging
@@ -28,9 +29,6 @@ OpenWorkbook = True
 
 
 
-weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
-### Conversion between rsx weekdaykey and what this translate to in shorthand english
-weekdaykey_dict2 = {'120':'M-Th', '4':'Fri', '2':'Sat', '1':'Sun'}
 
 
 ### Used for 'Comes From' or 'Continues To' rows to avoid having stabling locations in the public timetable
@@ -131,7 +129,7 @@ def TTS_PTT(path, mypath = None):
                 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
+            for tn,day in tn_doubles: print(f' - 2 trains running on {ID_TO_SHORT[day]} with train number {tn} - ')
             time.sleep(15)
             sys.exit() 
         
@@ -338,7 +336,8 @@ def TTS_PTT(path, mypath = None):
                             break
                             
                     tripdict['AM/PM'] = 'am' if origin['departure'] < '12:00:00' or origin['departure'] > '24:00:00' else 'pm'
-                    tripdict['DoO'] = weekdaykey_dict2.get(WeekdayKey)
+                    tripdict['DoO'] = ID_TO_ALIAS[WeekdayKey]
+
                         
                     
                     # tripdict['DoO'] = 'M-Th' if WeekdayKey=='120' else 'Fri'
@@ -370,8 +369,7 @@ def TTS_PTT(path, mypath = None):
                 Given a list for a line in a particular direction,
                 Sort the list chronologically and merge trips that run on multiple days
                 """
-                SORT_ORDER = {'M-Th': 0, 'Fri': 1, 'Sat': 2, 'Sun':3}
-                triplist.sort(key=lambda x: SORT_ORDER[x['DoO']])
+                triplist.sort(key=lambda x: SORT_ORDER_WEEK.index(NAME_TO_ID[x['DoO'].lower()]))
                 triplist.sort(key=lambda x: x['VirtualCBD'])
                 DELIMITER = '|'
                 refinedtriplist = []
@@ -536,32 +534,7 @@ def TTS_PTT(path, mypath = None):
                     sheet.set_column(i,i,6.3)
                         
             ### Initialise two lists for each line - one inbound, one outbound
-            list1  = []
-            list2  = []
-            list3  = []
-            list4  = []
-            list5  = []
-            list6  = []
-            list7  = []
-            list8  = []
-            list9  = []
-            list10 = []
-            list11  = []  # Varsity inbound
-            list12  = []  # Varsity outbound
-            list11b = []  # Airport inbound
-            list12b = []  # Airport outbound
-            list13 = []
-            list14 = []
-            list15 = []
-            list16 = []
-            list17 = []
-            list18 = []
-            list19 = []
-            list20 = []
-            list21 = []
-            list22 = []
-            list23 = []
-            list24 = []
+            trip_lists = {(line, ob): [] for line in STATIONS_MASTER['lines'] for ob in (False, True)}
 
             shuttle_trips = {}
             
@@ -607,7 +580,11 @@ def TTS_PTT(path, mypath = None):
                     suburban_line = 'Inner North'
 
                 elif o_line in ('Inner City', 'Normanby') and d_line in ('Inner City', 'Normanby'):
-                    suburban_line = 'Inner City'
+                    if oID_t in {'RS', 'BNC', 'BRC', 'BOG', 'WLG', 'ALB', 'RTL', 'EXH'}:
+                        suburban_line = 'Inner City Outbound'
+                    else:
+                        suburban_line = 'Inner City'
+
                 elif o_line not in ('Inner City', 'Normanby', None):
                     suburban_line = o_line
                 else:
@@ -625,6 +602,33 @@ def TTS_PTT(path, mypath = None):
                         line_station_order[suburban_line].append((name, code))
                     if split_at and code == split_at:
                         break
+
+            for line in ['Ipswich - Rosewood']:
+                all_train_entries = []
+                for train in root.iter('train'):
+                    if 'Empty' in train[1][0].attrib['trainTypeId']:
+                        continue
+                    if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
+                        continue
+                    train_entries = [
+                        (e.attrib['stationName'], e.attrib['stationID'])
+                        for e in train.iter('entry')
+                        if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
+                        and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
+                    ]
+                    if train_entries:
+                        all_train_entries.append(train_entries)
+                all_train_entries.sort(key=len, reverse=True)
+                canonical = []
+                for train_entries in all_train_entries:
+                    last_idx = -1
+                    for stop in train_entries:
+                        if stop in canonical:
+                            last_idx = canonical.index(stop)
+                        else:
+                            last_idx += 1
+                            canonical.insert(last_idx, stop)
+                line_station_order[line] = canonical
 
 
             # Build final station_lists dict
@@ -654,61 +658,41 @@ def TTS_PTT(path, mypath = None):
                 origin = revenue_entries[0].attrib
 
                 
-                build_triplist( list1,  'Beenleigh'                                )
-                build_triplist( list2,  'Beenleigh',                 Outbound=True )
-                build_triplist( list3,  'Caboolture - Gympie North'                ) 
-                build_triplist( list4,  'Caboolture - Gympie North', Outbound=True )
-                build_triplist( list5,  'Cleveland'                                )
-                build_triplist( list6,  'Cleveland',                 Outbound=True )
-                build_triplist( list7,  'Doomben'                                  )
-                build_triplist( list8,  'Doomben',                   Outbound=True )
-                build_triplist( list9,  'Ferny Grove'                              )
-                build_triplist( list10, 'Ferny Grove',               Outbound=True )
-                build_triplist(list11,  'Varsity Lakes')
-                build_triplist(list12,  'Varsity Lakes',  Outbound=True)
-                build_triplist(list11b, 'Airport')
-                build_triplist(list12b, 'Airport',        Outbound=True)
-                build_triplist( list15, 'Inner North'                              )
-                build_triplist( list16, 'Inner North',               Outbound=True )
-                build_triplist( list17, 'Inner City'                               )
-                build_triplist( list18, 'Inner City',                Outbound=True )
-                build_triplist( list13, 'Ipswich - Rosewood'                       )
-                build_triplist( list14, 'Ipswich - Rosewood',        Outbound=True )
-                build_triplist( list19, 'Redcliffe'                                )
-                build_triplist( list20, 'Redcliffe',                 Outbound=True )
-                build_triplist( list21, 'Shorncliffe'                              )
-                build_triplist( list22, 'Shorncliffe',               Outbound=True )
-                build_triplist( list23, 'Springfield'                              )
-                build_triplist( list24, 'Springfield',               Outbound=True )
-        
+                for (line, ob), lst in trip_lists.items():
+                    build_triplist(lst, line, Outbound=ob)
             
-            write_timetable(BNH_in,      list1,  station_lists[('Beenleigh', False)],                'Beenleigh')
-            write_timetable(BNH_out,     list2,  station_lists[('Beenleigh', True)],                 'Beenleigh')
-            write_timetable(CAB_GYN_in,  list3,  station_lists[('Caboolture - Gympie North', False)], 'Caboolture - Gympie North')
-            write_timetable(CAB_GYN_out, list4,  station_lists[('Caboolture - Gympie North', True)],  'Caboolture - Gympie North')
-            write_timetable(CVN_in,      list5,  station_lists[('Cleveland', False)],                'Cleveland')
-            write_timetable(CVN_out,     list6,  station_lists[('Cleveland', True)],                 'Cleveland')
-            write_timetable(DBN_in,      list7,  station_lists[('Doomben', False)],                  'Doomben')
-            write_timetable(DBN_out,     list8,  station_lists[('Doomben', True)],                   'Doomben')
-            write_timetable(FYG_in,      list9,  station_lists[('Ferny Grove', False)],              'Ferny Grove')
-            write_timetable(FYG_out,     list10, station_lists[('Ferny Grove', True)],               'Ferny Grove')
-            write_timetable(VYS_in,  list11,  station_lists[('Varsity Lakes', False)], 'Varsity Lakes')
-            write_timetable(VYS_out, list12,  station_lists[('Varsity Lakes', True)],  'Varsity Lakes')
-            write_timetable(BDT_in,  list11b, station_lists[('Airport', False)],       'Airport')
-            write_timetable(BDT_out, list12b, station_lists[('Airport', True)],        'Airport')
 
-            write_timetable(INN_in,      list15, station_lists[('Inner North', False)],              'Inner North')
-            write_timetable(INN_out,     list16, station_lists[('Inner North', True)],               'Inner North')
-            write_timetable(INC_in,      list17, station_lists[('Inner City', False)],               'Inner City')
-            write_timetable(INC_out,     list18, station_lists[('Inner City', True)],                'Inner City')
-            write_timetable(IPS_RSW_in,  list13, station_lists[('Ipswich - Rosewood', False)],       'Ipswich - Rosewood')
-            write_timetable(IPS_RSW_out, list14, station_lists[('Ipswich - Rosewood', True)],        'Ipswich - Rosewood')
-            write_timetable(RDP_in,      list19, station_lists[('Redcliffe', False)],                'Redcliffe')
-            write_timetable(RDP_out,     list20, station_lists[('Redcliffe', True)],                 'Redcliffe')
-            write_timetable(SHC_in,      list21, station_lists[('Shorncliffe', False)],              'Shorncliffe')
-            write_timetable(SHC_out,     list22, station_lists[('Shorncliffe', True)],               'Shorncliffe')
-            write_timetable(SFC_in,      list23, station_lists[('Springfield', False)],              'Springfield')
-            write_timetable(SFC_out,     list24, station_lists[('Springfield', True)],               'Springfield')
+            sheet_map = {
+                ('Beenleigh',                False): BNH_in,
+                ('Beenleigh',                True):  BNH_out,
+                ('Caboolture - Gympie North', False): CAB_GYN_in,
+                ('Caboolture - Gympie North', True):  CAB_GYN_out,
+                ('Cleveland',                False): CVN_in,
+                ('Cleveland',                True):  CVN_out,
+                ('Doomben',                  False): DBN_in,
+                ('Doomben',                  True):  DBN_out,
+                ('Ferny Grove',              False): FYG_in,
+                ('Ferny Grove',              True):  FYG_out,
+                ('Varsity Lakes',            False): VYS_in,
+                ('Varsity Lakes',            True):  VYS_out,
+                ('Airport',                  False): BDT_in,
+                ('Airport',                  True):  BDT_out,
+                ('Inner North',              False): INN_in,
+                ('Inner North',              True):  INN_out,
+                ('Inner City',               False): INC_in,
+                ('Inner City',               True):  INC_out,
+                ('Ipswich - Rosewood',       False): IPS_RSW_in,
+                ('Ipswich - Rosewood',       True):  IPS_RSW_out,
+                ('Redcliffe',                False): RDP_in,
+                ('Redcliffe',                True):  RDP_out,
+                ('Shorncliffe',              False): SHC_in,
+                ('Shorncliffe',              True):  SHC_out,
+                ('Springfield',              False): SFC_in,
+                ('Springfield',              True):  SFC_out,
+                }
+            for (line, ob), lst in trip_lists.items():
+                if (line, ob) in sheet_map:
+                    write_timetable(sheet_map[(line, ob)], lst, station_lists[(line, ob)], line)
             titles(daycode)
             
         
