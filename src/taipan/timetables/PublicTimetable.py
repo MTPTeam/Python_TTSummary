@@ -27,7 +27,20 @@ CreateWorkbook = True
 OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
-
+INNER_CITY_ORDER = [
+   ('Boggo Rd', 'BOG'),
+   ('Woolloongabba', 'WLG'),
+   ('Albert St', 'ALB'),
+   ('Roma St', 'RTL'),
+   ('Exhibition', 'EXH'),
+   ('Bowen Hills', 'BHI'),
+   ('Fortitude Valley', 'BRC'),
+   ('Central', 'BNC'),
+   ('Roma Street', 'RS'),
+   ('South Brisbane', 'SBE'),
+   ('South Bank', 'SBA'),
+   ('Park Road', 'PKR'),
+]
 
 
 
@@ -268,14 +281,42 @@ def TTS_PTT(path, mypath = None):
                     else:
                         condition = condition and oID in INNER_NORTH_STATIONS
                 else:
+                    
+
                     condition = (o_line == line or d_line == line)
                     if Outbound:
                         condition = condition and (d_line == line)
                     else:
                         condition = condition and (o_line == line)
+                    train_station_ids = {e.attrib['stationID'] for e in revenue_entries}
+                    corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
+                    line_termini = {
+                    code for code, s in STATIONS_MASTER['stations'].items()
+                    if s['line'] == line and s['byline_terminus']
+                    }
+                    if corridor is None:
+                        """inner_city_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line and not s['non_revenue']}
+                        if Outbound:
+                            condition = condition and bool(train_station_ids & inner_city_codes)
+                        else:
+                            condition = condition and oID in inner_city_codes and dID in inner_city_codes"""
+                        
 
-
-                
+                        inner_city_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line and not s['non_revenue']}
+                        INBOUND_TERMINI = {'EXH', 'RS', 'PKR'}
+                        if Outbound:
+                            condition = condition and bool(train_station_ids & inner_city_codes)
+                            condition = condition and dID not in INBOUND_TERMINI
+                        else:
+                            condition = condition and oID in inner_city_codes and dID in inner_city_codes
+                            condition = condition and dID in INBOUND_TERMINI
+                    else:
+                        if Outbound:
+                            condition = condition and dID in line_termini
+                        else:
+                            condition = condition and oID in line_termini
+                                                                    
+                    
                 if condition:
                     tripdict = {}
                     tripdict['Train ID'] = tn
@@ -283,7 +324,7 @@ def TTS_PTT(path, mypath = None):
                     # determine split point for this specific train
                     train_station_ids = {e.attrib['stationID'] for e in entries}
                     corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
-                    if 'RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids:
+                    """if 'RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids:
                         if corridor:
                             if 'RTL' in train_station_ids:
                                 train_split = CITY_TERMINUS[(corridor, True)]
@@ -292,10 +333,21 @@ def TTS_PTT(path, mypath = None):
                         else:
                             train_split = 'RS'
                     else:
+                        train_split = None"""
+                    
+
+
+                    if corridor and ('RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids):
+                        if 'RTL' in train_station_ids:
+                            train_split = CITY_TERMINUS[(corridor, True)]
+                        else:
+                            train_split = CITY_TERMINUS[(corridor, False)]
+                    else:
                         train_split = None
+ 
 
                     
-                    reached_split = False if Outbound else True
+                    reached_split = False if (Outbound and train_split) else True
        
                     for n, x in enumerate(entries):
                         stationName = x.attrib['stationName']
@@ -347,7 +399,7 @@ def TTS_PTT(path, mypath = None):
                     tripdict['Continues2'] = dID
 
 
-                    if train_split is None:
+                    if train_split is None and corridor is not None:
                         #print(f'Train {tn} shuttle - has RS: {"RS" in train_station_ids}, has RTL: {"RTL" in train_station_ids}, has BNC: {"BNC" in train_station_ids}')
                         #print(f'Station IDs: {train_station_ids}')
                         shuttle_key = f'{oID}-{dID}'
@@ -554,56 +606,12 @@ def TTS_PTT(path, mypath = None):
             print(f'all_entries count: {len(all_entries)}')
             print('Sample station IDs:', [e.attrib['stationID'] for e in all_entries[:10]])
             
-        
-    
+
+
+
             line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
-            for train in root.iter('train'):
-                if 'Empty' in train[1][0].attrib['trainTypeId']:
-                    continue
-                if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
-                    continue
-                train_entries = [e for e in train.iter('entry')
-                                if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
-                                and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']]
-                if not train_entries:
-                    continue
-                oID_t = train_entries[0].attrib['stationID']
-                dID_t = train_entries[-1].attrib['stationID']
-                o_line = line_station_lookup.get(oID_t)
-                d_line = line_station_lookup.get(dID_t)
-                # determine suburban line
-                if oID_t in VARSITY_STATIONS:
-                    suburban_line = 'Varsity Lakes'
-                elif oID_t in AIRPORT_STATIONS:
-                    suburban_line = 'Airport'
-                elif oID_t in INNER_NORTH_STATIONS:
-                    suburban_line = 'Inner North'
-
-                elif o_line in ('Inner City', 'Normanby') and d_line in ('Inner City', 'Normanby'):
-                    if oID_t in {'RS', 'BNC', 'BRC', 'BOG', 'WLG', 'ALB', 'RTL', 'EXH'}:
-                        suburban_line = 'Inner City Outbound'
-                    else:
-                        suburban_line = 'Inner City'
-
-                elif o_line not in ('Inner City', 'Normanby', None):
-                    suburban_line = o_line
-                else:
-                    continue
-                if suburban_line not in line_station_order:
-                    continue
-                train_ids = {e.attrib['stationID'] for e in train_entries}
-                has_tunnel = 'RTL' in train_ids
-                corridor = STATIONS_MASTER['lines'].get(suburban_line, {}).get('corridor')
-                split_at = CITY_TERMINUS.get((corridor, has_tunnel)) if corridor else None
-                for e in train_entries:
-                    code = e.attrib['stationID']
-                    name = e.attrib['stationName']
-                    if (name, code) not in line_station_order[suburban_line]:
-                        line_station_order[suburban_line].append((name, code))
-                    if split_at and code == split_at:
-                        break
-
-            for line in ['Ipswich - Rosewood']:
+            for line in STATIONS_MASTER['lines']:
+                corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
                 all_train_entries = []
                 for train in root.iter('train'):
                     if 'Empty' in train[1][0].attrib['trainTypeId']:
@@ -616,9 +624,51 @@ def TTS_PTT(path, mypath = None):
                         if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
                         and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
                     ]
-                    if train_entries:
-                        all_train_entries.append(train_entries)
-                all_train_entries.sort(key=len, reverse=True)
+                    if not train_entries:
+                        continue
+                    oID_t = train_entries[0][1]
+                    dID_t = train_entries[-1][1]
+                    o_line = line_station_lookup.get(oID_t)
+                    d_line = line_station_lookup.get(dID_t)
+                    # Same condition logic as build_triplist
+                    if line == 'Varsity Lakes':
+                        condition = oID_t in VARSITY_STATIONS or dID_t in VARSITY_STATIONS
+                    elif line == 'Airport':
+                        condition = oID_t in AIRPORT_STATIONS or dID_t in AIRPORT_STATIONS
+                    elif line == 'Inner North':
+                        condition = oID_t in INNER_NORTH_STATIONS or dID_t in INNER_NORTH_STATIONS
+                    elif STATIONS_MASTER['lines'].get(line, {}).get('corridor') is None:
+                        INBOUND_TERMINI = { 'EXH', 'RS'}
+
+                        inner_city_codes = {
+                        code for code, s in STATIONS_MASTER['stations'].items()
+                        if s['line'] == line and not s['non_revenue']}
+                        condition = oID_t in inner_city_codes and dID_t in inner_city_codes
+                        condition = condition and dID_t in INBOUND_TERMINI
+
+                        if condition and line == 'Inner City':
+                            print(f'Inner City match: {oID_t} -> {dID_t}, train entries: {[e[1] for e in train_entries]}')
+
+                    else:
+                        condition = (o_line == line or d_line == line)
+                    if not condition:
+                        continue
+                    
+                    # Trim to the city split point so city stations
+                    # don't bleed into the wrong line's list
+                    train_ids = {e[1] for e in train_entries}
+                    has_tunnel = 'RTL' in train_ids
+                    split_at = CITY_TERMINUS.get((corridor, has_tunnel)) if corridor else None
+                    trimmed = []
+                    for stop in train_entries:
+                        trimmed.append(stop)
+                        if split_at and stop[1] == split_at:
+                            break
+                    if trimmed:
+                        
+                        all_train_entries.append(trimmed)
+                # Longest first so shorter trains slot into the established order
+                """all_train_entries.sort(key=len, reverse=True)
                 canonical = []
                 for train_entries in all_train_entries:
                     last_idx = -1
@@ -628,7 +678,29 @@ def TTS_PTT(path, mypath = None):
                         else:
                             last_idx += 1
                             canonical.insert(last_idx, stop)
-                line_station_order[line] = canonical
+                line_station_order[line] = canonical"""
+
+
+                if corridor is None:
+                   line_station_order[line] = INNER_CITY_ORDER
+                else:
+                   all_train_entries.sort(key=len, reverse=True)
+                   canonical = []
+                   for train_entries in all_train_entries:
+                       last_idx = -1
+                       for stop in train_entries:
+                           if stop in canonical:
+                               last_idx = canonical.index(stop)
+                           else:
+                               last_idx += 1
+                               canonical.insert(last_idx, stop)
+                   line_station_order[line] = canonical
+
+
+
+           
+
+
 
 
             # Build final station_lists dict
@@ -906,7 +978,7 @@ def TTS_PTT(path, mypath = None):
                 'Doomben':                    (purpletitle,   thursdaypurple, thursdaypurplebold, fridaypurple, fridaypurplebold, dbn_capitalstops),
                 'Ferny Grove':                (redtitle,      thursdayred, thursdayredbold, fridayred, fridayredbold,             fyg_capitalstops),
                 'Varsity Lakes': (yellowtitle, thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, ['VYS','PKR','BHI']),
-                'Airport':       (bluetitle,   thursdayblue,   thursdaybluebold,   fridayblue,   fridaybluebold,   ['BDT','BIT','RS']),
+                'Airport': (yellowtitle, thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, ['BDT','BIT','RS']),
                 'Inner North':                (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inn_capitalstops),
                 'Inner City':                 (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inc_capitalstops),
                 'Ipswich - Rosewood':         (greentitle,    thursdaygreen, thursdaygreenbold, fridaygreen, fridaygreenbold,     ips_capitalstops),
@@ -928,8 +1000,8 @@ def TTS_PTT(path, mypath = None):
                 FYG_out:      redtitle,
                 VYS_in:  yellowtitle,
                 VYS_out: yellowtitle,
-                BDT_in:  bluetitle,
-                BDT_out: bluetitle,
+                BDT_in:  yellowtitle,
+                BDT_out: yellowtitle,
                 INN_in:       greytitle,
                 INN_out:      greytitle,
                 INC_in:       greytitle,
