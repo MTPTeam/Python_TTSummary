@@ -312,9 +312,12 @@ def TTS_PTT(path, mypath = None):
                             condition = condition and dID in INBOUND_TERMINI
                     else:
                         if Outbound:
-                            condition = condition and dID in line_termini
+                            condition = condition and d_line == line
+
                         else:
-                            condition = condition and oID in line_termini
+
+                            condition = condition and o_line == line
+ 
                                                                     
                     
                 if condition:
@@ -766,7 +769,9 @@ def TTS_PTT(path, mypath = None):
                 if (line, ob) in sheet_map:
                     write_timetable(sheet_map[(line, ob)], lst, station_lists[(line, ob)], line)
             titles(daycode)
-            
+
+
+           
         
             # IPS_RSW_in.activate()
             # CAB_GYN_in.activate()
@@ -817,6 +822,35 @@ def TTS_PTT(path, mypath = None):
                             sheet.write(row, col, val, s_default)
                     sheet.set_column(col, col, 6.3)
             shuttleworkbook.close()
+
+
+            all_trip_ids = set()
+            for lst in trip_lists.values():
+                for t in lst:
+                    for tid in t['Train ID'].split('|'):
+                        all_trip_ids.add(tid)
+            for trips in shuttle_trips.values():
+                for t in trips:
+                    for tid in t['Train ID'].split('|'):
+                        all_trip_ids.add(tid)
+            for train in root.iter('train'):
+                if 'Empty' in train[1][0].attrib['trainTypeId']:
+                    continue
+                if train[0][0][0].attrib['weekdayKey'] not in weekdaykeys:
+                    continue
+                tn = train.attrib['number']
+                if tn not in all_trip_ids:
+                    entries = [
+                        e for e in train.iter('entry')
+                        if STATIONS_MASTER['stations'].get(e.attrib['stationID'])
+                        and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
+                    ]
+                    if entries:
+                        oID_p = entries[0].attrib['stationID']
+                        dID_p = entries[-1].attrib['stationID']
+                        print(f'Unmatched revenue train: {tn} {oID_p}->{dID_p}')
+
+
             shuttle_trips.clear()
                         
             dayofop_dict = {
