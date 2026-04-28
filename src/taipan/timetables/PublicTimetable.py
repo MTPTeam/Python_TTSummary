@@ -28,24 +28,27 @@ OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
 
-RTL_ORDER = [
-   ('Boggo Rd', 'BOG'),
-   ('Woolloongabba', 'WLG'),
-   ('Albert St', 'ALB'),
-   ('Roma St', 'RTL'),
-   ('Exhibition', 'EXH'),
-]
-
 RS_ORDER = [
    ('Bowen Hills', 'BHI'),
    ('Fortitude Valley', 'BRC'),
-   ('Central', 'BNC'),
-   ('Roma Street', 'RS'),
+   ('Central Arr', 'BNCarr'),
+   ('Central Dep', 'BNCdep'),
+   ('Roma Street Arr', 'RSarr'),
+   ('Roma Street Dep', 'RSdep'),
    ('South Brisbane', 'SBE'),
    ('South Bank', 'SBA'),
    ('Park Road', 'PKR'),
 ]
 
+
+RTL_ORDER = [
+   ('Boggo Rd', 'BOG'),
+   ('Woolloongabba', 'WLG'),
+   ('Albert St', 'ALB'),
+   ('Roma St Arr', 'RTLarr'),
+   ('Roma St Dep', 'RTLdep'),
+   ('Exhibition', 'EXH'),
+]
 
 ### Used for 'Comes From' or 'Continues To' rows to avoid having stabling locations in the public timetable
 ### First or last station reassigned if a non-revenue location
@@ -53,6 +56,28 @@ RS_ORDER = [
 city = 'RS'
 
 name_to_code = { s['name']: code for code, s in STATIONS_MASTER['stations'].items()}
+
+
+def reverse_with_arrdep(order):
+   # Separate out arr/dep pairs and reverse the station order
+   result = []
+   i = len(order) - 1
+   while i >= 0:
+       name, code = order[i]
+       if code.endswith('dep'):
+           # find the matching arr which should be just before
+           arr_name, arr_code = order[i-1]
+           result.append((arr_name, arr_code))
+           result.append((name, code))
+           i -= 2
+       elif code.endswith('arr'):
+           # standalone arr without dep after (shouldn't happen but just in case)
+           result.append((name, code))
+           i -= 1
+       else:
+           result.append((name, code))
+           i -= 1
+   return result
 
 def TTS_PTT(path, mypath = None):
 
@@ -262,7 +287,6 @@ def TTS_PTT(path, mypath = None):
                 o_line = line_station_lookup.get(oID)
                 d_line = line_station_lookup.get(dID)
 
-
                 
                 if line == 'Varsity Lakes':
                     condition = oID in VARSITY_STATIONS or dID in VARSITY_STATIONS
@@ -319,6 +343,8 @@ def TTS_PTT(path, mypath = None):
                                 condition = condition and not is_inbound
                             else:
                                 condition = condition and is_inbound
+
+                
                                                                 
                 if condition:
                     tripdict = {}
@@ -363,8 +389,16 @@ def TTS_PTT(path, mypath = None):
 
 
                         if stationName == 'Roma Street':
-                            tripdict['RSarr'] = arrival
-                            tripdict['RSdep'] = departure
+                            if stationID == 'RTL':
+                                tripdict['RTLarr'] = arrival
+                                tripdict['RTLdep'] = departure
+                            else:
+                                tripdict['RSarr'] = arrival
+                                tripdict['RSdep'] = departure
+
+                        if stationName == 'Central':
+                            tripdict['BNCarr'] = arrival
+                            tripdict['BNCdep'] = departure
                         if stationName == 'Brunswick Street':
                             tripdict['BRCarr'] = arrival
                             tripdict['BRCdep'] = departure
@@ -401,13 +435,13 @@ def TTS_PTT(path, mypath = None):
                     triplist.append(tripdict)     
                 
         
-            def refine_triplist(triplist, stations):
+            def refine_triplist(triplist, stations, outbound=False):
                 """
                 Given a list for a line in a particular direction,
                 Sort the list chronologically and merge trips that run on multiple days
                 """
-                triplist.sort(key=lambda x: SORT_ORDER_WEEK.index(NAME_TO_ID[x['DoO'].lower()]))
-                triplist.sort(key=lambda x: x['VirtualCBD'])
+                sort_key = 'RSdep' if outbound else 'RSarr'
+                triplist.sort(key=lambda x: x.get(sort_key) or x.get('RTLdep' if outbound else 'RTLarr') or x.get('VirtualCBD'))
                 DELIMITER = '|'
                 refinedtriplist = []
                 for tripdict in triplist:
@@ -440,7 +474,8 @@ def TTS_PTT(path, mypath = None):
         
         
         
-            def write_timetable(sheet, triplist, stations, line):
+            def write_timetable(sheet, triplist, stations, line, outbound=False):
+
                 """ Write the data to the worksheet, including train ID, DoO and departure times for each station """
 
 
@@ -457,7 +492,7 @@ def TTS_PTT(path, mypath = None):
                 if stations:
                     stations_long = list(zip(*stations))[0]
                     stations_abr  = list(zip(*stations))[1]
-                    triplist = refine_triplist(triplist, stations_abr)
+                    triplist = refine_triplist(triplist, stations_abr, outbound=outbound)
                     active_stations = [
                     (name, code) for name, code in zip(stations_long, stations_abr)
                     if code in ('CF', 'CT') or any(trip.get(code) for trip in triplist)
@@ -665,20 +700,7 @@ def TTS_PTT(path, mypath = None):
                     if trimmed:
                         
                         all_train_entries.append(trimmed)
-                # Longest first so shorter trains slot into the established order
-                """all_train_entries.sort(key=len, reverse=True)
-                canonical = []
-                for train_entries in all_train_entries:
-                    last_idx = -1
-                    for stop in train_entries:
-                        if stop in canonical:
-                            last_idx = canonical.index(stop)
-                        else:
-                            last_idx += 1
-                            canonical.insert(last_idx, stop)
-                line_station_order[line] = canonical"""
-
-
+              
                 if corridor is None:
                     line_station_order[line] = RS_ORDER + RTL_ORDER
                 else:
@@ -709,9 +731,33 @@ def TTS_PTT(path, mypath = None):
 
                 # RS AND rtl
                 station_lists[('Inner City RS',  False)] = [('Comes From', 'CF')] + RS_ORDER + [('Continues To', 'CT')]
-                station_lists[('Inner City RS',  True)]  = [('Comes From', 'CF')] + list(reversed(RS_ORDER)) + [('Continues To', 'CT')]
+                #station_lists[('Inner City RS',  True)]  = [('Comes From', 'CF')] + list(reversed(RS_ORDER)) + [('Continues To', 'CT')]
+                station_lists[('Inner City RS', True)]  = [('Comes From', 'CF')] + reverse_with_arrdep(RS_ORDER)  + [('Continues To', 'CT')]
                 station_lists[('Inner City RTL', False)] = [('Comes From', 'CF')] + RTL_ORDER + [('Continues To', 'CT')]
-                station_lists[('Inner City RTL', True)]  = [('Comes From', 'CF')] + list(reversed(RTL_ORDER)) + [('Continues To', 'CT')]
+                #station_lists[('Inner City RTL', True)]  = [('Comes From', 'CF')] + list(reversed(RTL_ORDER)) + [('Continues To', 'CT')]
+                station_lists[('Inner City RTL', True)] = [('Comes From', 'CF')] + reverse_with_arrdep(RTL_ORDER) + [('Continues To', 'CT')]
+
+
+                for key in list(station_lists.keys()):
+                    lst = station_lists[key]
+                    codes_in_lst = [code for _, code in lst]
+                    if 'BNCarr' in codes_in_lst or 'RSarr' in codes_in_lst:
+                        continue  # already has arr/dep rows, skip
+                    new_lst = []
+                    for name, code in lst:
+                        if code not in ('RS', 'BNC', 'RTL'):
+                            new_lst.append((name, code))
+                        if code == 'BNC':
+                            new_lst.append(('Central Arr', 'BNCarr'))
+                            new_lst.append(('Central Dep', 'BNCdep'))
+                        if code == 'RS':
+                            new_lst.append(('Roma Street Arr', 'RSarr'))
+                            new_lst.append(('Roma Street Dep', 'RSdep'))
+                        if code == 'RTL':
+                            new_lst.append(('Roma Street Arr', 'RTLarr'))
+                            new_lst.append(('Roma Street Dep', 'RTLdep'))
+                    station_lists[key] = new_lst
+ 
                                                     
 
             for train in revenue:
@@ -766,11 +812,11 @@ def TTS_PTT(path, mypath = None):
 
                     rs_trips  = [t for t in lst if not t.get('RTL')]
                     rtl_trips = [t for t in lst if t.get('RTL')]
-                    write_timetable(RS_in  if not ob else RS_out,  rs_trips,  station_lists[('Inner City RS',  ob)], 'Inner City RS')
-                    write_timetable(RTL_in if not ob else RTL_out, rtl_trips, station_lists[('Inner City RTL', ob)], 'Inner City RTL')
+                    write_timetable(RS_in  if not ob else RS_out,  rs_trips,  station_lists[('Inner City RS',  ob)], 'Inner City RS',  outbound=ob)
+                    write_timetable(RTL_in if not ob else RTL_out, rtl_trips, station_lists[('Inner City RTL', ob)], 'Inner City RTL', outbound=ob)
 
                 elif (line, ob) in sheet_map:
-                    write_timetable(sheet_map[(line, ob)], lst, station_lists[(line, ob)], line)
+                    write_timetable(sheet_map[(line, ob)], lst, station_lists[(line, ob)], line, outbound=ob)
             titles(daycode)
 
 
@@ -790,7 +836,7 @@ def TTS_PTT(path, mypath = None):
                 shuttle_stations = []
                 for trip in trips:
                     for code in trip:
-                        if code not in ('Train ID', 'VirtualCBD', 'AM/PM', 'DoO', 'Comes From', 'Continues2'):
+                        if code not in ('Train ID', 'VirtualCBD', 'AM/PM', 'DoO', 'Comes From', 'Continues2'): 
                             station = STATIONS_MASTER['stations'].get(code)
                             if station and not station['non_revenue']:
                                 name = station['name']
