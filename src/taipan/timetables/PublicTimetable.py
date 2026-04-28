@@ -9,7 +9,7 @@ import shutil
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
 from taipan.constants.days import ID_TO_SHORT, ID_TO_ALIAS, NAME_TO_ID, DAY_PRIORITY, SORT_ORDER_WEEK
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info, show_info_scroll
 import traceback
 import logging
 
@@ -27,12 +27,16 @@ CreateWorkbook = True
 OpenWorkbook = True
 # --------------------------------------------------------------------------------------------------- #
 
-INNER_CITY_ORDER = [
+
+RTL_ORDER = [
    ('Boggo Rd', 'BOG'),
    ('Woolloongabba', 'WLG'),
    ('Albert St', 'ALB'),
    ('Roma St', 'RTL'),
    ('Exhibition', 'EXH'),
+]
+
+RS_ORDER = [
    ('Bowen Hills', 'BHI'),
    ('Fortitude Valley', 'BRC'),
    ('Central', 'BNC'),
@@ -41,7 +45,6 @@ INNER_CITY_ORDER = [
    ('South Bank', 'SBA'),
    ('Park Road', 'PKR'),
 ]
-
 
 
 ### Used for 'Comes From' or 'Continues To' rows to avoid having stabling locations in the public timetable
@@ -294,14 +297,9 @@ def TTS_PTT(path, mypath = None):
                     code for code, s in STATIONS_MASTER['stations'].items()
                     if s['line'] == line and s['byline_terminus']
                     }
-                    if corridor is None:
-                        """inner_city_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line and not s['non_revenue']}
-                        if Outbound:
-                            condition = condition and bool(train_station_ids & inner_city_codes)
-                        else:
-                            condition = condition and oID in inner_city_codes and dID in inner_city_codes"""
-                        
 
+
+                    if corridor is None:
                         inner_city_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line and not s['non_revenue']}
                         INBOUND_TERMINI = {'EXH', 'RS', 'PKR'}
                         if Outbound:
@@ -318,8 +316,7 @@ def TTS_PTT(path, mypath = None):
 
                             condition = condition and o_line == line
  
-                                                                    
-                    
+                                                                
                 if condition:
                     tripdict = {}
                     tripdict['Train ID'] = tn
@@ -327,19 +324,6 @@ def TTS_PTT(path, mypath = None):
                     # determine split point for this specific train
                     train_station_ids = {e.attrib['stationID'] for e in entries}
                     corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
-                    """if 'RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids:
-                        if corridor:
-                            if 'RTL' in train_station_ids:
-                                train_split = CITY_TERMINUS[(corridor, True)]
-                            else:
-                                train_split = CITY_TERMINUS[(corridor, False)]
-                        else:
-                            train_split = 'RS'
-                    else:
-                        train_split = None"""
-                    
-
-
                     if corridor and ('RTL' in train_station_ids or 'RS' in train_station_ids or 'BNC' in train_station_ids):
                         if 'RTL' in train_station_ids:
                             train_split = CITY_TERMINUS[(corridor, True)]
@@ -348,8 +332,6 @@ def TTS_PTT(path, mypath = None):
                     else:
                         train_split = None
  
-
-                    
                     reached_split = False if (Outbound and train_split) else True
        
                     for n, x in enumerate(entries):
@@ -392,9 +374,6 @@ def TTS_PTT(path, mypath = None):
                             
                     tripdict['AM/PM'] = 'am' if origin['departure'] < '12:00:00' or origin['departure'] > '24:00:00' else 'pm'
                     tripdict['DoO'] = ID_TO_ALIAS[WeekdayKey]
-
-                        
-                    
                     # tripdict['DoO'] = 'M-Th' if WeekdayKey=='120' else 'Fri'
 
                     # use od to populate comes to and continues to since we previously filtered out the yards and misc locations 
@@ -416,7 +395,7 @@ def TTS_PTT(path, mypath = None):
                         print(f'{tn} missing VirtualCBD, skipping')
                         return
 
-                    triplist.append(tripdict)
+                    triplist.append(tripdict)     
                 
         
             def refine_triplist(triplist, stations):
@@ -460,6 +439,13 @@ def TTS_PTT(path, mypath = None):
         
             def write_timetable(sheet, triplist, stations, line):
                 """ Write the data to the worksheet, including train ID, DoO and departure times for each station """
+
+
+                if line == 'Inner City RS':
+                    print(f'stations: {stations}')
+                    print(f'triplist length: {len(triplist)}')
+                    if triplist:
+                        print(f'first trip: {triplist[0]}')
 
                 if not stations:
                     return
@@ -590,6 +576,11 @@ def TTS_PTT(path, mypath = None):
                         
             ### Initialise two lists for each line - one inbound, one outbound
             trip_lists = {(line, ob): [] for line in STATIONS_MASTER['lines'] for ob in (False, True)}
+            # init tunnel since theyre not in stationmaster
+            trip_lists[('Inner City RS',  False)] = []
+            trip_lists[('Inner City RS',  True)]  = []
+            trip_lists[('Inner City RTL', False)] = []
+            trip_lists[('Inner City RTL', True)]  = []
 
             shuttle_trips = {}
             
@@ -613,6 +604,10 @@ def TTS_PTT(path, mypath = None):
 
 
             line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+            # init inc rs and inc rtl
+            line_station_order['Inner City RS']  = RS_ORDER
+            line_station_order['Inner City RTL'] = RTL_ORDER
+
             for line in STATIONS_MASTER['lines']:
                 corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
                 all_train_entries = []
@@ -649,9 +644,6 @@ def TTS_PTT(path, mypath = None):
                         condition = oID_t in inner_city_codes and dID_t in inner_city_codes
                         condition = condition and dID_t in INBOUND_TERMINI
 
-                        if condition and line == 'Inner City':
-                            print(f'Inner City match: {oID_t} -> {dID_t}, train entries: {[e[1] for e in train_entries]}')
-
                     else:
                         condition = (o_line == line or d_line == line)
                     if not condition:
@@ -685,7 +677,7 @@ def TTS_PTT(path, mypath = None):
 
 
                 if corridor is None:
-                   line_station_order[line] = INNER_CITY_ORDER
+                    line_station_order[line] = RS_ORDER + RTL_ORDER
                 else:
                    all_train_entries.sort(key=len, reverse=True)
                    canonical = []
@@ -700,12 +692,6 @@ def TTS_PTT(path, mypath = None):
                    line_station_order[line] = canonical
 
 
-
-           
-
-
-
-
             # Build final station_lists dict
             station_lists = {}
             for line in STATIONS_MASTER['lines']:
@@ -717,6 +703,12 @@ def TTS_PTT(path, mypath = None):
                 #outbound = [('Comes From', 'CF')] + list(reversed(line_station_order[line]))
                 station_lists[(line, False)] = inbound
                 station_lists[(line, True)]  = outbound
+
+                # RS AND rtl
+                station_lists[('Inner City RS',  False)] = [('Comes From', 'CF')] + RS_ORDER + [('Continues To', 'CT')]
+                station_lists[('Inner City RS',  True)]  = [('Comes From', 'CF')] + list(reversed(RS_ORDER)) + [('Continues To', 'CT')]
+                station_lists[('Inner City RTL', False)] = [('Comes From', 'CF')] + RTL_ORDER + [('Continues To', 'CT')]
+                station_lists[('Inner City RTL', True)]  = [('Comes From', 'CF')] + list(reversed(RTL_ORDER)) + [('Continues To', 'CT')]
                                                     
 
             for train in revenue:
@@ -754,8 +746,8 @@ def TTS_PTT(path, mypath = None):
                 ('Airport',                  True):  BDT_out,
                 ('Inner North',              False): INN_in,
                 ('Inner North',              True):  INN_out,
-                ('Inner City',               False): INC_in,
-                ('Inner City',               True):  INC_out,
+          
+                
                 ('Ipswich - Rosewood',       False): IPS_RSW_in,
                 ('Ipswich - Rosewood',       True):  IPS_RSW_out,
                 ('Redcliffe',                False): RDP_in,
@@ -766,17 +758,19 @@ def TTS_PTT(path, mypath = None):
                 ('Springfield',              True):  SFC_out,
                 }
             for (line, ob), lst in trip_lists.items():
-                if (line, ob) in sheet_map:
+
+                if line == 'Inner City':
+
+                    rs_trips  = [t for t in lst if not t.get('RTL')]
+                    rtl_trips = [t for t in lst if t.get('RTL')]
+                    write_timetable(RS_in  if not ob else RS_out,  rs_trips,  station_lists[('Inner City RS',  ob)], 'Inner City RS')
+                    write_timetable(RTL_in if not ob else RTL_out, rtl_trips, station_lists[('Inner City RTL', ob)], 'Inner City RTL')
+
+                elif (line, ob) in sheet_map:
                     write_timetable(sheet_map[(line, ob)], lst, station_lists[(line, ob)], line)
             titles(daycode)
 
 
-           
-        
-            # IPS_RSW_in.activate()
-            # CAB_GYN_in.activate()
-            # SHC_in.activate()
-            # INC_in.activate()
             BNH_in.activate() 
             
             print(f'\nAll trains with weekdayKey {" or ".join(weekdaykeys)} have been processed')
@@ -803,9 +797,6 @@ def TTS_PTT(path, mypath = None):
                 stations_long = [s[0] for s in shuttle_stations]
                 stations_abr  = [s[1] for s in shuttle_stations]
 
-
-
-
                 sheet.write_column('A2', ['Days of Operation', 'Train ID', 'AM/PM', 'Station'], s_boldleft)
                 sheet.freeze_panes(5, 1)
                 for j in range(1, len(shuttle_stations) + 5):
@@ -825,6 +816,7 @@ def TTS_PTT(path, mypath = None):
 
 
             all_trip_ids = set()
+            unmatched = []
             for lst in trip_lists.values():
                 for t in lst:
                     for tid in t['Train ID'].split('|'):
@@ -849,6 +841,7 @@ def TTS_PTT(path, mypath = None):
                         oID_p = entries[0].attrib['stationID']
                         dID_p = entries[-1].attrib['stationID']
                         print(f'Unmatched revenue train: {tn} {oID_p}->{dID_p}')
+                        unmatched.append((tn, oID_p, dID_p))
 
 
             shuttle_trips.clear()
@@ -900,8 +893,12 @@ def TTS_PTT(path, mypath = None):
             BDT_out = book.add_worksheet('BDT-Out')
             INN_in        = book.add_worksheet('INN-In')
             INN_out       = book.add_worksheet('INN-Out')
-            INC_in        = book.add_worksheet('INC-In')
-            INC_out       = book.add_worksheet('INC-Out')
+       
+
+            RS_in   = book.add_worksheet('RS-In')
+            RS_out  = book.add_worksheet('RS-Out')
+            RTL_in  = book.add_worksheet('RTL-In')
+            RTL_out = book.add_worksheet('RTL-Out')
             IPS_RSW_in    = book.add_worksheet('IPS+RSW-In')
             IPS_RSW_out   = book.add_worksheet('IPS+RSW-Out')
             RDP_in        = book.add_worksheet('RDP-In')
@@ -1014,7 +1011,10 @@ def TTS_PTT(path, mypath = None):
                 'Varsity Lakes': (yellowtitle, thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, ['VYS','PKR','BHI']),
                 'Airport': (yellowtitle, thursdayyellow, thursdayyellowbold, fridayyellow, fridayyellowbold, ['BDT','BIT','RS']),
                 'Inner North':                (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inn_capitalstops),
-                'Inner City':                 (greytitle,     thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold,         inc_capitalstops),
+
+                'Inner City RS':  (greytitle, thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold, ['BHI', 'BNC', 'RS', 'PKR']),
+                'Inner City RTL': (greytitle, thursdaygrey, thursdaygreybold, fridaygrey, fridaygreybold, ['EXH', 'BOG']),
+
                 'Ipswich - Rosewood':         (greentitle,    thursdaygreen, thursdaygreenbold, fridaygreen, fridaygreenbold,     ips_capitalstops),
                 'Redcliffe':                  (bluetitle,     thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         rdp_capitalstops),
                 'Shorncliffe':                (darkbluetitle, thursdayblue, thursdaybluebold, fridayblue, fridaybluebold,         shc_capitalstops),
@@ -1038,8 +1038,10 @@ def TTS_PTT(path, mypath = None):
                 BDT_out: yellowtitle,
                 INN_in:       greytitle,
                 INN_out:      greytitle,
-                INC_in:       greytitle,
-                INC_out:      greytitle,
+                RS_in:   greytitle,
+                RS_out:  greytitle,
+                RTL_in:  greytitle,
+                RTL_out: greytitle,
                 IPS_RSW_in:   greentitle,
                 IPS_RSW_out:  greentitle,
                 RDP_in:       bluetitle,
@@ -1073,8 +1075,10 @@ def TTS_PTT(path, mypath = None):
                 title(BDT_out, 'City to Airport - Outbound')
                 title(INN_in,       'Inner North to City - Inbound')
                 title(INN_out,      'City to Inner North - Outbound')
-                title(INC_in,       'Inner City to City - Inbound')
-                title(INC_out,      'City to Inner City - Outbound')
+                title(RS_in,   'Roma Street to City - Inbound')
+                title(RS_out,  'City to Roma Street - Outbound')
+                title(RTL_in,  'RTL to City - Inbound')
+                title(RTL_out, 'City to RTL - Outbound')
                 title(IPS_RSW_in,   'Ipswich/Rosewood to City - Inbound')
                 title(IPS_RSW_out,  'City to Ipswich/Rosewood - Outbound')
                 title(RDP_in,       'Redcliffe Peninsula to City - Inbound')
