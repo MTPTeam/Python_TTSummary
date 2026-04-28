@@ -7,20 +7,18 @@ import shutil
 from datetime import datetime
 import xml.etree.ElementTree as ET
 import time
-
+import numpy as np
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 from taipan.stabling.StablingCount import capacity_exceeded
 import traceback
 import logging
 
 from taipan.constants.locations import YARDS, NON_STABLE_LOCATIONS
-from taipan.constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER, ID_TO_SHORT
+from taipan.constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER
 from taipan.constants.trains import SORT_ORDER_UNIT
 from taipan.constants.styles import STEPS_COL
-
-
 from taipan.core.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days
-from taipan.core.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, write_sheet_from_store, build_singletrip_col, find_runs_without_stable
+from taipan.core.xml_processor import init_store, build_weeklists_into_store, make_legacy_stables_dict_from_store, startofdayunitcount, write_sheet_from_store, build_singletrip_col, find_runs_without_stable, merge_out_in_per_day
 from taipan.core.ExcelWriter import writecell_unbalanced, write_unit_totals, build_excel_formats, build_generic_formats
 
 from PyQt6.QtWidgets import QApplication
@@ -32,7 +30,6 @@ OpenWorkbook = True
 
 headers1 = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Start Time', '# Sets','# SetsByUnit']
 headers2 = ['Run','Day','Unit','Cars','Trips','Origin','Dest','Finish Time', '# Sets','# SetsByUnit']
-
 
 def TTS_SB(path, mypath = None):
 
@@ -66,12 +63,17 @@ def TTS_SB(path, mypath = None):
         formats = build_excel_formats(workbook)
         #print(formats)
 
-
         d_list = normalise_days(sort_days(d_list), collapse_mon_thu=False)
         u_list = sort_units(u_list)
 
         ndays = len(d_list)
         n = len(u_list)
+
+
+        change_matrix = {}
+        for i, unittype in enumerate(u_list):
+            change_matrix[unittype] = [1] + list(np.zeros((n,)))
+            change_matrix[unittype][i+1] = 1
 
         #print(d_list)
         
@@ -81,26 +83,24 @@ def TTS_SB(path, mypath = None):
         #print(store)
         
         
-        def write_runs(sheet,daylist,r,c):
-            """ 
-            Writes either the runs coming out of or the runs coming in to the stabling yard
-            Must be called twice for each day to compare unit and total balances
-            """
-            
+        def write_runs(sheet, daylist, r, c, yard_name=None, dow=None, cap_violations=None, is_in=False):
             if daylist:
-                
-                # Write runs using individual unittype cell formatting
-                for idx,line in enumerate(daylist,r):
-                    sheet.write_row(idx, c, line, formats[line[2]]["normal"])
-                    
-                    # Use red font if run ends at a station not a stabling yard
+                for idx, line in enumerate(daylist, r):
+                    run_id = line[0]
+                    is_violation = (
+                        is_in and
+                        cap_violations is not None and
+                        (yard_name, dow, run_id) in cap_violations
+                    )
+                    fmt = formats[line[2]]["boldred"] if is_violation else formats[line[2]]["normal"]
+                    sheet.write_row(idx, c, line, fmt)
                     if line[5] in NON_STABLE_LOCATIONS:
                         sheet.write(idx, c+5, line[5], formats[line[2]]["boldred"])
                     if line[6] in NON_STABLE_LOCATIONS:
                         sheet.write(idx, c+6, line[6], formats[line[2]]["boldred"])
             
 
-        def write_day(sheet, daylist_out, daylist_in, row):
+        def write_day(sheet, daylist_out, daylist_in, row, yard_name=None, dow=None, cap_violations=None):
             """ 
             Separated by runs starting at or ending at the stable,
             prints each run to the workbook and updates the unit count, 
@@ -114,8 +114,9 @@ def TTS_SB(path, mypath = None):
             BD_out = {}
             BD_in  = {}
                       
-            write_runs(sheet, daylist_out, row, col1)
-            write_runs(sheet, daylist_in,  row, col2)
+            write_runs(sheet, daylist_out, row, col1, yard_name, dow, cap_violations, is_in=False)
+            write_runs(sheet, daylist_in,  row, col2, yard_name, dow, cap_violations, is_in=True)
+
             
             if daylist_out:
                 units_in_daylist = [ttype for ttype in u_list if any([x[2]==ttype for x in daylist_out])]
@@ -180,25 +181,22 @@ def TTS_SB(path, mypath = None):
                     sheet.write(totals_row,widecol2-1,allunits_in,border16)
             
             
-        def write_sheet(sheet, mon_out,tue_out,wed_out,thu_out,mth_out,fri_out,sat_out,sun_out,   mon_in,tue_in,wed_in,thu_in,mth_in,fri_in,sat_in,sun_in):
-            """ Populates the sheet with runs and totals for the whole week """
-            
+        def write_sheet(sheet, mon_out, tue_out, wed_out, thu_out, mth_out, fri_out, sat_out, sun_out,
+                     mon_in,  tue_in,  wed_in,  thu_in,  mth_in,  fri_in,  sat_in,  sun_in):
             widecol1 = len(headers1) - 1
             widecol2 = len(headers1) + len(headers2)
-            sheet.set_column(widecol1,widecol1,11.5)
-            sheet.set_column(widecol2,widecol2,11.5)
-            sheet.merge_range(0,0,0,widecol2,f'{sheet.get_name()} stabling balance - {filename}', title)
-            col1 = 0
-            col2 = 11
-            sheet.write_row(    1,col1,headers1,header)
-            sheet.write_row(    1,col2,headers2,header)
-            
+            sheet.set_column(widecol1, widecol1, 11.5)
+            sheet.set_column(widecol2, widecol2, 11.5)
+            sheet.merge_range(0, 0, 0, widecol2, f'{sheet.get_name()} stabling balance - {filename}', title)
+            sheet.write_row(1, 0,  headers1, header)
+            sheet.write_row(1, 11, headers2, header)
+            yard_name = sheet.get_name()
             firstrow = 2
-            outlists = [mon_out,tue_out,wed_out,thu_out,mth_out,fri_out,sat_out,sun_out]
-            inlists  = [mon_in,tue_in,wed_in,thu_in,mth_in,fri_in,sat_in,sun_in]
-            for a,b in zip(outlists, inlists):
-                write_day(sheet, a,b, firstrow)
-                firstrow += max(len(a),len(b)) + 2*bool(a or b)
+            outlists = [mon_out, tue_out, wed_out, thu_out, mth_out, fri_out, sat_out, sun_out]
+            inlists  = [mon_in,  tue_in,  wed_in,  thu_in,  mth_in,  fri_in,  sat_in,  sun_in]
+            for (a, b), dow in zip(zip(outlists, inlists), SORT_ORDER_WEEK):
+                write_day(sheet, a, b, firstrow, yard_name=yard_name, dow=dow, cap_violations=capacity_violations)
+                firstrow += max(len(a), len(b)) + 2 * bool(a or b)
             
         
         # size16vc = workbook.add_format({'font_size':16,'align':'center','valign':'vcenter'})
@@ -256,7 +254,34 @@ def TTS_SB(path, mypath = None):
         # Create yard worksheets ONCE (no sheet_dict)
         yard_sheets = [(name, workbook.add_worksheet(name)) for name in YARDS.keys()]
 
-
+        store_for_cap = init_store(YARDS, SORT_ORDER_WEEK)
+        for yard_name, info in YARDS.items():
+            build_weeklists_into_store(
+                store_for_cap, yard_name, info['yards'],
+                SORT_ORDER_WEEK, d_list, run_dict, count=True
+            )
+        
+        
+        capacity_violations = set()
+        for yard_name in YARDS:
+            meta = YARDS[yard_name]
+            capacity = meta.get('capacity')
+            if capacity is None:
+                continue
+            for dow in SORT_ORDER_WEEK:
+                day_store = store_for_cap[yard_name].get(dow, {})
+                out_list = day_store.get('out', [])
+                in_list  = day_store.get('in', [])
+                if not out_list and not in_list:
+                    continue
+                day = merge_out_in_per_day(out_list, in_list)
+                if not day:
+                    continue
+                current = startofdayunitcount(day, u_list)[0]
+                for run in day:
+                    current += run[8]
+                    if current > capacity and run[8] > 0:  # only flag arriving runs
+                        capacity_violations.add((yard_name, dow, run[0]))
         # Write each yard sheet using your legacy write_sheet via the adapter
         for yard_name, ws in yard_sheets:
             write_sheet_from_store(
@@ -265,7 +290,6 @@ def TTS_SB(path, mypath = None):
                 write_sheet_legacy=write_sheet
             )
 
-        
 
         # wrong train type in yard 
         for yard_name, ws in yard_sheets:
@@ -291,6 +315,13 @@ def TTS_SB(path, mypath = None):
                 print(f"Warning: {yard_name} has a wrong train type on at least one day")
                 ws.set_tab_color('#FF0000')
 
+
+        for yard_name, ws in yard_sheets:
+            if any(v[0] == yard_name for v in capacity_violations):
+                ws.set_tab_color('#FF0000')
+                    
+
+        
         
         stables_dict = make_legacy_stables_dict_from_store(store, SORT_ORDER_WEEK)
 
