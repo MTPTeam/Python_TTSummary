@@ -9,7 +9,7 @@ import shutil
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
 from taipan.constants.days import ID_TO_SHORT, ID_TO_ALIAS, NAME_TO_ID, DAY_PRIORITY, SORT_ORDER_WEEK
-from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info, show_info_scroll
+from taipan.gui.base import open_file_crossplatform, select_checkboxes, show_info, select_file, show_info, show_info_scroll
 import traceback
 import logging
 
@@ -86,7 +86,7 @@ def TTS_PTT(path, mypath = None):
     copyfile = dest_dir is not None and source_dir != dest_dir
 
     try:
-
+        
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename = path.split('/')[-1]
@@ -122,41 +122,6 @@ def TTS_PTT(path, mypath = None):
         saturdayworkbook = xlsxwriter.Workbook(saturdayfilename_xlsx)
         sundayworkbook =   xlsxwriter.Workbook(sundayfilename_xlsx)
         
-        
-        ### If in future, the MTP team may only require let's say a weekend timetable and a weekday timetable to be created,
-        ###  this code will allow easy toggling of how many reports get generated for the user
-        ### In the meantime, all useful combinations of reports will be created if the day_of_operation exists in the rsx.
-        ###  That is, no blank timetable workbooks will be created
-        Weekday = Weekend = MonThu = Friday = Saturday = Sunday = False
-        Weekday = True
-        Weekend = True
-        MonThu = True
-        Friday = True
-        Saturday = True
-        Sunday = True
-        workbooks = []
-        
-        Weekday =  124 if Weekday  else False
-        Weekend =  130 if Weekend  else False
-        MonThu =   60  if MonThu   else False
-        Friday =   64  if Friday   else False
-        Saturday = 128 if Saturday else False
-        Sunday =   2   if Sunday   else False
-        
-        workbooks_dict = {
-            Weekday:  weekdayworkbook,
-            Weekend:  weekendworkbook,
-            MonThu:   monthuworkbook,
-            Friday:   fridayworkbook,
-            Saturday: saturdayworkbook,
-            Sunday:   sundayworkbook,
-            }
-        
-        for day in [Weekday, Weekend, MonThu, Friday, Saturday, Sunday]:
-            daysheet = workbooks_dict.get(day)
-            if day:
-                workbooks.append(daysheet)
-                
               
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
@@ -216,6 +181,52 @@ def TTS_PTT(path, mypath = None):
                 if stID not in STATIONS_MASTER['stations']:
                     newstations.add(name)
                     name_to_code[name] = stID
+        
+
+
+        day_options = []
+        if '120' in d_list: day_options.append(('Mon-Thu',  'monthu'))
+        if '4'   in d_list: day_options.append(('Friday',   'friday'))
+        if '2'   in d_list: day_options.append(('Saturday', 'saturday'))
+        if '1'   in d_list: day_options.append(('Sunday',   'sunday'))
+        if '120' in d_list and '4' in d_list:
+            day_options.insert(0, ('Weekday (Mon-Fri)', 'weekday'))
+        if '1'   in d_list and '2' in d_list:
+            day_options.append(('Weekend (Sat-Sun)', 'weekend'))
+        selected_days = select_checkboxes(title='Select Days of Operation',message='Choose which timetables to generate:',options=day_options, default_values=[v for _, v in day_options],)  # all checked by default
+        if selected_days is None:
+            return  # user cancelled
+
+
+
+        Weekday  = 'weekday'  in selected_days
+        Weekend  = 'weekend'  in selected_days
+        MonThu   = 'monthu'   in selected_days
+        Friday   = 'friday'   in selected_days
+        Saturday = 'saturday' in selected_days
+        Sunday   = 'sunday'   in selected_days
+
+
+        Weekday  = 124 if Weekday  else False
+        Weekend  = 130 if Weekend  else False
+        MonThu   = 60  if MonThu   else False
+        Friday   = 64  if Friday   else False
+        Saturday = 128 if Saturday else False
+        Sunday   = 2   if Sunday   else False
+        workbooks_dict = {
+            Weekday:  weekdayworkbook,
+            Weekend:  weekendworkbook,
+            MonThu:   monthuworkbook,
+            Friday:   fridayworkbook,
+            Saturday: saturdayworkbook,
+            Sunday:   sundayworkbook,
+        }
+            
+        workbooks = []
+        for day in [Weekday, Weekend, MonThu, Friday, Saturday, Sunday]:
+            daysheet = workbooks_dict.get(day)
+            if day:
+                workbooks.append(daysheet)
             
     
         if newstations:
@@ -477,14 +488,6 @@ def TTS_PTT(path, mypath = None):
             def write_timetable(sheet, triplist, stations, line, outbound=False):
 
                 """ Write the data to the worksheet, including train ID, DoO and departure times for each station """
-
-
-                if line == 'Inner City RS':
-                    print(f'stations: {stations}')
-                    print(f'triplist length: {len(triplist)}')
-                    if triplist:
-                        print(f'first trip: {triplist[0]}')
-
                 if not stations:
                     return
                 
@@ -634,9 +637,6 @@ def TTS_PTT(path, mypath = None):
                 and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
                 ]
 
-            
-            print(f'all_entries count: {len(all_entries)}')
-            print('Sample station IDs:', [e.attrib['stationID'] for e in all_entries[:10]])
             
 
 
