@@ -300,22 +300,25 @@ def TTS_PTT(path, mypath = None):
 
 
                     if corridor is None:
+            
                         inner_city_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line and not s['non_revenue']}
-                        INBOUND_TERMINI = {'EXH', 'RS', 'PKR'}
-                        if Outbound:
-                            condition = condition and bool(train_station_ids & inner_city_codes)
-                            condition = condition and dID not in INBOUND_TERMINI
+                        condition = (o_line == line or d_line == line) and (oID in inner_city_codes or dID in inner_city_codes)
+                        order = RTL_ORDER if any(e.attrib['stationID'] == 'RTL' for e in revenue_entries) else RS_ORDER
+                        order_codes = [code for _, code in order]
+                        ic_entries = [e for e in revenue_entries if e.attrib['stationID'] in set(order_codes)]
+                        if not ic_entries:
+                            condition = False
                         else:
-                            condition = condition and oID in inner_city_codes and dID in inner_city_codes
-                            condition = condition and dID in INBOUND_TERMINI
-                    else:
-                        if Outbound:
-                            condition = condition and d_line == line
-
-                        else:
-
-                            condition = condition and o_line == line
- 
+                            ic_codes = [e.attrib['stationID'] for e in ic_entries]
+                            order_positions = [order_codes.index(c) for c in ic_codes if c in order_codes]
+                            if len(order_positions) < 2:
+                                is_inbound = True
+                            else:
+                                is_inbound = order_positions == sorted(order_positions)
+                            if Outbound:
+                                condition = condition and not is_inbound
+                            else:
+                                condition = condition and is_inbound
                                                                 
                 if condition:
                     tripdict = {}
