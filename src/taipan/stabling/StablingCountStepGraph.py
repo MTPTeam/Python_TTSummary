@@ -17,6 +17,26 @@ import pythoncom
 from PyQt6.QtWidgets import QApplication
 
 
+UNIT_COLOURS = {
+    'QMU':    0xF79646,  # Holland Tulip
+    'REP':    0x4BACC6,  # Frozen Wave
+    'NGR':    0x9BBB59,  # sapling
+    'NGRE':   0x8064A2,  # scampi
+    'EMU':    0xC0504D,  # Autumn Fire
+    'IMU100': 0x4F81BD,  # Fisher King
+    'SMU':    0xBD8C58,  # Deer
+    'HYBRID': 0x4D4D64,  # Intergalactic
+    'DEPT':   0x5F574D,  # Major Brown
+}
+
+
+
+
+def rgb_to_bgr(c):
+    # converts rgb format to bgr for COM 
+    return ((c & 0xFF) << 16) | (c & 0xFF00) | ((c >> 16) & 0xFF)
+
+
 def build_change_matrix(u_list):
     n = len(u_list)
     matrix = {}
@@ -54,7 +74,7 @@ def detect_capacity_violations(stables_dict, yard_meta, u_list, change_matrix):
    violations = []
    for yard_name, stables_tuple in stables_dict.items():
        capacity = yard_meta[yard_name].get('capacity')
-       if not isinstance(capacity, int):
+       if not isinstance(capacity, (int, float)):
            continue
        for dow, daylist in zip(SORT_ORDER_WEEK, stables_tuple):
            if not daylist:
@@ -160,7 +180,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d
            for r, v in enumerate(counts[u]):
                data_sheet.write(data_row_start + r, uc, v)
 
-       if isinstance(capacity, int):
+       if isinstance(capacity, (int, float)):
            cap_col = col + block_w
            data_sheet.write(0, cap_col, f'{yard_name}_{dow}_capacity', hdr_fmt)
            for r in range(n_rows):
@@ -230,6 +250,7 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
                cap_col_idx   = header_map.get(f'{yard_name}_{dow}_capacity')
                unit_col_idxs = {u: header_map.get(f'{yard_name}_{dow}_{u}') for u in u_list}                
                present_units = [u for u in u_list if any(v != 0 for v in counts.get(u, []))]
+               plot_total = len(present_units) > 1
 
                dow_label = WEEKDAY_KEYS_MASTER.get(dow, {}).get('long', dow)
    
@@ -240,28 +261,38 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
                left = chart_col * (chart_w + 30) + 5
                top  = 35
                co    = ws.ChartObjects().Add(left, top, chart_w, chart_h)
+
                chart = co.Chart
+               chart.ChartStyle = 240  # COM-fragile
                chart.ChartType = 75  # COM-fragile - xlXYScatterLinesNoMarkers
                # total series
-               s = chart.SeriesCollection().NewSeries()
-               s.Name    = 'Total'
-               s.XValues = data_sheet.Range(data_sheet.Cells(data_row_start, time_col_idx),data_sheet.Cells(data_row_start + n_rows - 1, time_col_idx))
-               s.Values = data_sheet.Range(data_sheet.Cells(data_row_start, total_col_idx),data_sheet.Cells(data_row_start + n_rows - 1, total_col_idx))
-               s.Format.Line.Weight = 2.5 # COM-fragile
+
+               if plot_total:
+                    s = chart.SeriesCollection().NewSeries()
+                    s.Format.Line.ForeColor.RGB = 0x000000  # black
+                    s.Name    = 'Total'
+                    s.XValues = data_sheet.Range(data_sheet.Cells(data_row_start, time_col_idx),data_sheet.Cells(data_row_start + n_rows - 1, time_col_idx))
+                    s.Values = data_sheet.Range(data_sheet.Cells(data_row_start, total_col_idx),data_sheet.Cells(data_row_start + n_rows - 1, total_col_idx))
+                    s.Format.Line.Weight = 1.5 # COM-fragile
                # per-unit series
                for u in present_units:
                    uc = unit_col_idxs.get(u)
                    if uc is None:
                        continue
                    s = chart.SeriesCollection().NewSeries()
+                   
                    s.Name    = u
                    s.XValues = data_sheet.Range(data_sheet.Cells(data_row_start, time_col_idx),data_sheet.Cells(data_row_start + n_rows - 1, time_col_idx))
                    s.Values = data_sheet.Range(data_sheet.Cells(data_row_start, uc),data_sheet.Cells(data_row_start + n_rows - 1, uc))
                    s.Format.Line.Weight = 1.5
+                   if u in UNIT_COLOURS:
+                        s.Format.Line.ForeColor.RGB = rgb_to_bgr(UNIT_COLOURS[u])
+
                # capacity series
                capacity = capacity_map.get(yard_name)
-               if isinstance(capacity, int) and cap_col_idx:
+               if isinstance(capacity, (int, float)) and cap_col_idx:
                    s = chart.SeriesCollection().NewSeries()
+                   s.Format.Line.ForeColor.RGB = rgb_to_bgr(0xFF0000)  # red
                    s.Name    = f'Capacity ({capacity})'
                    s.XValues = data_sheet.Range(
                        data_sheet.Cells(data_row_start, time_col_idx),
@@ -293,7 +324,7 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
                chart.Legend.Position     = -4107  # COM-fragile xlLegendPositionRight
                chart.Legend.Font.Size    = 12
                # apply style — works because COM owns the chart from creation
-               chart.ChartStyle = 240  # COM-fragile
+               
                #chart.ChartColor = 2
                chart_count += 1
                chart_col += 1
