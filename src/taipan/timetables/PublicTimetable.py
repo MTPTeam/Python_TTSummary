@@ -248,7 +248,6 @@ def TTS_PTT(path, mypath = None):
             Run twice, one for school days and one for weekends
             """
 
-
             AIRPORT_STATIONS = {'BDT', 'BIT', 'AJN'}
             VARSITY_STATIONS = {'VYS', 'ROB', 'MRC', 'NRG', 'HLN', 'HID', 'CXM', 'PPA', 'ORM', 'ROBS', 'VYST'}
             INNER_NORTH_STATIONS = {'NTG', 'NND', 'TBU', 'EGJ', 'WWI', 'AIN'}
@@ -435,7 +434,8 @@ def TTS_PTT(path, mypath = None):
                         shuttle_key = f'{oID}-{dID}'
                         if shuttle_key not in shuttle_trips:
                             shuttle_trips[shuttle_key] = []
-                        shuttle_trips[shuttle_key].append(tripdict)
+                        if not any(t['Train ID'] == tripdict['Train ID'] and t['DoO'] == tripdict['DoO'] for t in shuttle_trips[shuttle_key]):
+                            shuttle_trips[shuttle_key].append(tripdict)
                         return
 
 
@@ -830,19 +830,29 @@ def TTS_PTT(path, mypath = None):
             s_bold     = shuttleworkbook.add_format({'align':'center','font_size':9,'bold':True})
             s_boldleft = shuttleworkbook.add_format({'align':'left','font_size':9,'bold':True})
             for i, (shuttle_key, trips) in enumerate(shuttle_trips.items()):
+                # deduplicate by Train ID + DoO
+                seen = set()
+                unique_trips = []
+                for trip in trips:
+                    key = (trip['Train ID'], trip['DoO'])
+                    if key not in seen:
+                        seen.add(key)
+                        unique_trips.append(trip)
+                trips = unique_trips
                 sheet_name = f'{shuttle_key}-{i}'[:31]
                 sheet = shuttleworkbook.add_worksheet(sheet_name)
                 trips.sort(key=lambda x: x['VirtualCBD'])
                 shuttle_stations = []
                 for trip in trips:
                     for code in trip:
-                        if code not in ('Train ID', 'VirtualCBD', 'AM/PM', 'DoO', 'Comes From', 'Continues2'): 
+                        if code not in ('Train ID', 'VirtualCBD', 'AM/PM', 'DoO', 'Comes From', 'Continues2'):
                             station = STATIONS_MASTER['stations'].get(code)
                             if station and not station['non_revenue']:
                                 name = station['name']
                                 if (name, code) not in shuttle_stations:
                                     shuttle_stations.append((name, code))
                 shuttle_stations = [('Comes From', 'CF')] + shuttle_stations + [('Continues To', 'CT')]
+
                 stations_long = [s[0] for s in shuttle_stations]
                 stations_abr  = [s[1] for s in shuttle_stations]
 
