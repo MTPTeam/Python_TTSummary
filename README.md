@@ -124,6 +124,8 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
     `.\venv\Scripts\python.exe -m pytest`
 
 
+ - **Current state (29/04) - 24 PASSED, 0 FAILING**
+
 ## Installation Instructions 
 
 
