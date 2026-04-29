@@ -63,6 +63,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 **All files in `stabling/`**
 - `REP` has been changed to `QMU` to align with newer rollingstock naming convention. However the input RSX can contain both `REP` and `QMU` and they will be processed the same - the output file will just change it to `QMU`.
 - Logic has been changed -> for all trains, 6 cars always count as 1 unit, and 3 cars count as 0.5. All calculations are done relative to 6 car sets. To get 3 car equivalent = 6 car equivalent * 2. This change means we can now directly compare stabling totals to the yard capacity. 
+- All stabling files now check for capacity/wrong traintype violations
 
 **`gui/`**
 - All user interface code been changed from Tkinter to PyQT5.
@@ -99,7 +100,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 
 **`publictimetable/PublicTimetable.py`**
-- Logic has been updated to make it independent of O/D pairs - only uses O or D to determine line 
+- Logic has been updated to make it independent of O/D pairs - only uses O or D to determine line. This was done so PTT works properly with future states.
 - For writing station-times, there is additional logic introduced for new timetables:
 
 > - If RS exists:
@@ -111,6 +112,10 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 - There is a new 'shuttle' sheet which has trains with no RS or RTL stations in their `entries` but contain revenue stations. There will be a separate sheet for each day in the RSX if 'shuttles' are detected. 
 - All the data structures have been removed and refactored (vrt, unique stations, stablingmaster, stationsmaster etc) and will only rely on a single source to receive station and line metadata (`STATIONS_MASTER` in `constants/locations.py`). If you find a missing station / and or line in the output, `STATION_MASTER` would be the place to update. 
+- Station ordering is no longer hardcoded - this is inferred dynamically from each train. The script looks at all trains that have stations belonging to a line and builds the order using that.
+- Now has Roma Street Arrive and Roma Street Depart rows - for sheets with both RS and RTL. Also has Central Arrive and Central Depart.
+- Inner city sheet has been separated by RS and RTL. RS inbound, outbound and RTL inbound, outbound
+- User can specify what day's timetables they want generated (generated list from all possible days in input rsx)
 
 
 ## Testing
