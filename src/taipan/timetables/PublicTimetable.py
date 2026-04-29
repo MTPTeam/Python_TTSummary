@@ -534,23 +534,26 @@ def TTS_PTT(path, mypath = None):
                     for idx,sID in enumerate(stations_abr):
                         # sID = station[-1]
                         
+                        arr_dep_codes = {'RSarr', 'RSdep', 'BNCarr', 'BNCdep', 'RTLarr', 'RTLdep'}
+
                         timevalue = x.get(sID)
                         if timevalue:
-                            if firststationarr or 'arr' not in sID:
+                            if firststationarr or 'arr' not in sID or sID in arr_dep_codes:
                                 vals.append(timetrim(timevalue))
                             else:
                                 vals.append(None)
                             firststationarr = True
                         else:
                             vals.append(None)
-                            
-                            
                         if timevalue:
-                            if 'dep' in sID:
-                                laststationdep = True 
+                            if 'dep' in sID and sID not in arr_dep_codes:
+                                laststationdep = True
                                 laststationidx = idx
                             else:
                                 laststationdep = False
+
+                        
+                        ## change end
                                 
                     if laststationdep:
                         vals[laststationidx] = None
