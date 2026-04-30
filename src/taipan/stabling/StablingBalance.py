@@ -397,6 +397,10 @@ def TTS_SB(path, mypath = None):
                 yard_to_ws[k].set_tab_color('#CCB233')
             else:
                 Summary.merge_range(srow,0,erow,0,k,boldleftvc)
+            
+
+            Summary.freeze_panes(2, 0)
+
         
         # Info
         info_col  = ['Timetable Name:','Timetable Id:','Report Date:','Report Type:']

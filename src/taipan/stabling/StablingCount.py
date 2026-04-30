@@ -30,6 +30,7 @@ CreateWorkbook = True
 OpenWorkbook = True
 
 
+
 def capacity_exceeded(yard_name, meta, os_total, os_bkdwn, u_list):
    """
    Returns True if capacity is exceeded or wrong train type is stabled.
@@ -48,7 +49,7 @@ def capacity_exceeded(yard_name, meta, os_total, os_bkdwn, u_list):
    qr_count  = sum(v for u, v in unit_counts.items() if u not in ('NGR', 'NGRE'))
    total     = ngr_count + qr_count
    if ngr_only:
-       # red if any non-NGR present, or capacity exceeded
+       # red if any non-NGR present, or capacity exceeded for ngr only yards 
        wrong_type = qr_count > 0
        over_cap   = capacity is not None and ngr_count > capacity
        return wrong_type or over_cap
@@ -60,6 +61,15 @@ def capacity_exceeded(yard_name, meta, os_total, os_bkdwn, u_list):
    # mixed yard — one shared capacity, all trains (ex QMU)
    over_cap = capacity is not None and os_total > capacity
    return over_cap
+
+
+
+
+def weekend_exceeds(value, max_value, is_weekend, has_weekdays):
+    return has_weekdays and is_weekend and value > max_value
+
+
+
 
 def TTS_SC(path, mypath = None):
 
@@ -106,7 +116,7 @@ def TTS_SC(path, mypath = None):
         ndays = len(d_list)
         n     = len(u_list)        
         
-        # Create an identity matrix using unit types
+        # Create an identity matrix using unit types 
         # This will be used to update the row representing the number of units in a stabling location, using element-wise addition
         # A ones column is appended for the total
         change_matrix = {}
@@ -162,7 +172,7 @@ def TTS_SC(path, mypath = None):
             firstrow = 2
             for d in [mon,tue,wed,thu,mth,fri,sat,sun]:
                 write_day(sheet,d,firstrow)
-                firstrow += len(d) + 5*bool(d)
+                firstrow += len(d) + 2*bool(d)
         
         title                 = workbook.add_format({'bold':True,'align':'center'})
         header                = workbook.add_format({'bold':True,'align':'center','bg_color':'#CCCCCC'})
@@ -236,6 +246,10 @@ def TTS_SC(path, mypath = None):
         Summary.set_tab_color('#7FE57F')
         # Summary.freeze_panes('C3')
         # Summary.freeze_panes('A3')
+
+        Summary.freeze_panes(2, 0)
+
+        
         
         # Write the column headers for unit types
         for i,uu in enumerate(u_list):
@@ -343,6 +357,8 @@ def TTS_SC(path, mypath = None):
             #yard_days_present = [d for d, info in summary_dict.items() if info[0] is not None]
             d_list_s = [str(d) for d in d_list]
 
+            has_weekdays = len(WEEKDAY_KEYS) > 0
+
             for DoW in SORT_ORDER_WEEK:
                 #day_obj, total, breakdown, os_total, os_breakdown, ip_total, ip_breakdown = summary_info
 
@@ -363,19 +379,22 @@ def TTS_SC(path, mypath = None):
 
 
                     # daily difference
-                    diff_total_fmt = boldborderred if (is_weekend and total > weekday_max_diff_total) else totals_font
+                    
+                    diff_total_fmt = boldborderred if weekend_exceeds(
+                        total, weekday_max_diff_total, is_weekend, has_weekdays) else totals_font
+
                     Summary.write(row_ptr, 2, total, diff_total_fmt)
                     for ui in range(n):
                        val = float(breakdown[ui])
                        max_val = float(weekday_max_breakdown[ui])
-                       fmt = boldborderred if (is_weekend and val > max_val) else greyedouttext
+                       fmt = boldborderred if weekend_exceeds(val, max_val, is_weekend, has_weekdays) else greyedouttext
                        Summary.write(row_ptr, 3 + ui, val, fmt)
 
                     # overnight stabling
-                    os_total_fmt = boldborderred if (is_weekend and os_total > weekday_max_total) else boldborder
+                    os_total_fmt = boldborderred if weekend_exceeds(os_total, weekday_max_total, is_weekend, has_weekdays) else boldborder
                     Summary.write(row_ptr, 5 + n, os_total, os_total_fmt)
                     for ui, (unit_val, unit_max) in enumerate(zip(os_breakdown, weekday_max_by_unit)):
-                       unit_fmt = boldborderred if (is_weekend and unit_val > unit_max) else centered
+                       unit_fmt = boldborderred if weekend_exceeds(unit_val, unit_max, is_weekend, has_weekdays) else centered
                        Summary.write(row_ptr, 6 + n + ui, unit_val, unit_fmt)
                     if k == 'Mayne West':
                        print(f"Mayne West {DoW}: is_weekend={is_weekend}, os_breakdown={os_breakdown}, weekday_max_by_unit={weekday_max_by_unit}, weekday_max_total={weekday_max_total}, os_total={os_total}")
@@ -385,7 +404,7 @@ def TTS_SC(path, mypath = None):
                     #Summary.write(row_ptr, 7 + 2 * n, ip_total, boldborder)
                     #summary_writerow(row_ptr, 8 + 2 * n, ip_breakdown, Summary, centered, greyedouttext)
 
-                    ip_total_fmt = boldborderred if (is_weekend and ip_total > weekday_max_ip_total) else boldborder
+                    ip_total_fmt = boldborderred if weekend_exceeds(ip_total, weekday_max_ip_total, is_weekend, has_weekdays) else boldborder
 
                     if ip_total > os_total:
                         ip_total_fmt = interpeak_flag
@@ -394,7 +413,7 @@ def TTS_SC(path, mypath = None):
                     for ui in range(n):  
                         val = float(ip_breakdown[ui]) if ip_breakdown is not None and len(ip_breakdown) > ui else 0
                         max_val = float(weekday_max_ip_breakdown[ui])
-                        if is_weekend and val > max_val:
+                        if weekend_exceeds(val, max_val, is_weekend, has_weekdays):
                             fmt = boldborderred
                         elif val == 0:
                             fmt = greyedouttext
