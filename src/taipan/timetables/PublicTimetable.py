@@ -140,13 +140,7 @@ def TTS_PTT(path, mypath = None):
             sys.exit() 
         
         start_time = time.time()
-
-           
-        ### uniquestations_dict and network_vrt_dict are used to determine what Line that trip belongs to
-        ### Virtual run time (vrt) dictionaries for each line are used to order trips chronologically 
-        ###  due to some trips not running through the city making sorting trips by Central arrival unavailable
-       
-        
+    
         line_station_lookup = {
         code: s['line']
         for code, s in STATIONS_MASTER['stations'].items()
@@ -279,7 +273,7 @@ def TTS_PTT(path, mypath = None):
                     timestring = timestring[1:-3]
                 else: timestring = timestring[:-3]
                 return timestring
-
+            
             
             def build_triplist(triplist, line, Outbound=False):
                 """ 
@@ -311,26 +305,46 @@ def TTS_PTT(path, mypath = None):
                     else:
                         condition = condition and oID in AIRPORT_STATIONS
 
-                elif line == 'Inner North':                                          # add here
-                    condition = oID in INNER_NORTH_STATIONS or dID in INNER_NORTH_STATIONS
-                    if Outbound:
-                        condition = condition and dID in INNER_NORTH_STATIONS
-                    else:
-                        condition = condition and oID in INNER_NORTH_STATIONS
-                else:
-                    
+                elif line == 'Inner North':                                         
+                    train_station_ids = {e.attrib['stationID'] for e in revenue_entries}
+                    condition = bool(train_station_ids & INNER_NORTH_STATIONS)
+                    if condition:
+                        # determine direction - find if train is heading toward or away from city
+                        # by checking if Inner North stations come before or after city stations
+                        city_codes = {'RS', 'BNC', 'BRC', 'BHI', 'RTL', 'EXH', 'BOG'}
+                        entry_codes = [e.attrib['stationID'] for e in revenue_entries]
+                        inn_indices = [i for i, c in enumerate(entry_codes) if c in INNER_NORTH_STATIONS]
+                        city_indices = [i for i, c in enumerate(entry_codes) if c in city_codes]
+                        if inn_indices and city_indices:
+                            # inbound = Inner North stations come before city stations
+                            is_inbound = min(inn_indices) < min(city_indices)
+                            if Outbound:
+                                condition = condition and not is_inbound
+                            else:
+                                condition = condition and is_inbound
 
-                    condition = (o_line == line or d_line == line)
-                    if Outbound:
-                        condition = condition and (d_line == line)
-                    else:
-                        condition = condition and (o_line == line)
+
+
+                else:
                     train_station_ids = {e.attrib['stationID'] for e in revenue_entries}
                     corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
                     line_termini = {
-                    code for code, s in STATIONS_MASTER['stations'].items()
-                    if s['line'] == line and s['byline_terminus']
+                        code for code, s in STATIONS_MASTER['stations'].items()
+                        if s['line'] == line and s['byline_terminus']
                     }
+                    line_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line}
+                    condition = (o_line == line or d_line == line) and bool(train_station_ids & line_termini)
+                    if condition and corridor:
+                        city_codes = {'RS', 'BNC', 'BRC', 'BHI', 'RTL', 'EXH', 'BOG', 'PKR', 'SBE', 'SBA'}
+                        entry_codes = [e.attrib['stationID'] for e in revenue_entries]
+                        line_indices = [i for i, c in enumerate(entry_codes) if c in line_codes]
+                        city_indices = [i for i, c in enumerate(entry_codes) if c in city_codes]
+                        if line_indices and city_indices:
+                            is_inbound = min(line_indices) < min(city_indices)
+                            if Outbound:
+                                condition = condition and not is_inbound
+                            else:
+                                condition = condition and is_inbound
 
 
                     if corridor is None:
@@ -354,8 +368,7 @@ def TTS_PTT(path, mypath = None):
                             else:
                                 condition = condition and is_inbound
 
-                
-                                                                
+                                                                            
                 if condition:
                     tripdict = {}
                     tripdict['Train ID'] = tn
@@ -415,10 +428,16 @@ def TTS_PTT(path, mypath = None):
                         if stationName == 'Bowen Hills':
                             tripdict['BHIarr'] = arrival
                             tripdict['BHIdep'] = departure
-                        # stop writing at this train's split point
+                        
+
                         if not Outbound and train_split and stationID == train_split:
-                            break
-                            
+                           line_codes = {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line}
+                           entries_ahead = entries[n+1:]
+                           entry_codes_ahead = {e.attrib['stationID'] for e in entries_ahead}
+                           if not entry_codes_ahead & line_codes:
+                               break
+
+
                     tripdict['AM/PM'] = 'am' if origin['departure'] < '12:00:00' or origin['departure'] > '24:00:00' else 'pm'
                     tripdict['DoO'] = ID_TO_ALIAS[WeekdayKey]
                     # tripdict['DoO'] = 'M-Th' if WeekdayKey=='120' else 'Fri'
@@ -640,8 +659,6 @@ def TTS_PTT(path, mypath = None):
                 and not STATIONS_MASTER['stations'][e.attrib['stationID']]['non_revenue']
                 ]
 
-            
-
 
 
             line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
@@ -675,7 +692,9 @@ def TTS_PTT(path, mypath = None):
                     elif line == 'Airport':
                         condition = oID_t in AIRPORT_STATIONS or dID_t in AIRPORT_STATIONS
                     elif line == 'Inner North':
-                        condition = oID_t in INNER_NORTH_STATIONS or dID_t in INNER_NORTH_STATIONS
+                        train_ids_t = {e[1] for e in train_entries}
+                        condition = bool(train_ids_t & INNER_NORTH_STATIONS)
+
                     elif STATIONS_MASTER['lines'].get(line, {}).get('corridor') is None:
                         INBOUND_TERMINI = { 'EXH', 'RS'}
 
@@ -700,6 +719,8 @@ def TTS_PTT(path, mypath = None):
                         trimmed.append(stop)
                         if split_at and stop[1] == split_at:
                             break
+                    if line == 'Inner North':
+                       trimmed = [(name, code) for name, code in trimmed if code in INNER_NORTH_STATIONS]
                     if trimmed:
                         
                         all_train_entries.append(trimmed)
