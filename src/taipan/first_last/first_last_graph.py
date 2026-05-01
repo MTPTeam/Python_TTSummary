@@ -16,6 +16,7 @@ import uuid
 CORE = {"RS", "RTL"}
 CITY = {'RS','BNC','BRC','BHI','EXH','ALB','RTL','WLG','BOG'}
 
+
 rev_map = {
    code: info['name']
    for code, info in STATIONS_MASTER['stations'].items()
@@ -71,19 +72,40 @@ def trains_to_df(rsx_path: str) -> pd.DataFrame:
    df.insert(5, 'StationName', df["Station"].map(rev_map) if rev_map else df["Station"])
    return df
 
+
 def assign_directions(df: pd.DataFrame) -> pd.DataFrame:
    df = df.copy()
-   df["_seq"] = df.groupby(["Train","Day"]).cumcount()
-   is_core = df["Station"].isin(CORE)
-   first_core_seq = df[is_core].groupby(["Train","Day"])["_seq"].min()
-   df["core_seq"] = df.set_index(["Train","Day"]).index.map(first_core_seq)
-   df["Direction"] = np.where(
-       df["core_seq"].isna(), "Unknown",
-       np.where(df["_seq"] < df["core_seq"], "Inbound", "Outbound")
+   CITY_STATIONS = {'BNC', 'RS', 'RTL'}
+   def direction_for_stop(station_ids: list[str], stop_idx: int) -> str:
+       # Find first city station in this train's stops
+       city_idx = next(
+           (i for i, s in enumerate(station_ids) if s in CITY_STATIONS),
+           None
+       )
+       if city_idx is None:
+           return "Unknown"  # shuttle, never touches city
+       if stop_idx < city_idx:
+           return "Inbound"
+       else:
+           return "Outbound"
+   # Build per-row stop index within each train/day
+   df["_stop_idx"] = df.groupby(["Train", "Day"]).cumcount()
+   # Build station list per train/day
+   train_stations = (
+       df.groupby(["Train", "Day"])["Station"]
+       .apply(list)
+       .reset_index()
+       .rename(columns={"Station": "station_list"})
    )
-   df["Direction"] = np.where(df["Station"].isin(CITY), "City", df["Direction"])
-   df.drop(columns=["_seq","core_seq"], inplace=True)
-   df = df[df.Direction != 'City']
+   df = df.merge(train_stations, on=["Train", "Day"], how="left")
+   df["Direction"] = df.apply(
+       lambda row: direction_for_stop(row["station_list"], row["_stop_idx"]),
+       axis=1
+   )
+   df["Direction"] = df["Direction"].where(~df["Station"].isin(CITY), "City")
+   df = df[df["Direction"] != "City"]
+   df = df[df["Direction"] != "Unknown"]
+   df.drop(columns=["_stop_idx", "station_list"], inplace=True)
    return df
 
 def aggregate_first_last(df: pd.DataFrame, rsx_path: str) -> pd.DataFrame:
@@ -178,7 +200,13 @@ def build_pivot_sheet(wb, timetable_names: list[str]):
    pt.RowAxisLayout(1)
    pt.ColumnGrand = False
    pt.RowGrand    = False
-   pt.PivotFields("Direction").PivotItems("Unknown").Visible = False
+
+   try:
+       pt.PivotFields("Direction").PivotItems("Unknown").Visible = False
+   except:
+       pass
+
+    
    pt.PivotFields("Timetable").Subtotals = (False,) * 12
    ws.Columns("B").NumberFormat = "h:mm"
    ws.Columns("C").NumberFormat = "h:mm"
@@ -278,7 +306,10 @@ def build_summary_table(wb, ws_chart, pc):
    pt2.ColumnGrand = False
    pt2.RowGrand    = False
    pt2.PivotFields("Timetable").Subtotals = (False,) * 12
-   pt2.PivotFields("Direction").PivotItems("Unknown").Visible = False
+   try:
+        pt2.PivotFields("Direction").PivotItems("Unknown").Visible = False
+   except:
+       pass
    pt2.TableStyle2                              = "TableStyleLight17"
    pt2.DataFields("First Departure").NumberFormat = "hh:mm"
    pt2.DataFields("Last Departure").NumberFormat  = "hh:mm"
