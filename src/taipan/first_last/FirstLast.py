@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 
 from PyQt6.QtWidgets import QApplication
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.constants.locations import STATIONS_MASTER
 
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 import traceback
@@ -27,183 +28,21 @@ daylist = ['120','4','2','1']
 headers = ['Station','Line','Direction']
 blanks  = ['']
 
-byline_list = [
-    ['FYG', 'Ferny Grove', 'FernyGrove'],
-    ['BNH', 'Beenleigh', 'Beenleigh'],
-    ['SHC', 'Shorncliffe', 'Shorncliffe'],
-    ['CVN', 'Cleveland', 'Cleveland'],
-    ['BDT', 'Domestic Airport', 'Domestic Airport'],
-    ['VYS', 'Varsity Lakes', 'Gold Coast'],
-    ['DBN', 'Doomben', 'Doomben'],
-    ['PET', 'Petrie', 'Petrie'],
-    ['CAB', 'Caboolture', 'Caboolture'],
-    ['KPR', 'Kippa-Ring', 'RedcliffePeninsula'],
-    ['NBR', 'Nambour', 'Nambour'],
-    ['GYN', 'Gympie North', 'Gympie'],
-    ['IPS', 'Ipswich', 'Ipswich'],
-    ['RSW', 'Rosewood', 'Rosewood'],
-    ['SFC', 'Springfield Central', 'Springfield'],
-    ['AIN', 'Albion', 'InnerNorth'],
-    ['PKR', 'Park Road', 'InnerSouth'],
-    ['RS', 'Roma Street', 'City'],
-    ['DAR', 'Darra', 'Inner West']
-    ]
 
+# Replace bystation_list - all revenue stations
 bystation_list = [
-    ['AIN', 'Albion', 'InnerNorth'],
-    ['ADY', 'Alderley', 'FernyGrove'],
-    ['ATI', 'Altandi', 'Beenleigh'],
-    ['ACO', 'Ascot', 'Doomben'],
-    ['AHF', 'Auchenflower', 'InnerWest'],
-    ['BDS', 'Bald Hills', 'Petrie'],
-    ['BQO', 'Banoon', 'Beenleigh'],
-    ['BQY', 'Banyo', 'Shorncliffe'],
-    ['BNH', 'Beenleigh', 'Beenleigh'],
-    ['BEB', 'Beerburrum', 'Nambour'],
-    ['BWH', 'Beerwah', 'Nambour'],
-    ['BTI', 'Bethania', 'Beenleigh'],
-    ['BHA', 'Bindha', 'Shorncliffe'],
-    ['BDE', 'Birkdale', 'Cleveland'],
-    ['BZL', 'Boondall', 'Shorncliffe'],
-    ['BOV', 'Booval', 'Ipswich'],
-    ['BHI', 'Bowen Hills', 'City'],
-    ['BPR', 'Bray Park', 'Petrie'],
-    ['BDX', 'Bundamba', 'Ipswich'],
-    ['BRD', 'Buranda', 'Cleveland'],
-    ['BPY', 'Burpengary', 'Caboolture'],
-    ['CAB', 'Caboolture', 'Caboolture'],
-    ['CNQ', 'Cannon Hill', 'Cleveland'],
-    ['CDE', 'Carseldine', 'Petrie'],
-    ['BNC', 'Central', 'City'],
-    ['CMZ', 'Chelmer', 'InnerWest'],
-    ['CYF', 'Clayfield', 'Doomben'],
-    ['CVN', 'Cleveland', 'Cleveland'],
-    ['CXM', 'Coomera', 'GoldCoast'],
-    ['CEP', 'Coopers Plains', 'Beenleigh'],
-    ['COZ', 'Cooran', 'Gympie'],
-    ['COO', 'Cooroy', 'Gympie'],
-    ['CRO', 'Coorparoo', 'Cleveland'],
-    ['CQD', 'Corinda', 'InnerWest'],
-    ['DKB', 'Dakabin', 'Caboolture'],
-    ['DAR', 'Darra', 'InnerWest'],
-    ['DEG', 'Deagon', 'Shorncliffe'],
-    ['DIR', 'Dinmore', 'Ipswich'],
-    ['BDT', 'Domestic Airport', 'Airport'],
-    ['DBN', 'Doomben', 'Doomben'],
-    ['DUP', 'Dutton Park', 'Beenleigh'],
-    ['EGJ', 'Eagle Junction', 'InnerNorth'],
-    ['EIP', 'East Ipswich', 'Ipswich'],
-    ['EBV', 'Ebbw Vale', 'Ipswich'],
-    ['EDL', 'Eden’s Landing', 'Beenleigh'],
-    ['EMH', 'Elimbah', 'Nambour'],
-    ['EGG', 'Enoggera', 'FernyGrove'],
-    ['EUD', 'Eudlo', 'Nambour'],
-    ['EUM', 'Eumundi', 'Gympie'],
-    ['FFI', 'Fairfield', 'Beenleigh'],
-    ['FYG', 'Ferny Grove', 'FernyGrove'],
-    ['BRC', 'Fortitude Valley', 'City'],
-    ['FTG', 'Fruitgrove', 'Beenleigh'],
-    ['GAI', 'Gailes', 'Ipswich'],
-    ['GAO', 'Gaythorne', 'FernyGrove'],
-    ['GEB', 'Geebung', 'Petrie'],
-    ['GSS', 'Glasshouse Mountains', 'Nambour'],
-    ['GDQ', 'Goodna', 'Ipswich'],
-    ['GVQ', 'Graceville', 'InnerWest'],
-    ['GOQ', 'Grovely', 'FernyGrove'],
-    ['GYN', 'Gympie North', 'Gympie'],
-    ['HLN', 'Helensvale', 'GoldCoast'],
-    ['HMM', 'Hemmant', 'Cleveland'],
-    ['HDR', 'Hendra', 'Doomben'],
-    ['HVW', 'Holmview', 'Beenleigh'],
-    ['IDP', 'Indooroopilly', 'InnerWest'],
-    ['BIT', 'International Airport', 'Airport'],
-    ['IPS', 'Ipswich', 'Ipswich'],
-    ['KGR', 'Kallangur', 'RedcliffePeninsula'],
-    ['KRA', 'Karrabin', 'Rosewood'],
-    ['KEP', 'Keperra', 'FernyGrove'],
-    ['KGT', 'Kingston', 'Beenleigh'],
-    ['KPR', 'Kippa-Ring', 'RedcliffePeninsula'],
-    ['KRY', 'Kuraby', 'Beenleigh'],
-    ['LSH', 'Landsborough', 'Nambour'],
-    ['LWO', 'Lawnton', 'Petrie'],
-    ['LDM', 'Lindum', 'Cleveland'],
-    ['LGL', 'Loganlea', 'Beenleigh'],
-    ['LOT', 'Lota', 'Cleveland'],
-    ['MGH', 'Mango Hill', 'RedcliffePeninsula'],
-    ['MGE', 'Mango Hill East', 'RedcliffePeninsula'],
-    ['MNY', 'Manly', 'Cleveland'],
-    ['MTZ', 'Milton', 'InnerWest'],
-    ['MHQ', 'Mitchelton', 'FernyGrove'],
-    ['MOH', 'Mooloolah', 'Nambour'],
-    ['MQK', 'Moorooka', 'Beenleigh'],
-    ['MYE', 'Morayfield', 'Caboolture'],
-    ['MGS', 'Morningside', 'Cleveland'],
-    ['MJE', 'Murarrie', 'Cleveland'],
-    ['MRD', 'Murrumba Downs', 'RedcliffePeninsula'],
-    ['NBR', 'Nambour', 'Nambour'],
-    ['NRB', 'Narangba', 'Caboolture'],
-    ['NRG', 'Nerang', 'GoldCoast'],
-    ['NWM', 'Newmarket', 'FernyGrove'],
-    ['NPR', 'Norman Park', 'Cleveland'],
-    ['NBD', 'North Boondall', 'Shorncliffe'],
-    ['NTG', 'Northgate', 'InnerNorth'],
-    ['NUD', 'Nudgee', 'Shorncliffe'],
-    ['NND', 'Nundah', 'InnerNorth'],
-    ['ORM', 'Ormeau', 'GoldCoast'],
-    ['ORO', 'Ormiston', 'Cleveland'],
-    ['OXP', 'Oxford Park', 'FernyGrove'],
-    ['OXL', 'Oxley', 'InnerWest'],
-    ['PAL', 'Palmwoods', 'Nambour'],
-    ['PKR', 'Park Road', 'InnerSouth'],
-    ['PET', 'Petrie', 'Petrie'],
-    ['PMQ', 'Pomona', 'Gympie'],
-    ['RDK', 'Redbank', 'Ipswich'],
-    ['RHD', 'Richlands', 'Springfield'],
-    ['RVV', 'Riverview', 'Ipswich'],
-    ['ROB', 'Robina', 'GoldCoast'],
-    ['RKE', 'Rocklea', 'Beenleigh'],
-    ['RS', 'Roma Street', 'City'],
-    ['RSW', 'Rosewood', 'Rosewood'],
-    ['RWL', 'Rothwell', 'RedcliffePeninsula'],
-    ['RUC', 'Runcorn', 'Beenleigh'],
-    ['SLY', 'Salisbury', 'Beenleigh'],
-    ['SGE', 'Sandgate', 'Shorncliffe'],
-    ['SHW', 'Sherwood', 'InnerWest'],
-    ['SHC', 'Shorncliffe', 'Shorncliffe'],
-    ['SBA', 'South Bank', 'InnerSouth'],
-    ['SBE', 'South Brisbane', 'InnerSouth'],
-    ['SFD', 'Springfield', 'Springfield'],
-    ['SFC', 'Springfield Central', 'Springfield'],
-    ['SPN', 'Strathpine', 'Petrie'],
-    ['SYK', 'Sunnybank', 'Beenleigh'],
-    ['SSN', 'Sunshine', 'Petrie'],
-    ['TIQ', 'Taringa', 'InnerWest'],
-    ['TAO', 'Thagoona', 'Rosewood'],
-    ['THS', 'Thomas Street', 'Rosewood'],
-    ['TNS', 'Thorneside', 'Cleveland'],
-    ['TBU', 'Toombul', 'InnerNorth'],
-    ['TWG', 'Toowong', 'InnerWest'],
-    ['TRA', 'Traveston', 'Gympie'],
-    ['TDP', 'Trinder Park', 'Beenleigh'],
-    ['VYS', 'Varsity Lakes', 'GoldCoast'],
-    ['VGI', 'Virginia', 'Petrie'],
-    ['WAC', 'Wacol', 'Ipswich'],
-    ['WOQ', 'Walloon', 'Rosewood'],
-    ['WPT', 'Wellington Point', 'Cleveland'],
-    ['WLQ', 'Wilston', 'FernyGrove'],
-    ['WID', 'Windsor', 'FernyGrove'],
-    ['WOI', 'Woodridge', 'Beenleigh'],
-    ['WWI', 'Wooloowin', 'InnerNorth'],
-    ['WOB', 'Woombye', 'Nambour'],
-    ['WUL', 'Wulkuraka', 'Rosewood'],
-    ['WNM', 'Wynnum', 'Cleveland'],
-    ['WNC', 'Wynnum Central', 'Cleveland'],
-    ['WYH', 'Wynnum North', 'Cleveland'],
-    ['YAN', 'Yandina', 'Gympie'],
-    ['YLY', 'Yeerongpilly', 'Beenleigh'],
-    ['YRG', 'Yeronga', 'Beenleigh'],
-    ['ZLL', 'Zillmere', 'Petrie']
-    ]
+   [code, info['name'], info['line']]
+   for code, info in STATIONS_MASTER['stations'].items()
+   if not info.get('non_revenue', False)
+]
+# Replace byline_list - byline terminus stations only
+byline_list = [
+   [code, info['name'], info['line']]
+   for code, info in STATIONS_MASTER['stations'].items()
+   if info.get('byline_terminus', False)
+   and not info.get('non_revenue', False)
+]
+
 
 # stationlist = [x[0] for x in byline_list]
 # stationlist = [x[0] for x in bystation_list]
@@ -314,15 +153,11 @@ def TTS_FL(path, mypath = None):
             return (arrival,departure)
         
         
-        
-        
-    
-        
-        
-            
               
         for i,day in enumerate(daylist):
             
+
+            #### THIS EXCLUDES EMPTY TRAINS
             rsx1 = [x for x in root1.iter('train') if x[0][0][0].attrib['weekdayKey'] == day and 'Empty' not in x[1][0].attrib['trainTypeId']]
             rsx2 = [x for x in root2.iter('train') if x[0][0][0].attrib['weekdayKey'] == day and 'Empty' not in x[1][0].attrib['trainTypeId']]
         
@@ -343,29 +178,30 @@ def TTS_FL(path, mypath = None):
                 ddep = destin.attrib['departure']
                 stations = [x.attrib['stationID'] for x in entries]
                 
-                
+                city_idx = next((stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations),None)
+
+
+                if city_idx is None:
+                    continue # skip it for now because its a shuttle
+
+
                 # if intersection #!!!
                 for n,entry in enumerate(entries):
                     arr, dep = stoptime_info(n)
                     
-                    
-                    for k,v in file1_startdict.items():
-                        if 'BNC' in stations and entry.attrib['stationID'] == k:
-                            if stations.index('BNC') > n and dep < v[i][0]:
+                    for k, v in file1_startdict.items():
+                        if entry.attrib['stationID'] == k:
+                            if city_idx > n and dep < v[i][0]:
                                 file1_startdict[k][i][0] = dep
-                            if stations.index('BNC') < n and arr < v[i][1]:
+                            if city_idx < n and arr < v[i][1]:
                                 file1_startdict[k][i][1] = arr
-                            
-                                
-                                        
-                                        
-                    for k,v in file1_enddict.items():
-                        if 'BNC' in stations and entry.attrib['stationID'] == k:
-                            if stations.index('BNC') > n and dep > v[i][0]:
+                    for k, v in file1_enddict.items():
+                        if entry.attrib['stationID'] == k:
+                            if city_idx > n and dep > v[i][0]:
                                 file1_enddict[k][i][0] = dep
-                            
-                            if stations.index('BNC') < n and arr > v[i][1]:
+                            if city_idx < n and arr > v[i][1]:
                                 file1_enddict[k][i][1] = arr
+                                        
     
                     
             
@@ -379,38 +215,34 @@ def TTS_FL(path, mypath = None):
                 origin = entries[0]
                 destin = entries[-1]
                 unit   = origin.attrib['trainTypeId'].split('-',1)[1]
-                    
-                
                 oID = origin.attrib['stationID']
                 dID = destin.attrib['stationID']
                 odep = origin.attrib['departure']
                 ddep = destin.attrib['departure']
-                
                 stations = [x.attrib['stationID'] for x in entries]
-                
-                # if intersection #!!!
-                for n,entry in enumerate(entries):
+                city_idx = next(  
+                    (stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations),
+                    None
+                )
+                if city_idx is None:
+                    continue
+                for n, entry in enumerate(entries):
                     arr, dep = stoptime_info(n)
+                    for k, v in file2_startdict.items():  
+                        if entry.attrib['stationID'] == k:
+                            if city_idx > n and dep < v[i][0]:
+                                file2_startdict[k][i][0] = dep  
+                            if city_idx < n and arr < v[i][1]:
+                                file2_startdict[k][i][1] = arr  
+                    for k, v in file2_enddict.items():   
+                        if entry.attrib['stationID'] == k:
+                            if city_idx > n and dep > v[i][0]:
+                                file2_enddict[k][i][0] = dep    
+                            if city_idx < n and arr > v[i][1]:
+                                file2_enddict[k][i][1] = arr    
+                                                        
+    
                     
-                    
-                    for k,v in file2_startdict.items():
-                        
-                        
-                        if 'BNC' in stations and entry.attrib['stationID'] == k:
-                            if stations.index('BNC') > n and dep < v[i][0]:
-                                file2_startdict[k][i][0] = dep
-                            if stations.index('BNC') < n and arr < v[i][1]:
-                                file2_startdict[k][i][1] = arr
-                                
-                                
-                    for k,v in file2_enddict.items():
-                        if 'BNC' in stations and entry.attrib['stationID'] == k:
-                            if stations.index('BNC') > n and dep > v[i][0]:
-                                file2_enddict[k][i][0] = dep
-                            
-                            if stations.index('BNC') < n and arr > v[i][1]:
-                                file2_enddict[k][i][1] = arr
-                                
             
         def cleanup(dictionary):
             for k,v in dictionary.items():
@@ -635,15 +467,6 @@ def TTS_FL(path, mypath = None):
                     os.startfile(rf'{filename_xlsx}')
                     print('\nOpening workbook')  
         
-        # if CreateWorkbook:
-        #     print('Creating workbook')  
-        #     workbook.close()
-        #     if OpenWorkbook and __name__ == "__main__":
-        #         os.startfile(rf'{filename_xlsx}')
-        #         print('\nOpening workbook')   
-        #     else:
-        #         if copyfile:
-        #             shutil.copy(filename_xlsx, mypath) 
                 
         
         if ProcessDoneMessagebox and __name__ == "__main__":
