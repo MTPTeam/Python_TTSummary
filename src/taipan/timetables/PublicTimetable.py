@@ -12,6 +12,7 @@ from taipan.constants.days import ID_TO_SHORT, ID_TO_ALIAS, NAME_TO_ID, DAY_PRIO
 from taipan.gui.base import open_file_crossplatform, select_checkboxes, show_info, select_file, show_info, show_info_scroll
 import traceback
 import logging
+from taipan.core.xml_parser import parse_rsx
 
 ### CreateFile toggles whether text files are generated on running the script
 ### OpenWorkbook will subsequently open the newly created files for the user
@@ -94,11 +95,7 @@ def TTS_PTT(path, mypath = None):
         if __name__ == "__main__":
             print(filename,'\n')
        
-        tree = ET.parse(filename)
-        root = tree.getroot()
         
-        entryelems = root.findall('.//entry')
-        tunnel = 'RTL' in {x.attrib['stationID'] for x in entryelems}
         CITY_TERMINUS = {
             ('south', False): 'BHI',
             ('south', True):  'EXH',
@@ -123,23 +120,8 @@ def TTS_PTT(path, mypath = None):
         sundayworkbook =   xlsxwriter.Workbook(sundayfilename_xlsx)
         
               
-        ### Check for duplicate train numbers before executing the script
-        ### Print warning for user if duplicates exist
-        ### Print out all duplicates
-        tn_list = []
-        tn_doubles = []
-        for train in root.iter('train'):
-            tn  = train.attrib['number']; day = train[0][0][0].attrib['weekdayKey']
-            if (tn,day) in tn_list: tn_doubles.append((tn,day))
-            tn_list.append((tn,day))
-                
-        if tn_doubles:
-            print('           Error: Duplicate train numbers')
-            for tn,day in tn_doubles: print(f' - 2 trains running on {ID_TO_SHORT[day]} with train number {tn} - ')
-            time.sleep(15)
-            sys.exit() 
-        
-        start_time = time.time()
+       
+       
     
         line_station_lookup = {
         code: s['line']
@@ -154,28 +136,31 @@ def TTS_PTT(path, mypath = None):
 
         
         ### d_list      tracks the days present in the rsx
-        ### newstations tracks if new locations have been added to the geography that haven't yet been added to stationmaster
-        ###              will allow the code to continue without erroring, stationmaster should then be amended 
-        d_list = []
-        newstations = set()
-        revtrains = [x for x in root.iter('train') if 'Empty' not in x[1][0].attrib['trainTypeId']]
+        ### newstations tracks if new locations have been added to the geography that haven't yet been added to stationmaster will allow the code to continue without erroring, stationmaster should then be amended 
+       
         
-        for train in revtrains:
-            tn  = train.attrib['number']
-            WeekdayKey = train[0][0][0].attrib['weekdayKey']
-            entries = [x for x in train.iter('entry')]
-            
-            if WeekdayKey not in d_list:
-                d_list.append(WeekdayKey)
-                
-            for entry in entries:
+        root, trains, d_list, _, _, duplicates = parse_rsx(path,want_trains=True,want_duplicates=True,want_days=True)
+        # Filter d_list to revenue trains only
+        revenue_weekdays = {t.weekday for t in trains if not t.is_empty_train}
+        d_list = [d for d in d_list if d in revenue_weekdays]
+        tunnel = 'RTL' in {e.attrib['stationID'] for t in root.iter('train') for e in t.iter('entry')}
+        if duplicates:
+            print('           Error: Duplicate train numbers')
+            for tn, day in duplicates:
+                print(f' - 2 trains running on {ID_TO_SHORT[day]} with train number {tn} - ')
+            time.sleep(15)
+            sys.exit()
+        start_time = time.time()
+        # scan once for any stationIDs not in STATIONS_MASTER
+        newstations = set()
+        for train in root.iter('train'):
+            for entry in train.iter('entry'):
                 stID = entry.attrib['stationID']
                 name = entry.attrib['stationName']
-
                 if stID not in STATIONS_MASTER['stations']:
                     newstations.add(name)
                     name_to_code[name] = stID
-        
+
 
 
         day_options = []
