@@ -9,6 +9,7 @@ from datetime import datetime
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
+from taipan.constants.locations import STATIONS_MASTER
 
 from PyQt6.QtWidgets import QApplication
 
@@ -29,82 +30,19 @@ headers = ['First Service (Depart)','Station','Last Service (arrive)']
 
 
 stables = {
-    'FYG':['24:00:00','00:00:00'],
-    'BNH':['24:00:00','00:00:00'],
-    'SHC':['24:00:00','00:00:00'],
-    'CVN':['24:00:00','00:00:00'],
-    'BDT':['24:00:00','00:00:00'],
-    'VYS':['24:00:00','00:00:00'],
-    'DBN':['24:00:00','00:00:00'],
-    'PET':['24:00:00','00:00:00'],
-    'CAB':['24:00:00','00:00:00'],
-    'KPR':['24:00:00','00:00:00'],
-    'NBR':['24:00:00','00:00:00'],
-    'GYN':['24:00:00','00:00:00'],
-    'IPS':['24:00:00','00:00:00'],
-    'RSW':['24:00:00','00:00:00'],
-    'SFC':['24:00:00','00:00:00'],
-    'AIN':['24:00:00','00:00:00'],
-    'PKR':['24:00:00','00:00:00'],
-    'RS' :['24:00:00','00:00:00'],
-    'DAR':['24:00:00','00:00:00']
-    }
+   code: ['24:00:00', '00:00:00']
+   for code, info in STATIONS_MASTER['stations'].items()
+   if info.get('byline_terminus', False)
+   and not info.get('non_revenue', False)
+}
+
 
 stationmaster = {
-    'FYG': 'Ferny Grove',
-    'BNH': 'Beenleigh',
-    'SHC': 'Shorncliffe',
-    'CVN': 'Cleveland',
-    'BDT': 'Domestic Airport',
-    'VYS': 'Varsity Lakes',
-    'DBN': 'Doomben',
-    'PET': 'Petrie',
-    'CAB': 'Caboolture',
-    'KPR': 'Kippa-Ring',
-    'NBR': 'Nambour',
-    'GYN': 'Gympie North',
-    'IPS': 'Ipswich',
-    'RSW': 'Rosewood',
-    'SFC': 'Springfield Central',
-    'AIN': 'Albion',
-    'PKR': 'Park Road',
-    'RS': 'Roma Street',
-    'DAR': 'Darra'
-    }
-
-
-
-# def timetrim(timestring):
-#     """ Format converter from hh:mm:ss to hh:mm """ #!!!
-#     # print(timestring)
-#     # if type(timestring) == list:
-#     #     timestring = timestring[0]
-#     meridiem = ' AM' if timestring < '12:00:00' or timestring >= '24:00:00' else ' PM'
-    
-#     if timestring is None or timestring.isalpha() or ':' not in timestring or 'AM' in timestring or 'PM' in timestring:
-#         pass
-#     else:
-#         if timestring[0] == '0':
-#             timestring = timestring[1:]
-#         elif '13:00:00' <= timestring <'25:00:00':
-#             timestring = str(int(timestring[0:2]) - 12) + timestring[2:]
-#         elif timestring >= '25:00:00':
-#             timestring = str(int(timestring[0:2]) - 24) + timestring[2:]
-    
-#         timestring = timestring[:-3]
-        
-#         timestring += meridiem
-        
-    
-    
-#     return timestring
-
-
-
-
-
-
-
+   code: info['name']
+   for code, info in STATIONS_MASTER['stations'].items()
+   if info.get('byline_terminus', False)
+   and not info.get('non_revenue', False)
+}
 
 
 def TTS_SFL(path, mypath = None):
