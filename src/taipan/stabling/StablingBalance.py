@@ -190,6 +190,7 @@ def TTS_SB(path, mypath = None):
             sheet.merge_range(0, 0, 0, widecol2, f'{sheet.get_name()} stabling balance - {filename}', title)
             sheet.write_row(1, 0,  headers1, header)
             sheet.write_row(1, 11, headers2, header)
+            sheet.freeze_panes(2, 0)
             yard_name = sheet.get_name()
             firstrow = 2
             outlists = [mon_out, tue_out, wed_out, thu_out, mth_out, fri_out, sat_out, sun_out]

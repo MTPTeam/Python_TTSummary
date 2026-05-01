@@ -168,6 +168,9 @@ def TTS_SC(path, mypath = None):
             
             sheet.merge_range('A1:N1',f'{sheet.get_name()} stabling balance - {filename}', title)
             sheet.write_row(    1,0,headers,header)
+            sheet.freeze_panes(2, 0)
+
+         
         
             firstrow = 2
             for d in [mon,tue,wed,thu,mth,fri,sat,sun]:
