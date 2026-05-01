@@ -207,7 +207,7 @@ def TTS_PTT(path, mypath = None):
             if day:
                 workbooks.append(daysheet)
             
-    
+        unmatched = []
         if newstations:
             print('Locations not recorded in station dictionary')
             print('--------------------------------------------')
@@ -884,7 +884,6 @@ def TTS_PTT(path, mypath = None):
 
 
             all_trip_ids = set()
-            unmatched = []
             for lst in trip_lists.values():
                 for t in lst:
                     for tid in t['Train ID'].split('|'):
@@ -908,8 +907,8 @@ def TTS_PTT(path, mypath = None):
                     if entries:
                         oID_p = entries[0].attrib['stationID']
                         dID_p = entries[-1].attrib['stationID']
-                        print(f'Unmatched revenue train: {tn} {oID_p}->{dID_p}')
-                        unmatched.append((tn, oID_p, dID_p))
+                        #print(f'Unmatched revenue train: {tn} {oID_p}->{dID_p}')
+                        unmatched.append((tn, oID_p, dID_p, daycode))
 
 
             shuttle_trips.clear()
@@ -943,6 +942,7 @@ def TTS_PTT(path, mypath = None):
         ### Format the broadsheet
         ### Print the data
         ### Generate and open the workbook
+    
         for book in workbooks: 
             timetableinfo = book.add_worksheet('TimetableInfo')
             BNH_in        = book.add_worksheet('BNH-In')
@@ -1182,8 +1182,11 @@ def TTS_PTT(path, mypath = None):
            
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Public Timetable','Process Done')
-            
+            if unmatched:
+                msg = '\n'.join(f'{tn}  {o} -> {d}  ({day})' for tn, o, d, day in unmatched)
+                show_info_scroll('Unmatched Revenue Trains', msg)
+            else:
+                show_info('Public Timetable', 'All trains matched successfully')
     
     except Exception as e:
         logging.error(traceback.format_exc())
