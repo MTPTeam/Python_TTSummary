@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ET
 from PyQt6.QtWidgets import QApplication
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 from taipan.constants.locations import STATIONS_MASTER
+from taipan.core.xml_parser import parse_rsx
 
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 import traceback
@@ -69,45 +70,28 @@ def TTS_FL(path, mypath = None):
         ### File 1
         ###############################################################################################
 
-        
         directory = '\\'.join(path.split('/')[0:-1])
         os.chdir(directory)
         filename1 = path.split('/')[-1]
-        
-        
-       
-        tree1 = ET.parse(filename1)
-        root1 = tree1.getroot()
+        root1, trains1, _, _, _, _ = parse_rsx(path, want_trains=True)
         filename1 = filename1[:-4]
         ###############################################################################################
-        
-        
-        
         
         
         ### File 2
         ###############################################################################################
         app = QApplication(sys.argv)
-        path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-        tree2 = ET.parse(path)
-        root2 = tree2.getroot()
+        path2 = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+        root2, trains2, _, _, _, _ = parse_rsx(path2, want_trains=True)
         filename2 = path.split('/')[-1]
         filename2 = filename2[:-4]
         ###############################################################################################
-        
-        
-        
-        
-        
-        
         
         print(filename1)
         print(filename2)
         print()
         start_time = time.time()
-        
-        
-        
+    
         os.chdir(directory)
         
         
@@ -155,40 +139,18 @@ def TTS_FL(path, mypath = None):
         
               
         for i,day in enumerate(daylist):
-            
-
-            #### THIS EXCLUDES EMPTY TRAINS
-            rsx1 = [x for x in root1.iter('train') if x[0][0][0].attrib['weekdayKey'] == day and 'Empty' not in x[1][0].attrib['trainTypeId']]
-            rsx2 = [x for x in root2.iter('train') if x[0][0][0].attrib['weekdayKey'] == day and 'Empty' not in x[1][0].attrib['trainTypeId']]
-        
-            
-        
-            
-            for train in rsx1:
-                tn  = train.attrib['number']
-                WeekdayKey = train[0][0][0].attrib['weekdayKey']
-                entries = [x for x in train.iter('entry')]
-                origin = entries[0]
-                destin = entries[-1]
-                unit   = origin.attrib['trainTypeId'].split('-',1)[1]
-                    
-                oID = origin.attrib['stationID']
-                dID = destin.attrib['stationID']
-                odep = origin.attrib['departure']
-                ddep = destin.attrib['departure']
-                stations = [x.attrib['stationID'] for x in entries]
-                
-                city_idx = next((stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations),None)
 
 
+            for t in trains1:
+                if t.weekday != day or t.is_empty_train:
+                    continue
+                entries = t.entries
+                stations = t.station_ids
+                city_idx = next((stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations), None)
                 if city_idx is None:
-                    continue # skip it for now because its a shuttle
-
-
-                # if intersection #!!!
-                for n,entry in enumerate(entries):
+                    continue
+                for n, entry in enumerate(entries):
                     arr, dep = stoptime_info(n)
-                    
                     for k, v in file1_startdict.items():
                         if entry.attrib['stationID'] == k:
                             if city_idx > n and dep < v[i][0]:
@@ -201,46 +163,32 @@ def TTS_FL(path, mypath = None):
                                 file1_enddict[k][i][0] = dep
                             if city_idx < n and arr > v[i][1]:
                                 file1_enddict[k][i][1] = arr
-                                        
-    
-                    
-            
-            
-        
-            
-            for train in rsx2:
-                tn  = train.attrib['number']
-                WeekdayKey = train[0][0][0].attrib['weekdayKey']
-                entries = [x for x in train.iter('entry')]
-                origin = entries[0]
-                destin = entries[-1]
-                unit   = origin.attrib['trainTypeId'].split('-',1)[1]
-                oID = origin.attrib['stationID']
-                dID = destin.attrib['stationID']
-                odep = origin.attrib['departure']
-                ddep = destin.attrib['departure']
-                stations = [x.attrib['stationID'] for x in entries]
-                city_idx = next(  
-                    (stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations),
-                    None
-                )
+
+
+            for t in trains2:
+                if t.weekday != day or t.is_empty_train:
+                    continue
+                entries = t.entries
+                stations = t.station_ids
+                city_idx = next((stations.index(c) for c in ['BNC', 'RS', 'RTL'] if c in stations), None)
                 if city_idx is None:
                     continue
                 for n, entry in enumerate(entries):
                     arr, dep = stoptime_info(n)
-                    for k, v in file2_startdict.items():  
+                    for k, v in file2_startdict.items():
                         if entry.attrib['stationID'] == k:
                             if city_idx > n and dep < v[i][0]:
-                                file2_startdict[k][i][0] = dep  
+                                file2_startdict[k][i][0] = dep
                             if city_idx < n and arr < v[i][1]:
-                                file2_startdict[k][i][1] = arr  
-                    for k, v in file2_enddict.items():   
+                                file2_startdict[k][i][1] = arr
+                    for k, v in file2_enddict.items():
                         if entry.attrib['stationID'] == k:
                             if city_idx > n and dep > v[i][0]:
-                                file2_enddict[k][i][0] = dep    
+                                file2_enddict[k][i][0] = dep
                             if city_idx < n and arr > v[i][1]:
-                                file2_enddict[k][i][1] = arr    
-                                                        
+                                file2_enddict[k][i][1] = arr
+                        
+
     
                     
             

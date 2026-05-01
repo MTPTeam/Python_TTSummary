@@ -10,6 +10,7 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 from taipan.constants.locations import STATIONS_MASTER
+from taipan.core.xml_parser import parse_rsx
 
 from PyQt6.QtWidgets import QApplication
 
@@ -90,8 +91,7 @@ def TTS_SFL(path, mypath = None):
         
         
        
-        tree = ET.parse(filename)
-        root = tree.getroot()
+        root, trains, _, _, _, _ = parse_rsx(path, want_trains=True)
         filename = filename[:-4]
         
         if __name__ == "__main__":
@@ -114,22 +114,11 @@ def TTS_SFL(path, mypath = None):
         SFL.write(0,0,filename,boldleft)
         
         for i,day in enumerate(daylist):
-            rsx = [x for x in root.iter('train') if x[0][0][0].attrib['weekdayKey'] == day and 'Empty' not in x[1][0].attrib['trainTypeId']]
-            for train in rsx:
-                tn  = train.attrib['number']
-                WeekdayKey = train[0][0][0].attrib['weekdayKey']
-                entries = [x for x in train.iter('entry')]
-                origin = entries[0]
-                destin = entries[-1]
-                unit   = origin.attrib['trainTypeId'].split('-',1)[1]
-                    
-                oID = origin.attrib['stationID']
-                dID = destin.attrib['stationID']
-                odep = origin.attrib['departure']
-                ddep = destin.attrib['departure']
-                stations = [x.attrib['stationID'] for x in entries]
-                
-                
+            for t in trains:
+                if t.weekday != day or t.is_empty_train:
+                    continue
+                entries = t.entries
+                            
                 # if intersection #!!!
                 for n,entry in enumerate(entries):
                     arr, dep = stoptime_info(n)
