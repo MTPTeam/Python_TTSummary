@@ -318,7 +318,7 @@ YARDS = {
    'Mayne East':    {'capacity': 17,  'yards': ['MES'],                'sector': 1},
     # Not yet online
    'Birtinya':      {'capacity': None, 'yards': ['BIRS'], 'sector': 1},
-   'Mayne North':   {'capacity': 18,  'yards': ['YN', 'MNS'],         'sector': 2},
+   'Mayne North':   {'capacity': 18,  'yards': ['YN', 'MNS', 'MNYE'],         'sector': 2},
    'Mayne West':    {'capacity': 29,  'yards': ['ETB', 'ETF', 'ETS', 'MWS', 'RS', 'BHI']},  # mixed yard, one total capacity no fleet restriction 
    'Wulkuraka':     {'capacity': 8,   'ngr_only': True,  'yards': ['WFE', 'WFW', 'FEE'], 'sector': 2}, # NGR only yard
    'Ipswich':       {'capacity': 6.5, 'qr_only': True,   'yards': ['IPSS', 'IPS'],        'sector': 2}, # QR only yard 
@@ -331,11 +331,25 @@ YARDS = {
 # other locations that are not stations and not yards
 
 MISC_LOCATIONS = {
-    # turnbacks and other places 
-    'VYST': { 'name': 'Varsity Lakes Turnback', 'sector': 1 },
-    'BNT':  { 'name': 'Beenleigh Turnback',     'sector': 1 }, 
+   'VYST': {'name': 'Varsity Lakes Turnback', 'sector': 1},
+   'BNT':  {'name': 'Beenleigh Turnback',     'sector': 1},
+   'MNYE': {'name': 'Mayne North Yard Entrance'},
+   'BHNJ': {'name': 'Bowen Hills North Jn'},
+   'RSWJ': {'name': 'Roma St West Junction'},
+   'SIG9A':    {'name': 'Signal 9 Arrival'},
+   'SIG10D':   {'name': 'Signal 10 Departure'},
+   'ZZZTJN':   {'name': 'Tunnel Junction'},
+   'TNYBCHJ':  {'name': 'Tennyson Branch Junction'},
+   'YLYJ': {'name': 'Yeerongpilly Junction'},
+   'STP':  {'name': 'Southern Tunnel Portal'},
+   'NTP':  {'name': 'Northern Tunnel Portal'},
+   'LBR':  {'name': 'Land Bridge'},
+   'MEJ':  {'name': 'Mayne East Junction'},
+   'SLYJ': {'name': 'Salisbury Junction'},
+   'FRK':  {'name': 'Fork Timing Point'},
+   'CYJ':  {'name': 'Clapham Yard Junction'},
+   'ORMJ': {'name': 'Ormeau Junction'},
 }
-
 
 # update internal list of non stable yards 
 NON_STABLE_LOCATIONS = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
