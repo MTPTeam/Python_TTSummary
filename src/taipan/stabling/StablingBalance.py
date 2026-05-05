@@ -446,7 +446,7 @@ def TTS_SB(path, mypath = None):
         
         if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Public Timetable', 'Process Done')
+            show_info('Stabling Balance', 'Process Done')
     
     except Exception as e:
         logging.error(traceback.format_exc())
@@ -455,14 +455,21 @@ def TTS_SB(path, mypath = None):
             
 if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
     
-    start_time = time.perf_counter()
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    end_time = time.perf_counter()
-    # Calculate the elapsed time - checking if pyqt is consistently faster than tk (should be)
-    elapsed_time = end_time - start_time
-    print(f"Elapsed time: {elapsed_time:.4f} seconds")
+    app = QApplication.instance() or QApplication(sys.argv)
 
-    TTS_SB(path)  
+    start_time = time.perf_counter()
+
+    path = select_file(
+        caption="Select RSX file",
+        directory="",
+        filter_str="RSX Files (*.rsx);;All Files (*.*)"
+    )
+
+    end_time = time.perf_counter()
+    print(f"Elapsed time: {end_time - start_time:.4f} seconds")
+
+    if path:   # ✅ important
+        TTS_SB(path)
+
 

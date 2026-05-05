@@ -1180,7 +1180,7 @@ def TTS_PTT(path, mypath = None):
                 if '1' in d_list:
                     write_workbook('Sunday', ['1'])
            
-        if ProcessDoneMessagebox and __name__ == "__main__":
+        if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             if unmatched:
                 msg = '\n'.join(f'{tn}  {o} -> {d}  ({day})' for tn, o, d, day in unmatched)
@@ -1194,6 +1194,6 @@ def TTS_PTT(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
     path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
     TTS_PTT(path)
