@@ -11,10 +11,8 @@ import pandas as pd
 from datetime import datetime
 from datetime import date
 import xml.etree.ElementTree as ET
-
-import tkinter as tk
-from tkinter import messagebox
-from tkinter.filedialog import askopenfilename
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from PyQt6.QtWidgets import QApplication
 
 import traceback
 import logging
@@ -77,7 +75,7 @@ def is_file_open(file_path):
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Define the Main Function #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~#
-def NGR_DPP(path, path_char, mypath = None):
+def NGR_WPP(path, path_char, mypath = None):
  
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
     
@@ -1492,7 +1490,7 @@ def NGR_DPP(path, path_char, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            messagebox.showinfo('','Process Done')
+            show_info('','Process Done')
         if CreateWorkbook:
             workbook.close()
             print('Creating workbook')  
@@ -1510,23 +1508,32 @@ def NGR_DPP(path, path_char, mypath = None):
     except Exception as e: # without defining exceptions, a "try" command cannot be executed
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
-            messagebox.showinfo('', 'Please choose valid files. \n \nThis process requires an RSX and Excel output.')
+            show_info('', 'Please choose valid files. \n \nThis process requires an RSX and Excel output.')
             time.sleep(1)
             
-            
+
+
+def run_ngr_wpp(path=None, path_char=None):
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    if not path:
+        show_info("", "Please choose your RSX.")
+        path = select_file(filter_str="RSX Files (*.rsx)")
+
+    if not path:
+        return
+
+    if not path_char:
+        show_info("", "Please choose your Train Characteristics file.")
+        path_char = select_file(filter_str="All Files (*.*)")
+
+    if not path_char:
+        return
+
+    NGR_WPP(path, path_char)
+
 #~~~~~~~~~~~~~~~~~~~~~~#
 # Calling the Function #
 #~~~~~~~~~~~~~~~~~~~~~~#
 if __name__ == "__main__":
-    rsxselecta = tk.Tk() # creates tkinter window
-    rsxselecta.withdraw() # we don't want a full GUI, so keep the root window from appearing
-    rsxselecta.lift() # brings to the front
-    rsxselecta.attributes('-topmost', 1)
-    rsxselecta.update() # updates tkinter process to ensure it is complete before requesting a file
-    messagebox.showinfo('', 'Please choose your RSX.')
-    path = askopenfilename(title="Select your RSX") # requests the user to select a file
-    messagebox.showinfo('', 'Please choose your Train Characteristics file.')
-    path_char = askopenfilename(title="Select your Train Characteristics file")
-    
-    rsxselecta.destroy() # destroys tkinter window and variables within it
-    NGR_DPP(path,path_char) # runs the script
+    run_ngr_wpp()

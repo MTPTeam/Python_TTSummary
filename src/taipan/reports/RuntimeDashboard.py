@@ -1274,10 +1274,15 @@ def runtime_dashboard(path, mypath=None):
             time.sleep(10)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    path = select_file(caption="Select your RSX", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    if path:
-        runtime_dashboard(path)
+
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    if len(sys.argv) > 1:
+        runtime_dashboard(sys.argv[1])
     else:
-        show_info('Runtime Dashboard', 'No file selected.', parent=None)
-        time.sleep(10)
+        path = select_file(
+            caption="Select RSX file",
+            filter_str="RSX Files (*.rsx)"
+        )
+        if path:
+            runtime_dashboard(path)

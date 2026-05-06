@@ -185,11 +185,7 @@ def TTS_TC(path, mypath = None):
             filename_xlsx = f'TripCountCENTRAL-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         
-        
-        
-        
-        
-        
+    
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
@@ -1340,9 +1336,10 @@ def TTS_TC(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    path = select_file("Select a file", "", "All Files (*.*)")
+
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     if path:
         TTS_TC(path)
-    else:
-        show_info('Trip Count Report','No file selected.')
+    
