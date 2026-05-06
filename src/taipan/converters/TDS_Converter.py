@@ -346,7 +346,8 @@ def TTS_TDS(path, mypath = None):
             
 if __name__ == "__main__":
 
-    app = QApplication(sys.argv)
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    app = QApplication.instance() or QApplication(sys.argv)
 
-    TTS_TDS(path)
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    if path:
+        TTS_TDS(path)

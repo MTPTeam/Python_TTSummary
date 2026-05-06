@@ -7,8 +7,9 @@ import sys
 import time
 import shutil  
 
-from tkinter import Tk     # from tkinter import Tk for Python 3.x
-from tkinter.filedialog import askopenfilename
+
+from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from PyQt6.QtWidgets import QApplication
 
 import traceback
 import logging
@@ -109,7 +110,7 @@ HASTUS_stableconverter = {
 
 
 
-def TTS_H(path, mypath = None):
+def TTS_HTT(path, mypath = None):
     
     copyfile = '\\'.join(path.split('/')[0:-1]) != mypath and mypath is not None
     
@@ -267,24 +268,7 @@ def TTS_H(path, mypath = None):
         SORT_ORDER_WEEK = ['1','2','4','120']
         d_list.sort(key=SORT_ORDER_WEEK.index)
         
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-        
-                    
-        
-    
-              
-                
-        
-        
-        
+
         ### uniquestations_dict, network_vrt_dict and virtual run time (vrt) dictionaries for each line are used to determine direction (Up or Down)
         ### Originally created for the Working Timetables, selects line if train passes through a location that is unique to a line
         ### If the associated vrt integer for that line is increasing → outbound else inbound, can determine direction from that
@@ -1136,14 +1120,15 @@ def TTS_H(path, mypath = None):
         
         
         if ProcessDoneMessagebox and __name__ == "__main__":
-            from tkinter import messagebox
-            messagebox.showinfo('HASTUS Converter','Process Done')
+            show_info('HASTUS Converter','Process Done')
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
             time.sleep(15)
             
 if __name__ == "__main__":
-    Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
-    path = askopenfilename() 
-    TTS_H(path)
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    if path:
+        TTS_HTT(path)

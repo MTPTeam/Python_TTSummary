@@ -86,6 +86,8 @@ HASTUS_stableconverter = {
     }
 
 
+
+
 def TTS_H(path, mypath = None):
     
     source_dir = os.path.abspath(os.path.dirname(path))
@@ -1046,8 +1048,9 @@ def TTS_H(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+   
+    app = QApplication.instance() or QApplication(sys.argv)
 
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    
-    TTS_H(path)
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    if path:
+        TTS_H(path)
