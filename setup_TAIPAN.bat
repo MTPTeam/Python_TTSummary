@@ -44,7 +44,7 @@ if errorlevel 1 (
 echo.
 :: ── Step 3: Install pywin32 .whl ──────────────
 echo [3/4] Installing pywin32...
-set WHL_PATH=C:\Python_TTSummary\pywin32-311-cp312-cp312-win_amd64.whl
+set WHL_PATH=%~dp0pywin32-311-cp312-cp312-win_amd64.whl
 if exist "%WHL_PATH%" (
    "%~dp0venv\Scripts\python.exe" -m pip install "%WHL_PATH%"
    if errorlevel 1 (
@@ -52,12 +52,15 @@ if exist "%WHL_PATH%" (
    )
 ) else (
    echo   WARNING: .whl file not found at %WHL_PATH%
+   echo   Expected it in the same folder as this .bat file.
    echo   Skipping - add it manually if needed.
 )
 echo.
 :: ── Step 4: Install package in editable mode ──
 echo [4/4] Installing TAIPAN as editable package...
-"%~dp0venv\Scripts\python.exe" -m pip install -e "%~dp0"
+set PROJECT_DIR=%~dp0
+set PROJECT_DIR=%PROJECT_DIR:~0,-1%
+"%~dp0venv\Scripts\python.exe" -m pip install -e "%PROJECT_DIR%"
 if errorlevel 1 (
    echo ERROR: Editable install failed.
    pause & exit /b 1
