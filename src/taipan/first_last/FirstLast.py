@@ -82,7 +82,7 @@ def TTS_FL(path, mypath = None):
         ###############################################################################################
         path2 = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
         root2, trains2, _, _, _, _ = parse_rsx(path2, want_trains=True)
-        filename2 = path.split('/')[-1]
+        filename2 = path2.split('/')[-1]
         filename2 = filename2[:-4]
         ###############################################################################################
         
@@ -96,28 +96,30 @@ def TTS_FL(path, mypath = None):
         
         def timetrim(timestring):
             """ Format converter from hh:mm:ss to hh:mm """
-            
-            # if type(timestring) == list:
-            #     timestring = timestring[0]
-            meridiem = ' AM' if timestring < '12:00:00' or timestring >= '24:00:00' else ' PM'
-            
+
             if timestring is None or timestring.isalpha() or ':' not in timestring:
-                pass
-            else:
-                if timestring[0] == '0':
-                    timestring = timestring[1:]
-                elif '13:00:00' <= timestring <'25:00:00':
-                    timestring = str(int(timestring[0:2]) - 12) + timestring[2:]
-                elif timestring >= '25:00:00':
-                    timestring = str(int(timestring[0:2]) - 24) + timestring[2:]
-            
-                timestring = timestring[:-3]
-                
-                timestring += meridiem
-                
-            
-            
+                return timestring
+
+            # get hour safely
+            hour = int(timestring.split(":")[0])
+
+            meridiem = ' AM' if hour < 12 or hour >= 24 else ' PM'
+
+            if timestring[0] == '0':
+                timestring = timestring[1:]
+
+            elif 13 <= hour < 25:
+                timestring = str(hour - 12) + timestring[len(str(hour)):]
+
+            elif hour >= 25:
+                timestring = str(hour - 24) + timestring[len(str(hour)):]
+
+            timestring = timestring[:-3]
+
+            timestring += meridiem
+
             return timestring
+
     
         def stoptime_info(entry_index): 
             x = entry_index
