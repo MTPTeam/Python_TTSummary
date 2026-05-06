@@ -95,9 +95,10 @@ def slice_rsx(rsx_path: str,desired_blocks: list[str],desired_days: list[str]) -
 
 
 
-def main():
-    app = QApplication(sys.argv)
-    rsx_path = select_file("Select RSX file", filter_str="RSX Files (*.rsx)")
+
+def main(rsx_path=None):
+    app = QApplication.instance() or QApplication(sys.argv)
+    rsx_path = rsx_path or select_file("Select RSX file", filter_str="RSX Files (*.rsx)")
 
     if not rsx_path:
         print("No File Selected")
