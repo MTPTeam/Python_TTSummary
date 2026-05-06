@@ -1,0 +1,859 @@
+import sys
+
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea, QSizePolicy, QGridLayout, QGraphicsDropShadowEffect
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFont, QCursor, QColor
+from taipan.reports.ErrorChecker import main as run_qa
+from taipan.gui.base import select_file, select_multi_rsx_files, show_info
+from taipan.timetables.PublicTimetable import TTS_PTT
+from taipan.stabling.StablingBalance import TTS_SB
+from taipan.stabling.StablingCount import TTS_SC
+from taipan.stabling.StablingCountStepGraph import TTS_Graph
+from taipan.run_renamers.run_renamer_new import assign_line_ids
+from taipan.rsx.SectoriseRSX import sectorise
+from taipan.rsx.train_renamer import main as rename_trains
+from taipan.reports.TrainMovements import TTS_TM
+from taipan.reports.RuntimeDashboard import runtime_dashboard
+from taipan.reports.kilometrage import main as run_km
+from taipan.reports.TripCount import TTS_TC
+from taipan.reports.RunInfo import TTS_RI
+from taipan.first_last.FirstLast import TTS_FL
+from taipan.first_last.SimpleFirstLast import TTS_SFL
+from taipan.first_last.first_last_graph import main as run_fl_graph
+from taipan.timetables.TimetableSummary import TTS_SUM
+from taipan.timetables.WorkingTimetable import TTS_WTT
+from taipan.rsx.slice_rsx import main as slice_rsxfile
+from taipan.converters.ITOPSGeoConvert import run_geo_convert
+from taipan.converters.ITOPS_TTConvert import main as run_itops_tt
+from taipan.converters.HASTUS_Converter import TTS_H
+from taipan.converters.TDS_Converter import TTS_TDS
+from taipan.converters.HASTUS_ttrefnum import TTS_HTT
+from taipan.plans.NGRDailyPlan import run_ngr_dpp
+from taipan.plans.NGRWeeklyPlan import run_ngr_wpp
+from taipan.reports.VASExtract import TTS_VAS
+from taipan.gui.ui_constants.stylesheet import STYLESHEET
+
+
+import os
+
+
+
+SCRIPTS = {
+
+    "Timetable Information": {
+
+        "style": "normal",
+
+        "groups": {
+
+            "": [
+                ("Timetable Summary",  "_run_tt_summary",        "Generate multiple reports"),
+                ("Working Timetable",  "_run_wtt",               "Generate the working timetable from RSX"),
+                ("Public Timetable",   "_run_ptt",               "Generate public timetable workbooks from RSX"),
+                ("RunInfo",            "_run_runinfo",           "Generate run information report from RSX"),
+                ("Train Movements",    "_run_movements",         "Generate train movements report from RSX"),
+                ("TripCount",          "_run_tripcount",         "Count trips by line and period from RSX"),
+                ("Runtime Dashboard",  "_run_runtime",           "Generate runtime dashboard from RSX"),
+                ("KM Calculation",     "_run_km",                "Calculate kilometres by service from Excel export of RSX"),
+
+            ],
+
+            "First Last": [
+                ("First Last",         "_run_first_last",        "Generate detailed first and last service report from RSX"),
+                ("Simple First Last",  "_run_simple_first_last", "Simplified first and last service report from RSX"),
+                ("First Last Graph",   "_run_first_last_graph",  "Graph first and last services from single or multiple RSX files"),
+
+            ],
+        }
+    },
+
+    "Timetable Development": {
+
+        "style": "normal",
+
+        "groups": {
+
+            "": [
+                ("QA",     "_run_qa",     "Run quality assurance checks on RSX"),
+                ("Slicer", "_run_slicer", "Slice timetable data"),
+
+            ],
+
+            "Stabling": [
+                ("Stabling Balance", "_run_stabling_balance", "Check stabling balance across yards"),
+                ("Stabling Count",   "_run_stabling_count",   "Count stabling movements"),
+                ("Stabling Graph",   "_run_stabling_graph",   "Graph stabling over time"),
+
+            ],
+
+            "Renamers": [
+                ("Assign LineIDs",  "_run_assign_lineids", "Assign line IDs to services"),
+                ("Train Renamer",   "_run_train_renamer",  "Rename trains in RSX in bulk"),
+                ("Sectorise RSX",   "_run_sectorise",      "Sectorise RSX file"),
+
+            ],
+
+        }
+
+    },
+
+    "ITOPS": {
+
+        "style": "normal",
+        "note": "⚠ Do not override current rsl files.\nCopy all rsl files in geo/dat to a separate folder first.",
+        "groups": {
+
+            "": [
+                ("ITOPS TT Conversion",  "_run_itops_tt",  "Convert timetable to ITOPS format"),
+                ("ITOPS Geo Conversion", "_run_itops_geo", "Convert geo data to ITOPS format"),
+
+            ],
+
+        },
+
+    },
+
+    "HASTUS": {
+        "style": "normal",
+        "groups": {
+            "": [
+                ("HASTUS",            "_run_hastus",          "Export RSX to HASTUS format"),
+                ("HASTUS (ttrefnum)", "_run_hastus_ttrefnum", "Export RSX to HASTUS (ttrefnum)"),
+
+            ],
+
+        }
+
+    },
+
+    "Deployment Plan": {
+
+        "style": "normal",
+        "note": "Requires an RSX and excel\n\"train characteristics\" export.",
+        "groups": {
+
+            "": [
+                ("NGR Weekly Plan", "_run_ngr_weekly", "Generate NGR weekly deployment plan"),
+                ("NGR Daily Plan",  "_run_ngr_daily",  "Generate NGR daily deployment plan"),
+
+            ],
+
+        },
+
+    },
+
+    "Others": {
+
+        "style": "normal",
+        "groups": {
+
+            "": [
+
+                ("VAS Extractor",      "_run_vas",      "Extract VAS data from RSX"),
+                ("Closure Impacts",    "_run_closure",  "Assess closure impacts on services"),
+                ("Timetable Archiver", "_run_archiver", "Archive timetable files"),
+
+            ],
+
+        }
+
+    },
+
+    "TDS": {
+
+        "style": "normal",
+
+        "groups": {
+
+            "": [
+
+                ("TDS + Journey Planner", "_run_tds_jp",  "Export TDS with Journey Planner data"),
+                ("TDS → WorkingTT",       "_run_tds_wtt", "Convert TDS to Working Timetable"),
+                ("TDS → PublicTT",        "_run_tds_ptt", "Convert TDS to Public Timetable"),
+
+            ],
+
+        }
+
+    },
+
+}
+
+COLUMN_ORDER = [
+
+    ["Timetable Information"],
+    ["Timetable Development"],
+    ["ITOPS", "Deployment Plan"],
+    ["HASTUS", "Others", "TDS"],
+
+]
+
+
+class ScriptCard(QWidget):
+
+    def __init__(self, title, data, dispatcher, parent=None):
+
+        super().__init__(parent)
+
+        is_orange = data.get("style") == "orange"
+        self.setObjectName("card_orange" if is_orange else "card_normal")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(14, 12, 14, 14)
+        layout.setSpacing(4)
+        title_lbl = QLabel(title)
+        title_lbl.setObjectName("card_title_orange" if is_orange else "card_title_normal")
+        title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(title_lbl)
+        div = QFrame()
+        div.setObjectName("div_orange" if is_orange else "div_normal")
+        div.setFrameShape(QFrame.Shape.HLine)
+        layout.addWidget(div)
+        layout.addSpacing(4)
+
+        for group_name, items in data["groups"].items():
+            if group_name:
+                sub = QLabel(group_name)
+                sub.setObjectName("subcat_orange" if is_orange else "subcat_normal")
+                sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                layout.addWidget(sub)
+
+            for label, func_name, tooltip in items:
+                btn = QPushButton(label)
+                btn.setObjectName("btn_orange" if is_orange else "btn_normal")
+
+
+                
+                shadow = QGraphicsDropShadowEffect()
+                shadow.setBlurRadius(10)
+                shadow.setOffset(2, 3)
+                shadow.setColor(QColor(0, 0, 0, 70))
+                btn.setGraphicsEffect(shadow)
+                
+                btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                btn.setToolTip(tooltip)
+                btn.setMinimumHeight(36)
+                btn.clicked.connect(lambda checked, f=func_name, b=btn: dispatcher(f, b))
+                layout.addWidget(btn)
+                layout.addSpacing(2)
+
+        if data.get("note"):
+            layout.addSpacing(4)
+            note = QLabel(data["note"])
+            note.setObjectName("card_note")
+            note.setWordWrap(True)
+            note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(note)
+        layout.addStretch()
+
+
+class TaipanLauncher(QMainWindow):
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.last_file = None
+        self.setWindowTitle("TAIPAN Timetable Tools")
+        self.setMinimumSize(1000, 640)
+        self.resize(1280, 800)
+        self.setStyleSheet(STYLESHEET)
+        self.setAcceptDrops(True)
+
+
+        QFont("Segoe UI", 12)
+        self._build_ui()
+
+    
+
+    
+    def get_file(self, *, force_new=False, filter_str="All Files (*.*)", multi_rsx=False):
+
+        def is_rsx(path):
+            if isinstance(path, list):
+                return all(str(p).lower().endswith(".rsx") for p in path)
+            return str(path).lower().endswith(".rsx")
+
+        #  sanity check: never allow non-RSX to live in memory
+        if self.last_file and not is_rsx(self.last_file):
+            self.last_file = None
+
+        if force_new:
+            path = select_multi_rsx_files() if multi_rsx else select_file(filter_str=filter_str)
+
+            if path:
+                #  ONLY save + update UI for RSX and NOT multi files 
+                if is_rsx(path) and not isinstance(path, list):
+
+                    self.last_file = path
+
+                    if isinstance(path, list):
+                        self.file_lbl.setText(f"{len(path)} files")
+                    else:
+                        self.file_lbl.setText(os.path.basename(path))
+                        self.file_lbl.setToolTip(path)
+
+                    self.clear_btn.setVisible(True)
+
+            return path
+
+        #  reuse ONLY if it's RSX (single OR multi — doesn't matter)
+        if self.last_file:
+            return self.last_file
+
+        # otherwise pick file
+        path = select_multi_rsx_files() if multi_rsx else select_file(filter_str=filter_str)
+
+        if path:
+            #  ONLY save RSX
+            if is_rsx(path):
+                self.last_file = path
+
+            # UI update
+            if isinstance(path, list):
+                self.file_lbl.setText(f"{len(path)} files")
+            else:
+                self.file_lbl.setText(os.path.basename(path))
+                self.file_lbl.setToolTip(path)
+
+            self.clear_btn.setVisible(True)
+
+        return path
+    
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+
+    def dropEvent(self, event):
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+
+        #  get first file
+        file_path = urls[0].toLocalFile()
+
+        if file_path:
+            self.last_file = file_path
+            import os
+            self.last_file = file_path
+            self.file_lbl.setText(os.path.basename(file_path))
+            self.clear_btn.setVisible(True)
+
+
+    def _clear_file(self):
+        self.last_file = None
+        self.file_lbl.setText("")          # remove filename (right side)
+        self.clear_btn.setVisible(False)   # hide the ✕ button
+        self._set_status("● FILE CLEARED")
+
+
+
+    
+
+    def run_task(self, func, start_msg, done_msg):
+        try:
+            self._set_status(start_msg)
+            QApplication.processEvents()  # ensure UI updates before freeze
+
+            func()
+
+            self._set_status(done_msg)
+
+        except Exception as e:
+            self._set_status(f"● ERROR — {e}")
+        
+
+    def _build_ui(self):
+
+        central = QWidget()
+        central.setObjectName("central")
+        self.setCentralWidget(central)
+        root = QVBoxLayout(central)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        # Header
+        header = QWidget()
+        header.setObjectName("header")
+        header.setFixedHeight(88)
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(20, 14, 20, 14)
+        h_layout.setSpacing(16)
+        
+        badge = QLabel("MTP")
+        badge.setObjectName("mtp_badge")
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge.setFixedSize(60, 60)
+        h_layout.addWidget(badge)
+
+        title_col = QVBoxLayout()
+        title_col.setSpacing(0)
+        t1 = QLabel("TAIPAN")
+        t1.setObjectName("app_title")
+        title_col.addWidget(t1)
+
+        t2 = QLabel("Timetable Tools")
+        t2.setObjectName("app_subtitle")
+        title_col.addWidget(t2)
+        h_layout.addLayout(title_col)
+        h_layout.addStretch()
+        root.addWidget(header)
+
+        # Scroll
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        content = QWidget()
+        content.setObjectName("scroll_content")
+
+        grid = QGridLayout(content)
+        grid.setContentsMargins(16, 16, 16, 16)
+        grid.setSpacing(12)
+        grid.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+        for col_idx, col_cards in enumerate(COLUMN_ORDER):
+
+            col_w = QWidget()
+            col_v = QVBoxLayout(col_w)
+            col_v.setContentsMargins(0, 0, 0, 0)
+            col_v.setSpacing(12)
+            col_v.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+            for card_name in col_cards:
+                card = ScriptCard(title=card_name,data=SCRIPTS[card_name],dispatcher=self._dispatch,)
+                col_v.addWidget(card)
+
+            grid.addWidget(col_w, 0, col_idx)
+
+        for i in range(4):
+            grid.setColumnStretch(i, 1)
+
+        scroll.setWidget(content)
+        root.addWidget(scroll, 1)
+
+        # Status bar
+
+        status = QWidget()
+        status.setObjectName("status_bar")
+        status.setFixedHeight(34)
+        s_layout = QHBoxLayout(status)
+        s_layout.setContentsMargins(20, 0, 20, 0)
+        self.status_lbl = QLabel("● READY")
+        self.status_lbl.setObjectName("status_text")
+
+        self.file_lbl = QLabel("")                    #  file name (right)
+        self.file_lbl.setObjectName("status_file")
+
+        self.clear_btn = QPushButton("✕")             #  clear button
+        self.clear_btn.setObjectName("clear_btn")
+        self.clear_btn.setFixedSize(20, 20)
+        self.clear_btn.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.clear_btn.setToolTip("Clear selected file")
+        self.clear_btn.clicked.connect(self._clear_file)
+        self.clear_btn.setVisible(False)              # hidden until file exists
+
+        #  layout order
+        s_layout.addWidget(self.status_lbl)
+        s_layout.addStretch()
+        s_layout.addWidget(self.file_lbl)
+        s_layout.addWidget(self.clear_btn)
+
+        root.addWidget(status)
+
+    def _dispatch(self, func_name, button=None):
+
+        handler = getattr(self, func_name, None)
+
+        if handler:
+            handler(button)
+        else:
+            name = func_name.replace("_run_", "").replace("_", " ").upper()
+            self._set_status(f"● NOT YET IMPLEMENTED — {name}")
+
+
+    def _set_status(self, text):
+        self.status_lbl.setText(text)
+
+    def _run_ptt(self, button=None):
+
+        
+        path = self.get_file(
+                filter_str="RSX Files (*.rsx)"
+            )
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: TTS_PTT(path),
+            "● RUNNING — PUBLIC TIMETABLE...",
+            "● DONE — PUBLIC TIMETABLE"
+        )
+
+    def _run_tt_summary(self, button=None):
+        
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: TTS_SUM(path),
+            "● RUNNING — TIMETABLE SUMMARY...",
+            "● DONE — TIMETABLE SUMMARY"
+        )
+
+
+    def _run_wtt(self, button=None):
+        path = self.get_file(
+                filter_str="RSX Files (*.rsx)"
+            )
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: TTS_WTT(path),
+            "● RUNNING — WORKING TIMETABLE...",
+            "● DONE — WORKING TIMETABLE"
+        )
+
+    def _run_runinfo(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_RI(path),"● RUNNING — RUN INFO...","● DONE — RUN INFO")
+
+    def _run_movements(self, button=None):
+        path = self.get_file(
+                filter_str="RSX Files (*.rsx)"
+            )
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: TTS_TM(path),
+            "● RUNNING — TRAIN MOVEMENTS...",
+            "● DONE — TRAIN MOVEMENTS"
+        )
+    def _run_tripcount(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_TC(path),"● RUNNING — TRIP COUNT...","● DONE — TRIP COUNT")
+
+    def _run_runtime(self, button=None):
+        # run this as subprocess since dash doesn't exit 
+        
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        import subprocess
+        import sys
+
+        
+        subprocess.Popen([
+            sys.executable,
+            "-m",
+            "taipan.reports.RuntimeDashboard",
+            path
+        ])
+
+
+
+    def _run_km(self, button=None):
+
+        print(self.last_file)
+        
+        path = self.get_file(
+            force_new=True,
+            filter_str="Excel Files (*.xlsx *.xls)"
+        )
+
+        if path:
+            print("Selected file:", path)
+            self.run_task(
+                lambda: run_km(path),  
+                "● RUNNING — KM CALC...",
+                "● DONE — KM CALC"
+                )
+
+        print(self.last_file)
+
+    def _run_first_last(self, button=None):
+        
+        
+        
+        path = select_file(
+                caption="Select RSX file",
+                filter_str="RSX Files (*.rsx)",
+            )
+
+        if not path:
+            return
+
+
+        self.run_task(
+        lambda: TTS_FL(path),  
+        "● RUNNING — FIRST LAST...",
+        "● DONE — FIRST LAST"
+        )
+
+
+
+    def _run_simple_first_last(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_SFL(path),"● RUNNING — SIMPLE FIRST LAST...","● DONE — SIMPLE FIRST LAST")
+
+    def _run_first_last_graph(self, button=None):
+        
+        self.run_task(
+                run_fl_graph,
+                "● RUNNING — FIRSTLAST GRAPH...",
+                "● DONE — FIRSTLAST GRAPH"
+            )
+
+
+    def _run_slicer(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: slice_rsxfile(path),"● RUNNING — SLICER...","● DONE — SLICER")
+
+    def _run_stabling_balance(self, button=None):
+        
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_SB(path),"● RUNNING — STABLING BALANCE...","● DONE — STABLING BALANCE")
+
+
+    def _run_stabling_count(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_SC(path),"● RUNNING — STABLING COUNT...","● DONE — STABLING COUNT")
+
+    def _run_stabling_graph(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_Graph(path),"● RUNNING — STABLING GRAPH...","● DONE — STABLING GRAPH")
+
+    def _run_assign_lineids(self, button=None):
+        
+        path = self.get_file(filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: assign_line_ids(path),
+            "● RUNNING — ASSIGN LINEIDS...",
+            "● DONE — ASSIGN LINEIDS"
+        )
+
+
+    def _run_train_renamer(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: rename_trains(path),
+            "● RUNNING — TRAIN RENAMER...",
+            "● DONE — TRAIN RENAMER"
+        )
+    def _run_sectorise(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: sectorise(path),
+            "● RUNNING — SECTORISE RSX...",
+            "● DONE — SECTORISE RSX"
+        )
+
+    def _run_itops_tt(self, button=None):
+        
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: run_itops_tt(path),
+            "● RUNNING — ITOPS FILE PREP...",
+            "● DONE — ITOPS FILE PREP"
+        )
+
+
+    def _run_itops_geo(self, button=None):
+        
+        paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
+
+        if not paths:
+            return
+
+        self.run_task(
+            lambda: run_geo_convert(paths),
+            "● RUNNING — ITOPS GEO CONVERSION...",
+            "● DONE — ITOPS GEO CONVERSION"
+        )
+
+
+    def _run_hastus(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_H(path),"● RUNNING — HASTUS...","● DONE — HASTUS")
+
+
+    def _run_hastus_ttrefnum(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_HTT(path),"● RUNNING — HASTUS (TTREFNUM)...","● DONE — HASTUS (TTREFNUM)")
+
+    def _run_ngr_weekly(self, button=None):
+        path = self.get_file(
+                filter_str="RSX Files (*.rsx)",
+                force_new=True   # ✅ ALWAYS open picker
+            )
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: run_ngr_wpp(path),
+            "● RUNNING — NGR WPP...",
+            "● DONE — NGR WPP"
+        )
+
+    def _run_ngr_daily(self, button=None):
+        
+
+        
+        path = self.get_file(
+                filter_str="RSX Files (*.rsx)",
+                force_new=True   # ALWAYS open picker
+            )
+
+        if not path:
+            return
+
+        self.run_task(
+            lambda: run_ngr_dpp(path),
+            "● RUNNING — NGR DPP...",
+            "● DONE — NGR DPP"
+        )
+
+
+    def _run_vas(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_VAS(path),"● RUNNING — VAS EXTRACTOR...","● DONE — VAS EXTRACTOR")
+
+    def _run_closure(self, button=None):
+
+        #### needs refactor
+        self.run_task(
+            lambda: None,
+            "● RUNNING — CLOSURE IMPACTS...",
+            "● DONE — CLOSURE IMPACTS"
+        )
+
+    def _run_archiver(self, button=None):
+
+        #### needs refactor
+        self.run_task(
+            lambda: None,
+            "● RUNNING — TIMETABLE ARCHIVER...",
+            "● DONE — TIMETABLE ARCHIVER"
+        )
+
+    def _run_tds_jp(self, button=None):
+
+        ### tds converter goes here 
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_TDS(path),"● RUNNING — TDS CONVERTER...","● DONE — TDS CONVERTER")
+
+    def _run_tds_wtt(self, button=None):
+
+        ## working timetable (tds) goes here
+        self.run_task(
+            lambda: None,
+            "● RUNNING — TDS → WORKINGTT...",
+            "● DONE — TDS → WORKINGTT"
+        )
+
+    def _run_tds_ptt(self, button=None):
+
+        ## public timetable (tds) goes here
+        self.run_task(
+            lambda: None,
+            "● RUNNING — TDS → PUBLICTT...",
+            "● DONE — TDS → PUBLICTT"
+        )
+
+    def _run_qa(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: run_qa(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
+
+
+
+def main():
+
+    app = QApplication(sys.argv)
+    # Use Windows style so stylesheets fully apply
+    app.setStyle("Windows")
+    app.setStyleSheet(STYLESHEET) 
+    window = TaipanLauncher()
+    window.show()
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
+ 
