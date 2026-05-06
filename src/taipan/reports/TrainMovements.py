@@ -10,8 +10,11 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 # from tkinter import Tk
-import tkinter as tk
-from tkinter.filedialog import askopenfilename
+
+from PyQt6.QtWidgets import QApplication
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, select_checkboxes
+
+
 
 import traceback
 import logging
@@ -179,17 +182,7 @@ non_revenue_stations = [
     'ORMS',
     'ORMH',
     ]
-
-
-        
-        
-        
-        
-    
-
-        
-        
-        
+       
         
 
 def TTS_TM(path, mypath = None):
@@ -229,42 +222,23 @@ def TTS_TM(path, mypath = None):
         
 
         if __name__ != "__main__":
-            workbooks = [workbook_tm,workbook_tmfo]
+            workbooks = [workbook_tm, workbook_tmfo]
         else:
-            count = 0
-            workbooks = []
-
-            def Add_Checkbox(var,wb):
-                nonlocal count
-                nonlocal workbooks
-                if var.get() == 1:
-                    workbooks.append(wb)
-                    count += 1
-                if var.get() == 0 and count > 0:
-                    workbooks.remove(wb) 
-
-            cb = tk.Tk()
-            cb.title('Choose Reports to Archive')
-            cb.geometry("250x100") # w x h (add 30 height for every box)
-            
-            var1  = tk.IntVar()
-            var2  = tk.IntVar()
-            
-            def Add_TrainMovements():
-                Add_Checkbox(var1,workbook_tm)
-            
-            def Add_TrainMovementsFull():
-                Add_Checkbox(var2,workbook_tmfo)
-                
-            checkbox1 = tk.Checkbutton(cb, text='TrainMovements',               variable=var1, onvalue=1, offvalue=0, command=Add_TrainMovements)
-            checkbox2 = tk.Checkbutton(cb, text='TrainMovements (Full Output)', variable=var2, onvalue=1, offvalue=0, command=Add_TrainMovementsFull)
-            checkbox1.pack(anchor  = "w")
-            checkbox2.pack(anchor  = "w")
-            def close_window(): 
-                cb.quit()
-            tk.Button(cb,width=20, padx=5, pady=5, text='OK',command=close_window).pack()
-            cb.mainloop()
-            cb.withdraw()
+            options = [
+                ('TrainMovements', 'tm'),
+                ('TrainMovements (Full Output)', 'tmfo'),
+            ]
+            selected = select_checkboxes(
+                title='Choose Reports to Archive',
+                message='Select reports to archive:',
+                options=options,
+            )
+            if selected is None:
+                # User cancelled
+                workbooks = []
+            else:
+                workbook_map = {'tm': workbook_tm, 'tmfo': workbook_tmfo}
+                workbooks = [workbook_map[key] for key in selected if key in workbook_map]
 
         
         ### Check for duplicate train numbers before executing the script
@@ -320,29 +294,12 @@ def TTS_TM(path, mypath = None):
             sys.exit() 
         
         
-        
-        
         start_time = time.time()
-    
-        
-        
-       
-        
-        
+
         
         # excluded_locations = ['MNE']
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    
         
         ### uniquestations_dict and network_vrt_dict are used to determine what Line that trip belongs to
         ### Virtual run time (vrt) dictionaries for each line are used to order trips chronologically 
@@ -698,18 +655,6 @@ def TTS_TM(path, mypath = None):
     
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         def stoptime_info(x):
             """ Return the arrival and deptarture times, input can either be the entry index or the entry itself """
             if type(x) == int:
@@ -750,16 +695,6 @@ def TTS_TM(path, mypath = None):
             timestring = timestring[:-2] + '00'
             
             return timestring
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         ### Creates a list of trains in a run 
@@ -1203,39 +1138,6 @@ def TTS_TM(path, mypath = None):
                 # formedby
                 
                 
-    
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-    
-                
             
                 if WeekdayKey == '120':
                     for d in ['M______','_T_____','__W____','___T___']:
@@ -1390,8 +1292,7 @@ def TTS_TM(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            from tkinter import messagebox
-            messagebox.showinfo('Train Movements Table (Full Output)','Process Done')
+            show_info('Train Movement Table (Full Output)','Process Done')
             
     
     except Exception as e:
@@ -1400,9 +1301,8 @@ def TTS_TM(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-    rsxselecta = tk.Tk()
-    rsxselecta.withdraw() # we don't want a full GUI, so keep the root window from appearing
-    rsxselecta.update()
-    path = askopenfilename() 
-    rsxselecta.destroy()
-    TTS_TM(path)
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    if path:
+        TTS_TM(path)

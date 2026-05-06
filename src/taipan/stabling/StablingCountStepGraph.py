@@ -493,6 +493,8 @@ def TTS_Graph(path):
     open_file_crossplatform(xlsx_path)
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
     path = select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
-    TTS_Graph(path)
+    
+    if path:
+        TTS_Graph(path)

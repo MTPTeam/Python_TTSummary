@@ -134,12 +134,7 @@ def apply_pattern(train, pattern):
     if train.connection is not None:
         train.connection.set("trainPattern", pattern)
 
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+def sectorise(path):
 
     tree, root, filename = load_rsx_with_tree(path)
         
@@ -313,6 +308,18 @@ if __name__ == "__main__":
     # print O/D unable to be sectorised even after inference step 
     print("different O/D sectors: ", final_diff)
 
+
+
+if __name__ == "__main__":
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+
+    if path:
+        sectorise(path)
+
+
+    
     
 
 

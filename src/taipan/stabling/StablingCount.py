@@ -588,7 +588,8 @@ def TTS_SC(path, mypath = None):
     
 if __name__ == "__main__":
     
-    app = QApplication(sys.argv)
+    app = QApplication.instance() or QApplication(sys.argv)
 
     path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    TTS_SC(path)
+    if path:
+        TTS_SC(path)
