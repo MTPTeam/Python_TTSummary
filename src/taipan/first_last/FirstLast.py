@@ -80,7 +80,6 @@ def TTS_FL(path, mypath = None):
         
         ### File 2
         ###############################################################################################
-        app = QApplication(sys.argv)
         path2 = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
         root2, trains2, _, _, _, _ = parse_rsx(path2, want_trains=True)
         filename2 = path.split('/')[-1]
@@ -428,7 +427,9 @@ def TTS_FL(path, mypath = None):
             time.sleep(15)
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    TTS_FL(path)
+    app = QApplication.instance() or QApplication(sys.argv)
+
+    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    if path:
+        TTS_FL(path)
         

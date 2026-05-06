@@ -355,7 +355,7 @@ def build_chart_sheet(wb, ws_pivot, pc, timetable_names: list[str], colors: list
    return ws_chart
 
 def main():
-   app = QApplication(sys.argv)
+   app = QApplication.instance() or QApplication(sys.argv)
    rsx_files = select_multi_rsx_files()
 
    if not rsx_files:
