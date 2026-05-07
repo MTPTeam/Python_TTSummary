@@ -5,25 +5,71 @@ echo ============================================
 echo  TAIPAN Python Environment Setup
 echo ============================================
 echo.
-:: ── Get username ──────────────────────────────
-set /p USERNAME="Enter your username (e.g. r123456): "
-set PYTHON_EXE=C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312\python.exe
-if not exist "%PYTHON_EXE%" (
-   echo.
-   echo ERROR: Python 3.12 not found at:
-   echo   %PYTHON_EXE%
-   echo.
-   echo Check your username is correct and Python 3.12 is installed.
-   pause & exit /b 1
-)
-echo   Found: %PYTHON_EXE%
+
+
+:: ── Detect Python ──────────────────────────────
+echo Detecting Python...
+
+:: Try system Python first (home machines)
+python --version >nul 2>&1
+
+if not errorlevel 1 (
+
+    set PYTHON_EXE=python
+    echo   Using system Python
+) else (
+    echo   Python not found in PATH.
+
+    :: Ask for corp username
+    set /p USERNAME="Enter your username (e.g. r123456): "
+    set "USERNAME=%USERNAME: =%"
+
+    set "PYTHON_EXE=C:\Users\%USERNAME%\AppData\Local\Programs\Python\Python312\python.exe"
+    if exist "!PYTHON_EXE!" (
+            echo   Found Python at:
+            echo   !PYTHON_EXE!
+        ) else (
+            echo.
+            echo ERROR: Could not find Python automatically.
+            echo.
+
+            echo Example:
+            echo   C:\Users\yourname\AppData\Local\Programs\Python\Python312\python.exe
+            echo   OR just type: python
+
+            set /p PYTHON_EXE="Enter full path to python.exe: "
+
+            "!PYTHON_EXE!" --version >nul 2>&1
+            if errorlevel 1 (
+                echo Invalid Python path.
+                pause & exit /b 1
+            )
+        )
+    )
+
+
 echo.
+
+
+
+echo Checking Python version...
+
+"!PYTHON_EXE!" -c "import sys; exit(0 if sys.version_info[:2]==(3,12) else 1)"
+if errorlevel 1 (
+    echo ERROR: Python 3.12 is required.
+    "!PYTHON_EXE!" --version
+    pause & exit /b 1
+)
+
+echo   Python 3.12 confirmed.
+echo.
+
 :: ── Step 1: Create venv ───────────────────────
 echo [1/4] Creating virtual environment...
 if exist "%~dp0venv\Scripts\activate.bat" (
    echo   venv already exists, skipping creation.
 ) else (
-   "%PYTHON_EXE%" -m venv "%~dp0venv"
+   "!PYTHON_EXE!" -m venv "%~dp0venv"
    if errorlevel 1 (
        echo ERROR: Failed to create virtual environment.
        pause & exit /b 1
