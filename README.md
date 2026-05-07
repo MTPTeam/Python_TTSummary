@@ -145,62 +145,24 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - For this method - you need to do two additional steps before you can proceed with Step 4.
 > - Create a Github account (use QR email to sign up) 
 > -  Download Github Desktop (from here https://desktop.github.com/download/)
-- Clone the repository into your C drive
-
+- Clone the repository anywhere in a local drive (e.g any path starting with C:/). DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
 
 
 #### Non cloning way (manual)
 
 - To download: Code -> download zip
-- Create a new folder in your C drive called "Python_TTSummary" (MUST be exactly this capitalisation/spelling/etc)
-> - C-drive is `C:\` in the path bar
-- Place the contents of the zip you downloaded into Python_TTSummary. Full path should look like `"C:\Python_TTSummary"` with src, tests, etc in the folder.
+- Unzip the repository in a local drive (e.g any path starting with C:/). DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
 
 
 ### 3. Downloading / Setup of IDE (skip if not developing)
-
 - Install VSCode if needed
 
-### 4. Setup the Python Virtual Environment
-- **Important**: For all commands, replace the `<username>` part with your own username (e.g r123456)
+### 4. Setup 
 
-- Open a powershell terminal inside the `Python_TTSummary` folder (the repository you just cloned/downloaded). 
-> - To do this, right click inside the folder -> select open in Terminal. This is the 'root' directory. In the terminal run the following commands.
+This step sets up the virtual environment and installs all dependencies. 
+- Double click setup_TAIPAN (.bat file)
+- Script works on both home and corp computers. The path to Python can also be specified manually.
 
-- Create a virtual environment:
-
-    `C:\Users\<username>\AppData\Local\Programs\Python\Python312\python.exe -m venv venv`
-
-- Activate the virtual environment
-
-    `.\venv\Scripts\activate`
-
-    After running the previous two steps, you see something that looks like the below image, note the green (venv) to the left of the folder structure. 
-
-    ![venv](/images/activating_venv.png "venv")
-
-    If you don't see the green (venv)  **🚨 DO NOT CONTINUE WITH THE REST OF THE STEPS! 🚨**. Doing so may break your Python environment. 
-
-- Install TAIPAN's Python packages to virtual environment:
-
-    `.\venv\Scripts\python.exe -m pip install -r requirements.txt`
-
-    Should see something that looks like this when it's finished; if you get that red error just ignore it and continue.
-
-    ![package installer](/images/installing_packages.png "packages")
-
-- Install pywin32 (requires .whl file, installing manually)
-    `.\venv\Scripts\python.exe -m pip install "C:\Python_TTSummary\pywin32-311-cp312-cp312-win_amd64.whl"`
-
-- Now tell Python this code is a 'package':
-
-    `.\venv\Scripts\python.exe -m pip install -e .`
-
-### 5. Setup complete
-- At this point, TAIPAN and all its dependencies should be installed and ready to use. To verify, run the following (in the same place you ran the previous commands) and if no errors pop up the installation succeeded. 
-
-    `.\venv\Scripts\python.exe -c "import taipan"`
-
-    If an error popped up, ask for help. Otherwise, you’re good to go 🚀
-
-
+### 5. Run 🚀
+This launches TAIPAN
+- Double click launch_TAIPAN (.bat file)
