@@ -7,6 +7,8 @@ echo ============================================
 echo.
 
 
+
+echo Please ensure Python 3.12 is installed. Install from https://www.python.org/downloads/release/python-3129/ if not done yet
 :: ── Detect Python ──────────────────────────────
 echo Detecting Python...
 
@@ -49,7 +51,6 @@ if not errorlevel 1 (
 
 
 echo.
-
 
 
 echo Checking Python version...
