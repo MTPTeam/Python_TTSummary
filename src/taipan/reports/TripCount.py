@@ -7,7 +7,7 @@ import os
 import sys
 import shutil
 
-from taipan.gui.base import select_file, select_option_safe, show_info
+from taipan.gui.base import select_file, select_option_safe, show_info_safe
 
 import traceback
 import logging
@@ -1326,7 +1326,7 @@ def TTS_TC(path, mypath = None):
         if ProcessDoneMessagebox and __name__ == "__main__":
             app = QApplication(sys.argv)
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Trip Count Report','Process Done')
+            show_info_safe('Trip Count Report','Process Done')
     
     
     

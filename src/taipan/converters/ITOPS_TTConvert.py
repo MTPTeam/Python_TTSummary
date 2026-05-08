@@ -16,7 +16,7 @@ import re
 import math
 from lxml import etree
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import select_file, show_info
+from taipan.gui.base import select_file
 
 # ---------------------------------------------------------------------------
 # lineID run ID reformatting
@@ -126,7 +126,6 @@ def main(path: str = None) -> None:
     process_train_nodes(trains)
     process_entry_nodes(entries)
     tree.write(out_path, xml_declaration=True, encoding="UTF-8", pretty_print=True)
-    show_info("Success", "Output Saved!")
 
 if __name__ == "__main__":
    app = QApplication.instance() or QApplication(sys.argv)

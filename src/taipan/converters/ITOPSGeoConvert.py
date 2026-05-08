@@ -1,7 +1,7 @@
 import re
 from lxml import etree as ET
 
-from taipan.gui.base import select_multi_rsx_files, show_info
+from taipan.gui.base import select_multi_rsx_files
 from PyQt6.QtWidgets import QApplication
 import sys
 
@@ -50,7 +50,6 @@ def run_geo_convert(paths=None):
             with open(item, 'a') as contents:
                 contents.write(save)
 
-    show_info("ITOPSGeoConvert", "Process Done")
 
 
 if __name__ == "__main__":

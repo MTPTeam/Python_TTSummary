@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 # from tkinter import Tk
 
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import open_file_crossplatform, show_info, select_file, select_checkboxes
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file, select_checkboxes_safe
 
 
 
@@ -228,7 +228,7 @@ def TTS_TM(path, mypath = None):
                 ('TrainMovements', 'tm'),
                 ('TrainMovements (Full Output)', 'tmfo'),
             ]
-            selected = select_checkboxes(
+            selected = select_checkboxes_safe(
                 title='Choose Reports to Archive',
                 message='Select reports to archive:',
                 options=options,
@@ -1292,7 +1292,7 @@ def TTS_TM(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Train Movement Table (Full Output)','Process Done')
+            show_info_safe('Train Movement Table (Full Output)','Process Done')
             
     
     except Exception as e:

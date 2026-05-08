@@ -12,7 +12,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import select_file, show_info
+from taipan.gui.base import select_file
 
 
 COLUMN_MAPPINGS = {
@@ -317,7 +317,6 @@ def main(path: str) -> None:
     build_output(ws, last_row)
     wb.save(out_path)
     os.startfile(out_path)
-    show_info("Success", "Kilometrage Calculated Successfully!")
 
 if __name__ == "__main__":
     app = QApplication.instance() or QApplication(sys.argv)

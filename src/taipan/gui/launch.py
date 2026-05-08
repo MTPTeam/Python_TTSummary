@@ -1,8 +1,8 @@
 import sys
-
+import ctypes
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea, QSizePolicy, QGridLayout, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont, QCursor, QColor
+from PyQt6.QtGui import QFont, QCursor, QColor, QIcon
 from taipan.reports.ErrorChecker import main as run_qa
 from taipan.gui.base import select_file, select_multi_rsx_files, show_info
 from taipan.timetables.PublicTimetable import TTS_PTT
@@ -20,7 +20,6 @@ from taipan.reports.RunInfo import TTS_RI
 from taipan.first_last.FirstLast import TTS_FL
 from taipan.first_last.SimpleFirstLast import TTS_SFL
 from taipan.first_last.first_last_graph import main as run_fl_graph
-from taipan.timetables.TimetableSummary import TTS_SUM
 from taipan.timetables.WorkingTimetable import TTS_WTT
 from taipan.rsx.slice_rsx import main as slice_rsxfile
 from taipan.converters.ITOPSGeoConvert import run_geo_convert
@@ -40,6 +39,9 @@ from taipan.gui.base import register_main_window
 
 from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
 from taipan.gui.base import register_main_window
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+icon_path = os.path.join(BASE_DIR, "images", "taipan-icon.jpg").replace("\\", "/")
 
 
 class _Worker(QThread):
@@ -121,6 +123,7 @@ class TaipanLauncher(QMainWindow):
 
         super().__init__()
         register_main_window(self)
+        self.setWindowIcon(QIcon(icon_path))
         self.last_file = None
         self.setWindowTitle("TAIPAN Timetable Tools")
         self.setMinimumSize(1000, 640)
@@ -135,8 +138,6 @@ class TaipanLauncher(QMainWindow):
     @pyqtSlot(object)            
     def _invoke_slot(self, func):
         func()
-
-    
 
     
     def get_file(self, *, force_new=False, filter_str="All Files (*.*)", multi_rsx=False):
@@ -221,9 +222,6 @@ class TaipanLauncher(QMainWindow):
         self.clear_btn.setVisible(False)   # hide the ✕ button
         self._set_status("● FILE CLEARED")
 
-
-
-    
 
     def run_task(self, func, start_msg, done_msg): 
         self._set_status(start_msg)
@@ -700,8 +698,8 @@ class TaipanLauncher(QMainWindow):
 
 
 def main():
-
     app = QApplication(sys.argv)
+
     # Use Windows style so stylesheets fully apply
     app.setStyle("Windows")
     app.setStyleSheet(STYLESHEET) 

@@ -9,7 +9,7 @@ import shutil
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
 from taipan.constants.days import ID_TO_SHORT, ID_TO_ALIAS, NAME_TO_ID, DAY_PRIORITY, SORT_ORDER_WEEK
-from taipan.gui.base import open_file_crossplatform, select_checkboxes, show_info, select_file, show_info, show_info_scroll
+from taipan.gui.base import open_file_crossplatform, select_checkboxes_safe, show_info_safe, select_file, show_info_safe, show_info_scroll_safe
 import traceback
 import logging
 from taipan.core.xml_parser import parse_rsx
@@ -172,7 +172,7 @@ def TTS_PTT(path, mypath = None):
             day_options.insert(0, ('Weekday (Mon-Fri)', 'weekday'))
         if '1'   in d_list and '2' in d_list:
             day_options.append(('Weekend (Sat-Sun)', 'weekend'))
-        selected_days = select_checkboxes(title='Select Days of Operation',message='Choose which timetables to generate:',options=day_options, default_values=[v for _, v in day_options],)  # all checked by default
+        selected_days = select_checkboxes_safe(title='Select Days of Operation',message='Choose which timetables to generate:',options=day_options, default_values=[v for _, v in day_options],)  # all checked by default
         if selected_days is None:
             return  # user cancelled
 
@@ -1184,10 +1184,10 @@ def TTS_PTT(path, mypath = None):
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             if unmatched:
                 msg = '\n'.join(f'{tn}  {o} -> {d}  ({day})' for tn, o, d, day in unmatched)
-                show_info_scroll('Unmatched Revenue Trains', msg)
+                show_info_scroll_safe('Unmatched Revenue Trains', msg)
             else:
-                show_info('Public Timetable', 'All trains matched successfully')
-    
+                show_info_safe('Public Timetable', 'All trains matched successfully')
+
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:

@@ -9,7 +9,7 @@ import shutil
 import traceback
 import logging
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import select_file, show_info
+from taipan.gui.base import select_file, show_info_safe
 
 
 
@@ -1689,25 +1689,9 @@ def TTS_WTT(path, mypath = None):
                     write_workbook('Sunday', ['1'])
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Working Timetable','Process Done')
+            show_info_safe('Working Timetable','Process Done')
             
     
     except Exception as e:

@@ -210,4 +210,5 @@ def select_option_safe(title, message, options):
    return call_on_main_thread(lambda: select_option(title, message, options))
 def show_error_safe(title, message):
    call_on_main_thread(lambda: show_error(title, message))
-
+def select_checkboxes_safe(title, message, options, default_values=None):
+   return call_on_main_thread(lambda: select_checkboxes(title, message, options, default_values))

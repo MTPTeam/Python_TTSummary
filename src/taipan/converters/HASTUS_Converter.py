@@ -11,7 +11,7 @@ import traceback
 import logging
 
 from taipan.core.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, select_file
 from taipan.core.utils import _time_key, timetrim
 from PyQt6.QtWidgets import QApplication
 
@@ -1039,9 +1039,7 @@ def TTS_H(path, mypath = None):
             print('RSX copied                 ',end='\r')
         
         
-        
-        if ProcessDoneMessagebox and __name__ == "__main__":
-            show_info('HASTUS Converter', 'Process Done')
+    
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:

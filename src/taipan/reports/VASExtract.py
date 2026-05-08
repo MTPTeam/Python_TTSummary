@@ -17,7 +17,7 @@ CreateWorkbook = True
 OpenWorkbook = True
 
 from taipan.constants.days import ID_TO_SHORT
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
 
 from PyQt6.QtWidgets import QApplication
 
@@ -1050,7 +1050,7 @@ def TTS_VAS(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('VAS Extract','Process Done')
+            show_info_safe('VAS Extract','Process Done')
         
     except Exception as e:
         logging.error(traceback.format_exc())

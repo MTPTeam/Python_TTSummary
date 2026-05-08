@@ -8,7 +8,7 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 from taipan.constants.days import ID_TO_SHORT
 
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
  
 
 import traceback
@@ -1336,7 +1336,7 @@ def TTS_RI(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Run Information Report','Process Done')
+            show_info_safe('Run Information Report','Process Done')
             
     
     except Exception as e:

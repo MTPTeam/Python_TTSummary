@@ -9,7 +9,7 @@ import shutil
 
 
 
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, select_file
 import traceback
 import logging
 from PyQt6.QtWidgets import QApplication
@@ -76,7 +76,7 @@ def TTS_TDS(path, mypath = None):
             print('           Error: Duplicate train numbers')
             for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
             time.sleep(15)
-            sys.exit() 
+            return
         
         
         
@@ -336,7 +336,7 @@ def TTS_TDS(path, mypath = None):
 
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('TDS Converter','Process Done')
+        
 
     
     except Exception as e:

@@ -8,7 +8,7 @@ import time
 import shutil  
 
 
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, select_file
 from PyQt6.QtWidgets import QApplication
 
 import traceback
@@ -1118,9 +1118,6 @@ def TTS_HTT(path, mypath = None):
             print('RSX copied                 ',end='\r')
         
         
-        
-        if ProcessDoneMessagebox and __name__ == "__main__":
-            show_info('HASTUS Converter','Process Done')
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
