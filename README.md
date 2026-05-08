@@ -67,8 +67,12 @@ These use call_on_main_thread() which works as follows:
 
 DO NOT call QDialog, QMessageBox, or any other Qt widget directly from a tool function — always use the 
 *_safe wrappers. To add a new function, add a wrapper using call_on_main_thread in gui/base.py
+
 select_file() and select_multi_rsx_files() are exempt - since they are always called before 
 run_task() on the main thread.
+
+If a Qt UI function needs to return information - return call_on_main_thread(). 
+If it doesn't return anything, just run call_on_main_thread().
 ```
 - If you see `QObject: Cannot create children for a parent that is in a different thread`, you likely called a Qt widget directly from a worker thread.
 - If you see functions/buttons that use COM/win32 freezing or crashing, add pythoncom.CoInitialize() at the top of your tool function and pythoncom.CoUninitialize() in a finally block. COM objects have thread affinity and must be initialised on the thread that uses them.
