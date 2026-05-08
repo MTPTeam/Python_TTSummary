@@ -22,6 +22,22 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 
 ### Description of New Functionality
 
+
+**`gui/launch.py`**
+- The excel macros file has been replaced with a unified frontend, implemented in PyQT6. PyQT6 is an incredibly flexible UI library, so get creative here `:)`
+- This launcher file is referenced in launch_TAIPAN.bat and is the entry point for TAIPAN. The .bat file should not need to be modified.
+- To add a new button, a new function must be defined in the `TaipanLauncher` class. To link this function to a button, add the function to the `SCRIPTS` dictionary in `gui/names.py` in the `groups` variable in the appropriate category. The ordering is `("BUTTON_TEXT",   "FUNCTION_NAME",   "TOOLTIP_TEXT")`. Please note the FUNCTION_NAME is the name of the function you added in the `TaipanLauncher` class, so please import it as well. You can also rearrange this dictionary and play around with the formatting...
+- You can also modify the styling and colouring of the UI in `gui/stylesheet` - which just uses standard CSS. 
+- If a code file has no clear return or exit point (e.g RuntimeDashboard since it uses dash), it must be run as a subprocess. This is so it does not occupy the thread that the actual UI is operating on and freeze it. To see an example, see `_run_runtime` in `launch.py`. The rest of the buttons are not implemented as subprocesses as they return/finish relatively quickly, handing the main thread back to the UI. 
+
+
+
+**`requirements.txt`**
+- This file MUST be updated when a new library is used or installed via pip. It manages the install on new users computers
+- Versions should also be pinned as supported functionality may vary across different library releases. 
+- An easy way to update requirements if you're not keeping track of libraries is to run `.\venv\Scripts\python.exe -m pip freeze > requirements.txt`. However because of the manual pywin32 .whl installation there will be 2 lines with no pinned versions (e.g `==version`). so delete those. If pip freezes any pywin32 libraries, delete those lines as well. 
+
+
 **`core/xml_parser.py`**
 - Contains foundational functionality relied upon across the entire TAIPAN codebase.
 - Defines the core RSX data model, where each RSX `<train>` element is parsed and represented as a structured Python object (`TrainInfo`).
@@ -66,7 +82,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - All stabling files now check for capacity/wrong traintype violations
 
 **`gui/`**
-- All user interface code been changed from Tkinter to PyQT5.
+- All user interface code been changed from Tkinter to PyQT6.
 - `base` contains all the standard functionality (e.g error boxes, warning boxes, inputting RSX files). Any other files in this directory contain specialised GUI functionality for specific functions. This structure should be maintained - if you expect to use a GUI across multiple files (in other words, if it's generic), it should be in base, or if it is specialised to one function, add a new file. 
 
 **`tests/`** 
