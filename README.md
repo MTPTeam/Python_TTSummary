@@ -37,9 +37,11 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 THREAD SAFETY TIPS
 ───────────────────────────────────────────────────────────────────────
 
-All tool functions (TTS_TC, TTS_PTT, etc.) run on a QThread worker, keeping the main thread/event loop free and the UI responsive.
+All tool functions (TTS_TC, TTS_PTT, etc.) run on a QThread worker, keeping the main thread/event loop 
+free and the UI responsive.
 
-Any Qt UI calls (dialogs, popups) from within a tool MUST use the *_safe wrappers defined in taipan/gui/base.py:
+Any Qt UI calls (dialogs, popups) from within a tool MUST use the *_safe wrappers 
+defined in taipan/gui/base.py:
 
 For example, in base.py we currently have...
    show_info_safe()
@@ -63,8 +65,10 @@ These use call_on_main_thread() which works as follows:
    worker unblocks, continues
    ─────────────────────────────────    ─────────────────────────────
 
-DO NOT call QDialog, QMessageBox, or any other Qt widget directly from a tool function — always use the *_safe wrappers. To add a new function, add a wrapper using call_on_main_thread in gui/base.py
-select_file() and select_multi_rsx_files() are exempt - since they are always called before run_task() on the main thread.
+DO NOT call QDialog, QMessageBox, or any other Qt widget directly from a tool function — always use the 
+*_safe wrappers. To add a new function, add a wrapper using call_on_main_thread in gui/base.py
+select_file() and select_multi_rsx_files() are exempt - since they are always called before 
+run_task() on the main thread.
 ```
 - If you see `QObject: Cannot create children for a parent that is in a different thread`, you likely called a Qt widget directly from a worker thread.
 - If you see functions/buttons that use COM/win32 freezing or crashing, add pythoncom.CoInitialize() at the top of your tool function and pythoncom.CoUninitialize() in a finally block. COM objects have thread affinity and must be initialised on the thread that uses them.
