@@ -20,7 +20,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - `timetables/` - all outputs relating to timetabling (public and working timetable).
 
 
-### Description of New Functionality
+### Developer Docs
 
 
 **`gui/launch.py`**
@@ -28,14 +28,54 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - This launcher file is referenced in launch_TAIPAN.bat and is the entry point for TAIPAN. The .bat file should not need to be modified.
 - To add a new button, a new function must be defined in the `TaipanLauncher` class. To link this function to a button, add the function to the `SCRIPTS` dictionary in `gui/names.py` in the `groups` variable in the appropriate category. The ordering is `("BUTTON_TEXT",   "FUNCTION_NAME",   "TOOLTIP_TEXT")`. Please note the FUNCTION_NAME is the name of the function you added in the `TaipanLauncher` class, so please import it as well. You can also rearrange this dictionary and play around with the formatting...
 - You can also modify the styling and colouring of the UI in `gui/stylesheet` - which just uses standard CSS. 
-- If a code file has no clear return or exit point (e.g RuntimeDashboard since it uses dash), it must be run as a subprocess. This is so it does not occupy the thread that the actual UI is operating on and freeze it. To see an example, see `_run_runtime` in `launch.py`. The rest of the buttons are not implemented as subprocesses as they return/finish relatively quickly, handing the main thread back to the UI. 
+- If a code file has no clear return or exit point (e.g RuntimeDashboard since it uses dash), it must be run as a subprocess. This is so it does not occupy the thread that the actual UI is operating on and freeze it. To see an example, see `_run_runtime` in `launch.py`. 
+- The user interface is multi-threaded. This is so multiple scripts can be running simultaneously and so the main UI doesn't crash during processing. The main UI stays on the main thread, and the functions run on Worker threads.  
+- Managing the thread state is **incredibly important** - if you don't, the application will crash or hang because of cross thread memory access. See below on how to do this...
 
+
+```
+THREAD SAFETY TIPS
+───────────────────────────────────────────────────────────────────────
+
+All tool functions (TTS_TC, TTS_PTT, etc.) run on a QThread worker, keeping the main thread/event loop free and the UI responsive.
+
+Any Qt UI calls (dialogs, popups) from within a tool MUST use the *_safe wrappers defined in taipan/gui/base.py:
+
+For example, in base.py we currently have...
+   show_info_safe()
+   show_error_safe()
+   show_info_scroll_safe()
+   select_option_safe()
+   select_checkboxes_safe()
+
+These use call_on_main_thread() which works as follows:
+
+   Worker thread                        Main thread
+   ─────────────────────────────────    ─────────────────────────────
+   tool function running...             UI responsive, event loop
+                                        spinning
+   hits *_safe() call
+   │
+   └─ BlockingQueuedConnection ───────► _invoke_slot() fires
+      WORKER BLOCKS AND WAITS!          dialog shown to user
+                                        user interacts
+   result returned ◄─────────────────   slot returns
+   worker unblocks, continues
+   ─────────────────────────────────    ─────────────────────────────
+
+DO NOT call QDialog, QMessageBox, or any other Qt widget directly from a tool function — always use the *_safe wrappers. To add a new function, add a wrapper using call_on_main_thread in gui/base.py
+select_file() and select_multi_rsx_files() are exempt - since they are always called before run_task() on the main thread.
+```
+- If you see `QObject: Cannot create children for a parent that is in a different thread`, you likely called a Qt widget directly from a worker thread.
+- If you see functions/buttons that use COM/win32 freezing or crashing, add pythoncom.CoInitialize() at the top of your tool function and pythoncom.CoUninitialize() in a finally block. COM objects have thread affinity and must be initialised on the thread that uses them.
 
 
 **`requirements.txt`**
 - This file MUST be updated when a new library is used or installed via pip. It manages the install on new users computers
 - Versions should also be pinned as supported functionality may vary across different library releases. 
 - An easy way to update requirements if you're not keeping track of libraries is to run `.\venv\Scripts\python.exe -m pip freeze > requirements.txt`. However because of the manual pywin32 .whl installation there will be 2 lines with no pinned versions (e.g `==version`). so delete those. If pip freezes any pywin32 libraries, delete those lines as well. 
+
+
 
 
 **`core/xml_parser.py`**

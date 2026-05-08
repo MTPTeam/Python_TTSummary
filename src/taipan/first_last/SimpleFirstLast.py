@@ -203,7 +203,6 @@ def TTS_SFL(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('FirstLast','Process Done')
         
         
         
