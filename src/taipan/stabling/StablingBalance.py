@@ -8,7 +8,7 @@ from datetime import datetime
 import xml.etree.ElementTree as ET
 import time
 import numpy as np
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info_safe
 from taipan.stabling.StablingCount import capacity_exceeded
 import traceback
 import logging
@@ -446,7 +446,6 @@ def TTS_SB(path, mypath = None):
         
         if ProcessDoneMessagebox:
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Stabling Balance', 'Process Done')
     
     except Exception as e:
         logging.error(traceback.format_exc())

@@ -7,7 +7,7 @@ import os
 import sys
 import shutil
 
-from taipan.gui.base import select_file, select_option, show_info
+from taipan.gui.base import select_file, select_option_safe, show_info
 
 import traceback
 import logging
@@ -158,7 +158,7 @@ def TTS_TC(path, mypath = None):
     
     try:
 
-        station = select_option("Select CBD Reference Station", "Please select a CBD reference station:", [("Roma Street - RS", "Roma Street"), ("Central Station - BNC", "Central Station")])
+        station = select_option_safe("Select CBD Reference Station", "Please select a CBD reference station:", [("Roma Street - RS", "Roma Street"), ("Central Station - BNC", "Central Station")])
 
         if station is None:
 

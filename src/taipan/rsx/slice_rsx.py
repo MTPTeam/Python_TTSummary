@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 import sys 
 
 
-from taipan.gui.base import select_file, show_info, show_error, open_file_crossplatform
+from taipan.gui.base import select_file, show_info, show_error, open_file_crossplatform,show_error_safe, show_info_safe, call_on_main_thread
 from taipan.gui.slicer import ask_slice_options, SliceDialog
 from taipan.core.xml_parser import parse_rsx
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT
@@ -94,48 +94,41 @@ def slice_rsx(rsx_path: str,desired_blocks: list[str],desired_days: list[str]) -
     return output_path
 
 
-
-
 def main(rsx_path=None):
-    app = QApplication.instance() or QApplication(sys.argv)
-    rsx_path = rsx_path or select_file("Select RSX file", filter_str="RSX Files (*.rsx)")
+   app = QApplication.instance() or QApplication(sys.argv)
+   rsx_path = rsx_path or select_file("Select RSX file", filter_str="RSX Files (*.rsx)")
+   if not rsx_path:
+       print("No File Selected")
+       return
+   available_blocks = detect_blocks(rsx_path)  # can stay on worker if slow
+   # marshal dialog back to main thread, get result
+   result = call_on_main_thread(lambda: _show_slice_dialog(available_blocks))
 
-    if not rsx_path:
-        print("No File Selected")
-        return
+   if result is None:
+       return
+   blocks, days = result
+   try:
+       output = slice_rsx(rsx_path, blocks, days)
+       show_info_safe("RSX Slicer", f"Process complete:\n\n{output}")
+       open_file_crossplatform(output)
+   except DuplicateTrainError as e:
+       show_error_safe("Duplicate trains detected", str(e))
+   except ValueError as e:
+       show_error_safe("No results found", str(e))
+   except Exception as e:
+       show_error_safe("Unexpected error", str(e))
 
-    available_blocks = detect_blocks(rsx_path)
-
-    dialog = SliceDialog(available_blocks)
-    if not dialog.exec():
-        return
-
-    if not dialog.blocks or not dialog.days:
-        show_error("Invalid input", "Please select at least one block and one day.")
-        return
-
-    try:
-        output = slice_rsx(rsx_path, dialog.blocks, dialog.days)
-        show_info("RSX Slicer", f"Process complete:\n\n{output}")
-        open_file_crossplatform(output)
-
-    except DuplicateTrainError as e:
-        # duplicate trains
-        show_error("Duplicate trains detected", str(e))
-
-
-    except ValueError as e:
-        # no results found for the chosen block and day
-        show_error("No results found", str(e))
-
-
-    except Exception as e:
-        # catch everything else
-        show_error("Unexpected error", str(e))
-    
+def _show_slice_dialog(available_blocks):
+   """Runs on main thread via call_on_main_thread."""
+   dialog = SliceDialog(available_blocks)
+   print(dialog.blocks)
+   if not dialog.exec():
+       return None
+   if not dialog.blocks or not dialog.days:
+       show_error_safe("Invalid input", "Please select at least one block and one day.")
+       return None
+   return dialog.blocks, dialog.days
 
 
 if __name__ == "__main__":
     main()
-
-

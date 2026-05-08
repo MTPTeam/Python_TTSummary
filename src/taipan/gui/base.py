@@ -8,10 +8,14 @@ import sys
 import os
 import platform
 import math 
-
+import threading
+from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
 
 # disable native dialog since its too slow on windows
 #_FAST_OPTIONS = QFileDialog.Option.DontUseNativeDialog
+
+
+
 
 
 def ensure_app() -> QApplication:
@@ -175,4 +179,35 @@ def open_file_crossplatform(path: str) -> None:
             os.spawnlp(os.P_NOWAIT, "xdg-open", "xdg-open", path)
     except Exception as e:
         print(f"Failed to open file '{path}': {e}")
+
+
+_main_window = None
+
+def register_main_window(win):
+   global _main_window
+   _main_window = win
+
+def call_on_main_thread(func):
+   if threading.current_thread() is threading.main_thread():
+       return func()
+   result = [None]
+   def wrapper():
+       result[0] = func()
+   QMetaObject.invokeMethod(
+       _main_window,
+       "_invoke_slot",
+       Qt.ConnectionType.BlockingQueuedConnection,
+       Q_ARG(object, wrapper),
+   )
+   return result[0]
+
+# wrap  existing dialogs
+def show_info_safe(title, message):
+   call_on_main_thread(lambda: show_info(title, message))
+def show_info_scroll_safe(title, message):
+   call_on_main_thread(lambda: show_info_scroll(title, message))
+def select_option_safe(title, message, options):
+   return call_on_main_thread(lambda: select_option(title, message, options))
+def show_error_safe(title, message):
+   call_on_main_thread(lambda: show_error(title, message))
 

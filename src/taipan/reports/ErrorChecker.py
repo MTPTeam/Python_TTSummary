@@ -9,7 +9,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 from taipan.constants.locations import MISC_LOCATIONS, STATIONS_MASTER, YARDS
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_error_safe, show_info_safe
 
 import traceback
 import logging
@@ -498,8 +498,7 @@ def main(path=None):
         o.close
         print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
         
-        if ProcessDoneMessagebox:
-            show_info('Error Check and QA Process Done','Click OK to close python console')
+  
             
 
     except Exception as e:

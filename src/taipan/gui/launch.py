@@ -32,13 +32,29 @@ from taipan.plans.NGRDailyPlan import run_ngr_dpp
 from taipan.plans.NGRWeeklyPlan import run_ngr_wpp
 from taipan.reports.VASExtract import TTS_VAS
 from taipan.gui.ui_constants.stylesheet import STYLESHEET
-
-
 import os
-
-
-
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
+from PyQt6.QtCore import pyqtSlot
+from taipan.gui.base import register_main_window
+
+
+from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
+from taipan.gui.base import register_main_window
+
+
+class _Worker(QThread):
+   done  = pyqtSignal(object)
+   error = pyqtSignal(str)
+   def __init__(self, func):
+       super().__init__()
+       self.func = func
+   def run(self):
+       try:
+           result = self.func()
+           self.done.emit(result)
+       except Exception as e:
+           self.error.emit(f"{type(e).__name__}: {e}")
+
 
 class ScriptCard(QWidget):
 
@@ -104,7 +120,7 @@ class TaipanLauncher(QMainWindow):
     def __init__(self):
 
         super().__init__()
-
+        register_main_window(self)
         self.last_file = None
         self.setWindowTitle("TAIPAN Timetable Tools")
         self.setMinimumSize(1000, 640)
@@ -115,6 +131,10 @@ class TaipanLauncher(QMainWindow):
 
         QFont("Segoe UI", 12)
         self._build_ui()
+
+    @pyqtSlot(object)            
+    def _invoke_slot(self, func):
+        func()
 
     
 
@@ -205,17 +225,12 @@ class TaipanLauncher(QMainWindow):
 
     
 
-    def run_task(self, func, start_msg, done_msg):
-        try:
-            self._set_status(start_msg)
-            QApplication.processEvents()  # ensure UI updates before freeze
-
-            func()
-
-            self._set_status(done_msg)
-
-        except Exception as e:
-            self._set_status(f"● ERROR — {e}")
+    def run_task(self, func, start_msg, done_msg): 
+        self._set_status(start_msg)
+        self._worker = _Worker(func)
+        self._worker.done.connect(lambda: self._set_status(done_msg))
+        self._worker.error.connect(lambda e: self._set_status(f"● ERROR — {e}"))
+        self._worker.start()
         
 
     def _build_ui(self):
@@ -345,18 +360,6 @@ class TaipanLauncher(QMainWindow):
             "● DONE — PUBLIC TIMETABLE"
         )
 
-    def _run_tt_summary(self, button=None):
-        
-        path = self.get_file(filter_str="RSX Files (*.rsx)")
-
-        if not path:
-            return
-
-        self.run_task(
-            lambda: TTS_SUM(path),
-            "● RUNNING — TIMETABLE SUMMARY...",
-            "● DONE — TIMETABLE SUMMARY"
-        )
 
 
     def _run_wtt(self, button=None):
@@ -599,7 +602,7 @@ class TaipanLauncher(QMainWindow):
     def _run_ngr_weekly(self, button=None):
         path = self.get_file(
                 filter_str="RSX Files (*.rsx)",
-                force_new=True   # ✅ ALWAYS open picker
+                force_new=True   # ALWAYS open picker
             )
 
         if not path:
@@ -650,6 +653,8 @@ class TaipanLauncher(QMainWindow):
     def _run_archiver(self, button=None):
 
         #### needs refactor
+
+        # timetable archiver goes here
         self.run_task(
             lambda: None,
             "● RUNNING — TIMETABLE ARCHIVER...",

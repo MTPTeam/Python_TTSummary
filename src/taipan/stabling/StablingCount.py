@@ -578,7 +578,6 @@ def TTS_SC(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('Stabling Count Report','Process Done')
             
     
     except Exception as e:

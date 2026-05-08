@@ -1,5 +1,5 @@
 from taipan.core.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
-from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info_scroll
+from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info_scroll, show_error_safe, show_info_safe, show_info_scroll_safe
 import sys 
 
 from taipan.core.utils import get_weekday_short
@@ -145,8 +145,8 @@ def sectorise(path):
     trains = extract_trains(root)
 
     if check_CRR(trains):
-        show_info('ERROR', 'RS present but RTL missing (Please check for CRR)')
-        sys.exit("CRITICAL ERROR: RS present but RTL missing (no CRR)")
+        show_error_safe('ERROR', 'RS present but RTL missing (Please check for CRR)')
+        #sys.exit("CRITICAL ERROR: RS present but RTL missing (no CRR)")
 
     # for debugging / summary stats of matched and unmatched 
     non_revenue = revenue = same_sector_pairs = diff_sector_pairs = same_sector_revenue = same_sector_empty = connections = upgraded = 0
@@ -269,7 +269,7 @@ def sectorise(path):
     #### GUI PRINT
 
     if not mixed_lineid_flags:
-        show_info("Sectorisation", "No broken connections found ✅")
+        show_info_safe("Sectorisation", "No broken connections found ✅")
 
 
     
@@ -285,7 +285,7 @@ def sectorise(path):
 
         message = "\n".join(message_lines)
 
-        show_info_scroll(
+        show_info_scroll_safe(
             "Broken connections",
             message
         )

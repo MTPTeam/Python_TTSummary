@@ -7,7 +7,6 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("Timetable Summary",  "_run_tt_summary",        "Generate multiple reports"),
                 ("Working Timetable",  "_run_wtt",               "Generate the working timetable from RSX"),
                 ("Public Timetable",   "_run_ptt",               "Generate public timetable workbooks from RSX"),
                 ("RunInfo",            "_run_runinfo",           "Generate run information report from RSX"),

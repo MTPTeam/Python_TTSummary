@@ -9,7 +9,7 @@ import logging
 from taipan.core.xml_parser import TrainInfo, load_rsx_with_tree, extract_trains
 from taipan.constants.locations import YARDS
 #from taipan.constants.trains import TRAIN_TYPES
-from taipan.gui.base import select_file, show_info_scroll
+from taipan.gui.base import select_file, show_info_scroll_safe
 from taipan.constants.days import ID_TO_SHORT
 from PyQt6.QtWidgets import QApplication
 ProcessDoneMessagebox = True
@@ -385,7 +385,7 @@ def assign_line_ids(path):
                     summary_parts.append(f"  ... and {len(cross_match_details) - 10} more matches")
 
             summary_message = "\n".join(summary_parts)
-            show_info_scroll("LineID Assignment Complete", summary_message)
+            show_info_scroll_safe("LineID Assignment Complete", summary_message)
     except Exception:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
