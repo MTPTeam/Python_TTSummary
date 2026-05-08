@@ -1,4 +1,5 @@
 import win32com.client as win32
+import pythoncom
 import xml.etree.ElementTree as ET
 import pandas as pd
 import numpy as np
@@ -6,7 +7,7 @@ import re, sys, os
 from taipan.constants.locations import STATIONS_MASTER
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 from taipan.constants.styles import SLICER_CONFIGS, CHART_H, CHART_LEFT, CHART_W, xlSrcRange, xlCenter, xlLegendPositionBottom, xlRowField, xlPageField, xlAverage, xlXYScatter, xlOpenXMLWorkbook, xlSheetVeryHidden, xlMax
-from taipan.gui.base import select_multi_rsx_files, show_error, show_info
+from taipan.gui.base import select_multi_rsx_files, show_error, show_info, show_info_safe, show_error_safe
 from taipan.core.utils import _time_key, timetrim, parseTimeDelta, minutes_to_time_format, timedeltatohhmmss, hhmm_to_excel_time, td_to_hhmm, generate_colors
 from PyQt6.QtWidgets import QApplication
 from taipan.core.xml_parser import TrainInfo, load_rsx, extract_trains
@@ -355,43 +356,43 @@ def build_chart_sheet(wb, ws_pivot, pc, timetable_names: list[str], colors: list
    return ws_chart
 
 def main():
-   app = QApplication.instance() or QApplication(sys.argv)
-   rsx_files = select_multi_rsx_files()
-
-   if not rsx_files:
-       show_error("No RSX files selected", "You must select at least one RSX file to continue.")
-       sys.exit(1)
-    
-   output_path = make_output_path(rsx_files)
-
-   colors = generate_colors(len(rsx_files))
-   timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in rsx_files])
-   aa, default_station_name, default_day = build_combined_df(rsx_files, colors)
-   print(f"Default filter: {default_station_name} / {default_day}")
-   print(f"Data ready: {len(aa)} rows")
-   excel = win32.DispatchEx("Excel.Application")
-   excel.Visible       = False
-   excel.DisplayAlerts = False
-
+   pythoncom.CoInitialize()
+   
    try:
-       wb = excel.Workbooks.Add()
-       build_data_sheet(wb, aa)
-       ws_pivot, pc, pt = build_pivot_sheet(wb, timetable_names)
-       build_chart_sheet(wb, ws_pivot, pc, timetable_names, colors,
-                         default_station_name, default_day, pt)
-       excel.Calculate()
-       wb.Worksheets("Charts").Activate()
-       
-       wb.SaveAs(output_path, FileFormat=xlOpenXMLWorkbook)
-       print(f"Saved to: {output_path}")
-       show_info("Successful",f"First Last Graph saved to:\n{output_path}\n\nOpening file now.")
+       app = QApplication.instance() or QApplication(sys.argv)
+       rsx_files = select_multi_rsx_files()
+       if not rsx_files:
+           show_error_safe("No RSX files selected", "You must select at least one RSX file to continue.")
+           return
+       output_path = make_output_path(rsx_files)
+       colors = generate_colors(len(rsx_files))
+       timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in rsx_files])
+       aa, default_station_name, default_day = build_combined_df(rsx_files, colors)
+       print(f"Default filter: {default_station_name} / {default_day}")
+       print(f"Data ready: {len(aa)} rows")
+       excel = win32.DispatchEx("Excel.Application")
+       excel.Visible       = False
+       excel.DisplayAlerts = False
 
-       print("Open the 'Charts' sheet -> use the slicers to filter.")
+       try:
+           wb = excel.Workbooks.Add()
+           build_data_sheet(wb, aa)
+           ws_pivot, pc, pt = build_pivot_sheet(wb, timetable_names)
+           build_chart_sheet(wb, ws_pivot, pc, timetable_names, colors,
+                             default_station_name, default_day, pt)
+           excel.Calculate()
+           wb.Worksheets("Charts").Activate()
+           wb.SaveAs(output_path, FileFormat=xlOpenXMLWorkbook)
+           print(f"Saved to: {output_path}")
+           show_info_safe("Successful", f"First Last Graph saved to:\n{output_path}\n\nOpening file now.")
+           print("Open the 'Charts' sheet -> use the slicers to filter.")
+       finally:
+           wb.Close(SaveChanges=False)
+           os.startfile(output_path)
+           excel.Visible = True
+           excel.Quit()
    finally:
-       wb.Close(SaveChanges=False)
-       os.startfile(output_path)
-       excel.visible = True
-       excel.Quit()
+       pythoncom.CoUninitialize()
 
 if __name__ == "__main__":
    main()

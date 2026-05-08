@@ -10,7 +10,7 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
 from taipan.constants.locations import STATIONS_MASTER
 from taipan.core.xml_parser import parse_rsx
 
@@ -420,7 +420,7 @@ def TTS_FL(path, mypath = None):
         
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n\n(runtime: {time.time()-start_time:.2f}seconds)')
-            show_info('FirstLast','Process Done')
+            show_info_safe('FirstLast','Process Done')
             
     
     except Exception as e:

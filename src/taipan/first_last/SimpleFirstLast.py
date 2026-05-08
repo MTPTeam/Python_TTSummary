@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import QApplication
 
 import traceback
 import logging
-from taipan.gui.base import open_file_crossplatform, show_info, select_file
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
 
 
 
