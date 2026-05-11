@@ -29,6 +29,16 @@ UNIT_COLOURS = {
     'DEPT':   0x5F574D,  # Major Brown
 }
 
+series_cache = {}
+
+
+def get_series(yard_name, dow, daylist, u_list, change_matrix):
+    key = (yard_name, dow, id(daylist), id(u_list), id(change_matrix))
+
+    if key not in series_cache:
+        series_cache[key] = extract_regular_series(daylist, u_list, change_matrix)
+
+    return series_cache[key]
 
 
 
@@ -79,7 +89,7 @@ def detect_capacity_violations(stables_dict, yard_meta, u_list, change_matrix):
        for dow, daylist in zip(SORT_ORDER_WEEK, stables_tuple):
            if not daylist:
                continue
-           ticks, counts, t_start, t_end = extract_regular_series(daylist, u_list, change_matrix)
+           ticks, counts, t_start, t_end = get_series(yard_name, dow, daylist, u_list, change_matrix)
            if not ticks:
                continue
            max_count = max(counts['Total'])
@@ -157,7 +167,7 @@ def write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix,d
    for dow, daylist in day_slots:
        if not daylist:
            continue
-       ticks, counts, t_start, t_end = extract_regular_series(daylist, u_list, change_matrix)
+       ticks, counts, t_start, t_end = get_series(yard_name, dow, daylist, u_list, change_matrix)
        if not ticks:
            continue
        
@@ -241,7 +251,7 @@ def create_charts_via_com(xlsx_path, stables_dict, u_list, change_matrix,d_list,
            for dow, daylist in day_slots:
                if not daylist:
                    continue
-               ticks, counts, t_start, t_end = extract_regular_series(daylist, u_list, change_matrix)
+               ticks, counts, t_start, t_end = get_series(yard_name, dow, daylist, u_list, change_matrix)
                if not ticks:
                    continue
 
@@ -442,8 +452,6 @@ def write_summary_sheet(workbook, violations, cap_violations, filename):
 
    final_row = cap_start + 2 + max(len(cap_violations), 1)
    sheet.write(final_row, 0, f'Generated: {filename}', note_fmt)
-
-
 
 
 def TTS_Graph(path):
