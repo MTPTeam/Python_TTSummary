@@ -14,43 +14,72 @@ echo.
 :: ── Detect Python ──────────────────────────────
 echo Detecting Python 3.12...
 
+set "PYTHON_EXE="
+set "PY_ARGS="
+
+:: 1) Try Python launcher
 py -3.12 --version >nul 2>&1
 if not errorlevel 1 (
     set "PYTHON_EXE=py"
     set "PY_ARGS=-3.12"
     echo   Using Python 3.12 via py launcher
-) else (
-    echo   Python 3.12 not found via py launcher.
+    goto :python_found
+)
 
-    python --version >nul 2>&1
+echo   Python 3.12 not found via py launcher.
+
+:: 2) Try system python
+python --version >nul 2>&1
+if not errorlevel 1 (
+    for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set VER=%%v
+    echo   Found system Python !VER!
+
+    echo !VER! | findstr /b "3.12" >nul
     if not errorlevel 1 (
-        for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set VER=%%v
-        echo   Found Python !VER!
-
-        echo !VER! | findstr /b "3.12" >nul
-        if errorlevel 1 (
-            echo ERROR: Python 3.12 required but found !VER!
-            pause & exit /b 1
-        )
-
         set "PYTHON_EXE=python"
         set "PY_ARGS="
-    ) else (
-        echo ERROR: Python not found.
-        pause & exit /b 1
+        echo   Using system Python 3.12
+        goto :python_found
     )
 )
 
 echo.
-echo Checking Python version...
+echo Automatic detection failed.
 
-"%PYTHON_EXE%" %PY_ARGS% -c "import sys; exit(0 if sys.version_info[:2]==(3,12) else 1)"
-if errorlevel 1 (
-    echo ERROR: Python 3.12 is required.
-    "%PYTHON_EXE%" %PY_ARGS% --version
+:: 3) Manual fallback
+echo Please enter full path to python.exe (must be Python 3.12)
+echo Example:
+echo   C:\Users\YourName\AppData\Local\Programs\Python\Python312\python.exe
+echo.
+
+set /p PYTHON_EXE="Python path: "
+
+if not exist "%PYTHON_EXE%" (
+    echo ERROR: File not found.
     pause & exit /b 1
 )
 
+"%PYTHON_EXE%" --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Invalid python executable.
+    pause & exit /b 1
+)
+
+"%PYTHON_EXE%" -c "import sys; exit(0 if sys.version_info[:2]==(3,12) else 1)"
+if errorlevel 1 (
+    echo ERROR: Python 3.12 is required.
+    "%PYTHON_EXE%" --version
+    pause & exit /b 1
+)
+
+set "PY_ARGS="
+echo   Using manually specified Python.
+
+:python_found
+echo.
+echo Checking Python version...
+
+"%PYTHON_EXE%" %PY_ARGS% --version
 echo   Python 3.12 confirmed.
 echo.
 
