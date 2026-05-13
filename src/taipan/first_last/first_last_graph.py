@@ -384,7 +384,6 @@ def main():
            wb.Worksheets("Charts").Activate()
            wb.SaveAs(output_path, FileFormat=xlOpenXMLWorkbook)
            print(f"Saved to: {output_path}")
-           show_info_safe("Successful", f"First Last Graph saved to:\n{output_path}\n\nOpening file now.")
            print("Open the 'Charts' sheet -> use the slicers to filter.")
        finally:
            wb.Close(SaveChanges=False)
