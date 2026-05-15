@@ -39,7 +39,11 @@ class SliceDialog(QDialog):
 
         blocks_label = QLabel("Select Blocks")
         blocks_label.setStyleSheet("font-size: 22px; font-weight: bold;")
+
+        blocks_note = QLabel("Right-click two blocks to select a range. e.g to select blocks 100-110, right-click 100 then right-click 110.")
+        blocks_note.setStyleSheet("font-size: 12px; color: gray;")
         main_layout.addWidget(blocks_label)
+        main_layout.addWidget(blocks_note)
 
         # display blocks in a scroll area
         grid_widget = QWidget()

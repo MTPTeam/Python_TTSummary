@@ -8,7 +8,7 @@ from collections import defaultdict
 from taipan.gui.base import open_file_crossplatform, show_info, select_file
 from taipan.core.xml_parser import parse_rsx, normalise_days, sort_days, sort_units
 from taipan.core.xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
-
+import time
 from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
 from taipan.core.utils import mins_to_excel_time, hhmm_to_mins
@@ -28,6 +28,22 @@ UNIT_COLOURS = {
     'HYBRID': 0x4D4D64,  # Intergalactic
     'DEPT':   0x5F574D,  # Major Brown
 }
+
+def close_if_open_in_excel(xlsx_path):
+   abs_path = os.path.abspath(xlsx_path)
+   pythoncom.CoInitialize()
+   try:
+       excel = win32com.client.GetActiveObject('Excel.Application')
+       for wb in excel.Workbooks:
+           if os.path.abspath(wb.FullName) == abs_path:
+               wb.Close(SaveChanges=False)
+               print(f'Closed existing {xlsx_path} in Excel')
+               return
+   except Exception:
+       pass  # Excel not running, nothing to close
+   finally:
+       pythoncom.CoUninitialize()
+
 
 series_cache = {}
 
@@ -479,6 +495,8 @@ def TTS_Graph(path):
     filename  = path.split('/')[-1].replace('.rsx', '')
     xlsx_path = f'StablingGraph-{filename}.xlsx'
     os.chdir('\\'.join(path.split('/')[0:-1]))
+    close_if_open_in_excel(xlsx_path)
+
     workbook = xlsxwriter.Workbook(xlsx_path)
     # Summary is created first -> leftmost tab, activate() makes it open first
     write_summary_sheet(workbook, violations, cap_violations, filename)  # pass both violation lists to summary sheet writer
@@ -493,6 +511,7 @@ def TTS_Graph(path):
         capacity = meta.get('capacity')
         col_ptr  = write_yard_chart(workbook, yard_name, stables_tuple, u_list, change_matrix, d_list, capacity, filename,data_sheet, col_ptr, violations=[v for v in violations if v['yard'] == yard_name], cap_violations=[v for v in cap_violations if v['yard'] == yard_name])
     workbook.close()
+    time.sleep(1)  # ensure file is fully written before COM tries to open it
     print(f'Saved: {xlsx_path}')
     print('Creating charts...')
     capacity_map = {yard_name: YARDS[yard_name].get('capacity') for yard_name in YARDS}
