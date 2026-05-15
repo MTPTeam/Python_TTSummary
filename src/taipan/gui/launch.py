@@ -1,44 +1,53 @@
 import sys
-import ctypes
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea, QSizePolicy, QGridLayout, QGraphicsDropShadowEffect
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFont, QCursor, QColor, QIcon
-from taipan.reports.ErrorChecker import main as run_qa
-from taipan.gui.base import select_file, select_multi_rsx_files, show_info
-from taipan.timetables.PublicTimetable import TTS_PTT
-from taipan.stabling.StablingBalance import TTS_SB
-from taipan.stabling.StablingCount import TTS_SC
-from taipan.stabling.StablingCountStepGraph import TTS_Graph
-from taipan.run_renamers.run_renamer_new import assign_line_ids
-from taipan.rsx.SectoriseRSX import sectorise
-from taipan.rsx.train_renamer import main as rename_trains
-from taipan.reports.TrainMovements import TTS_TM
-from taipan.reports.RuntimeDashboard import runtime_dashboard
-from taipan.reports.kilometrage import main as run_km
-from taipan.reports.TripCount import TTS_TC
-from taipan.reports.RunInfo import TTS_RI
-from taipan.first_last.FirstLast import TTS_FL
-from taipan.first_last.SimpleFirstLast import TTS_SFL
-from taipan.first_last.first_last_graph import main as run_fl_graph
-from taipan.timetables.WorkingTimetable import TTS_WTT
-from taipan.rsx.slice_rsx import main as slice_rsxfile
-from taipan.converters.ITOPSGeoConvert import run_geo_convert
-from taipan.converters.ITOPS_TTConvert import main as run_itops_tt
-from taipan.converters.HASTUS_Converter import TTS_H
-from taipan.converters.TDS_Converter import TTS_TDS
-from taipan.converters.HASTUS_ttrefnum import TTS_HTT
-from taipan.plans.NGRDailyPlan import run_ngr_dpp
-from taipan.plans.NGRWeeklyPlan import run_ngr_wpp
-from taipan.reports.VASExtract import TTS_VAS
+from taipan.gui.base import select_file, select_multi_rsx_files
 from taipan.gui.ui_constants.stylesheet import STYLESHEET
 import os
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
-from PyQt6.QtCore import pyqtSlot
 from taipan.gui.base import register_main_window
 
 
-from PyQt6.QtCore import QThread, pyqtSignal, pyqtSlot
-from taipan.gui.base import register_main_window
+
+import importlib
+def _lazy(module, attr):
+
+    # these imports are hefty which affects the startup time - lazy load them (so the user sees the UI right away although imports are still loading in the background)
+   _cache = {}
+   def _loader(*args, **kwargs):
+       if module not in _cache:
+           _cache[module] = getattr(importlib.import_module(module), attr)
+       return _cache[module](*args, **kwargs)
+   return _loader
+
+
+# update this with functions as required 
+run_qa          = _lazy("taipan.reports.ErrorChecker",           "main")
+TTS_PTT         = _lazy("taipan.timetables.PublicTimetable",     "TTS_PTT")
+TTS_SB          = _lazy("taipan.stabling.StablingBalance",       "TTS_SB")
+TTS_SC          = _lazy("taipan.stabling.StablingCount",         "TTS_SC")
+TTS_Graph       = _lazy("taipan.stabling.StablingCountStepGraph","TTS_Graph")
+assign_line_ids = _lazy("taipan.run_renamers.run_renamer_new",   "assign_line_ids")
+sectorise       = _lazy("taipan.rsx.SectoriseRSX",               "sectorise")
+rename_trains   = _lazy("taipan.rsx.train_renamer",              "main")
+TTS_TM          = _lazy("taipan.reports.TrainMovements",         "TTS_TM")
+run_km          = _lazy("taipan.reports.kilometrage",            "main")
+TTS_TC          = _lazy("taipan.reports.TripCount",              "TTS_TC")
+TTS_RI          = _lazy("taipan.reports.RunInfo",                "TTS_RI")
+TTS_FL          = _lazy("taipan.first_last.FirstLast",           "TTS_FL")
+TTS_SFL         = _lazy("taipan.first_last.SimpleFirstLast",     "TTS_SFL")
+run_fl_graph    = _lazy("taipan.first_last.first_last_graph",    "main")
+TTS_WTT         = _lazy("taipan.timetables.WorkingTimetable",    "TTS_WTT")
+slice_rsxfile   = _lazy("taipan.rsx.slice_rsx",                  "main")
+run_geo_convert = _lazy("taipan.converters.ITOPSGeoConvert",     "run_geo_convert")
+run_itops_tt    = _lazy("taipan.converters.ITOPS_TTConvert",     "main")
+TTS_H           = _lazy("taipan.converters.HASTUS_Converter",    "TTS_H")
+TTS_TDS         = _lazy("taipan.converters.TDS_Converter",       "TTS_TDS")
+TTS_HTT         = _lazy("taipan.converters.HASTUS_ttrefnum",     "TTS_HTT")
+run_ngr_dpp     = _lazy("taipan.plans.NGRDailyPlan",             "run_ngr_dpp")
+run_ngr_wpp     = _lazy("taipan.plans.NGRWeeklyPlan",            "run_ngr_wpp")
+TTS_VAS         = _lazy("taipan.reports.VASExtract",             "TTS_VAS")
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 icon_path = os.path.join(BASE_DIR, "images", "taipan-icon.jpg").replace("\\", "/")
@@ -134,6 +143,17 @@ class TaipanLauncher(QMainWindow):
 
         QFont("Segoe UI", 12)
         self._build_ui()
+
+        from threading import Thread
+        Thread(target=self._warmup, daemon=True).start()
+
+    def _warmup(self):
+        # put frequently used modules here to be pre imported to avoid first click delay 
+        import taipan.stabling.StablingCount
+        import taipan.timetables.PublicTimetable
+        import taipan.reports.TrainMovements
+        import taipan.reports.ErrorChecker
+        import taipan.reports.TripCount
 
     @pyqtSlot(object)            
     def _invoke_slot(self, func):
