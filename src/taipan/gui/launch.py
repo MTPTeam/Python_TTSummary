@@ -692,8 +692,8 @@ class TaipanLauncher(QMainWindow):
         self.run_task(lambda: TTS_TDS(path),"● RUNNING — TDS CONVERTER...","● DONE — TDS CONVERTER")
 
     def _run_tds_wtt(self, button=None):
-
-        path = self.get_file(filter_str="RSX Files (*.rsx)")
+        # FILTER TO TXT FILES
+        path = self.get_file(force_new=True,filter_str="TXT Files (*.txt)")
 
         if not path:
             return

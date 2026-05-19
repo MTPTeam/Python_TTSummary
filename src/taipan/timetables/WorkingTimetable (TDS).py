@@ -1697,5 +1697,5 @@ def TTS_TDSWTT(path, mypath = None):
 
 if __name__ == "__main__":
     app = QApplication.instance() or QApplication(sys.argv)
-    path = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
+    path = select_file(caption="Select TXT file", directory="",filter_str="TXT Files (*.txt)")
     TTS_TDSWTT(path)
