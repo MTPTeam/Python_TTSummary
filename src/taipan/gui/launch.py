@@ -39,6 +39,7 @@ TTS_FL          = _lazy("taipan.first_last.FirstLast",           "TTS_FL")
 TTS_SFL         = _lazy("taipan.first_last.SimpleFirstLast",     "TTS_SFL")
 run_fl_graph    = _lazy("taipan.first_last.first_last_graph",    "main")
 TTS_WTT         = _lazy("taipan.timetables.WorkingTimetable",    "TTS_WTT")
+TTS_TDSWTT      = _lazy("taipan.timetables.WorkingTimetable (TDS)",    "TTS_TDSWTT")
 slice_rsxfile   = _lazy("taipan.rsx.slice_rsx",                  "main")
 run_geo_convert = _lazy("taipan.converters.ITOPSGeoConvert",     "run_geo_convert")
 run_itops_tt    = _lazy("taipan.converters.ITOPS_TTConvert",     "main")
@@ -48,6 +49,7 @@ TTS_HTT         = _lazy("taipan.converters.HASTUS_ttrefnum",     "TTS_HTT")
 run_ngr_dpp     = _lazy("taipan.plans.NGRDailyPlan",             "run_ngr_dpp")
 run_ngr_wpp     = _lazy("taipan.plans.NGRWeeklyPlan",            "run_ngr_wpp")
 TTS_VAS         = _lazy("taipan.reports.VASExtract",             "TTS_VAS")
+
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 icon_path = os.path.join(BASE_DIR, "images", "taipan-icon.jpg").replace("\\", "/")
@@ -691,9 +693,14 @@ class TaipanLauncher(QMainWindow):
 
     def _run_tds_wtt(self, button=None):
 
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
         ## working timetable (tds) goes here
         self.run_task(
-            lambda: None,
+            lambda: TTS_TDSWTT(path),
             "● RUNNING — TDS → WORKINGTT...",
             "● DONE — TDS → WORKINGTT"
         )
