@@ -40,6 +40,7 @@ TTS_SFL         = _lazy("taipan.first_last.SimpleFirstLast",     "TTS_SFL")
 run_fl_graph    = _lazy("taipan.first_last.first_last_graph",    "main")
 TTS_WTT         = _lazy("taipan.timetables.WorkingTimetable",    "TTS_WTT")
 TTS_TDSWTT      = _lazy("taipan.timetables.WorkingTimetable (TDS)",    "TTS_TDSWTT")
+TTS_TDSPTT      = _lazy("taipan.timetables.PublicTimetable (TDS)",    "TTS_TDSPTT")
 slice_rsxfile   = _lazy("taipan.rsx.slice_rsx",                  "main")
 run_geo_convert = _lazy("taipan.converters.ITOPSGeoConvert",     "run_geo_convert")
 run_itops_tt    = _lazy("taipan.converters.ITOPS_TTConvert",     "main")
@@ -707,9 +708,15 @@ class TaipanLauncher(QMainWindow):
 
     def _run_tds_ptt(self, button=None):
 
+        path = self.get_file(force_new=True,filter_str="TXT Files (*.txt)")
+
+        if not path:
+            return
+
+
         ## public timetable (tds) goes here
         self.run_task(
-            lambda: None,
+            lambda: TTS_TDSPTT(path),
             "● RUNNING — TDS → PUBLICTT...",
             "● DONE — TDS → PUBLICTT"
         )
