@@ -241,7 +241,7 @@ class TaipanLauncher(QMainWindow):
 
     def _clear_file(self):
         self.last_file = None
-        self.file_lbl.setText("")          # remove filename (right side)
+        self.file_lbl.setText("Drag and drop RSX here...")          # remove filename (right side)
         self.clear_btn.setVisible(False)   # hide the ✕ button
         self._set_status("● FILE CLEARED")
 
@@ -332,7 +332,7 @@ class TaipanLauncher(QMainWindow):
         self.status_lbl = QLabel("● READY")
         self.status_lbl.setObjectName("status_text")
 
-        self.file_lbl = QLabel("")                    #  file name (right)
+        self.file_lbl = QLabel("Drag and drop RSX here...")                    #  file name (right)
         self.file_lbl.setObjectName("status_file")
 
         self.clear_btn = QPushButton("✕")             #  clear button
