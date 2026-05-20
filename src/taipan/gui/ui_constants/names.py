@@ -33,8 +33,8 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("QA",     "_run_qa",     "Run quality assurance checks on RSX"),
-                ("Slicer", "_run_slicer", "Slice timetable data"),
+                ("QA",     "_run_qa",     "Run quality assurance checks on RSX, saves text report"),
+                ("Slicer", "_run_slicer", "Slice timetable data by blocks and days, saves new RSX file"),
 
             ],
 
@@ -110,7 +110,7 @@ SCRIPTS = {
 
                 ("VAS Extractor",      "_run_vas",      "Extract VAS data from RSX"),
                 ("Closure Impacts",    "_run_closure",  "Assess closure impacts on services"),
-                ("Timetable Archiver", "_run_archiver", "Archive timetable files"),
+                #("Timetable Archiver", "_run_archiver", "Archive timetable files"),
 
             ],
 
