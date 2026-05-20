@@ -3,10 +3,11 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFont, QCursor, QColor, QIcon
 from taipan.gui.base import select_file, select_multi_rsx_files
-from taipan.gui.ui_constants.stylesheet import STYLESHEET
+from taipan.gui.ui_constants.stylesheet import STYLESHEET, img_path
 import os
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
 from taipan.gui.base import register_main_window
+from taipan.gui.ui_constants.background import BlurredBackground
 
 
 
@@ -80,6 +81,19 @@ class ScriptCard(QWidget):
         self.setObjectName("card_orange" if is_orange else "card_normal")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
+        ### card shadows
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setOffset(0, 4)
+
+        # Create color and apply alpha separately
+        shadow_color = QColor("#1a1917")
+        shadow_color.setAlpha(200)  # 128 is roughly 50% opacity
+        shadow.setColor(shadow_color)
+
+        self.setGraphicsEffect(shadow)
+                
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 14)
         layout.setSpacing(4)
@@ -256,7 +270,7 @@ class TaipanLauncher(QMainWindow):
 
     def _build_ui(self):
 
-        central = QWidget()
+        central = BlurredBackground(img_path, blur_radius=5, darken=150)
         central.setObjectName("central")
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
@@ -293,7 +307,12 @@ class TaipanLauncher(QMainWindow):
         # Scroll
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
+        scroll.viewport().setAutoFillBackground(False)   # <-- add this
+        scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+
+       
         content = QWidget()
         content.setObjectName("scroll_content")
 
@@ -735,7 +754,7 @@ def main():
     app = QApplication(sys.argv)
 
     # Use Windows style so stylesheets fully apply
-    app.setStyle("Windows")
+    #app.setStyle("Windows")
     app.setStyleSheet(STYLESHEET) 
     window = TaipanLauncher()
     window.show()
