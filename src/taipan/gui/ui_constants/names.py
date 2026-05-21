@@ -39,16 +39,16 @@ SCRIPTS = {
             ],
 
             "Stabling": [
-                ("Stabling Balance", "_run_stabling_balance", "Check stabling balance across yards"),
-                ("Stabling Count",   "_run_stabling_count",   "Count stabling movements"),
-                ("Stabling Graph",   "_run_stabling_graph",   "Graph stabling over time"),
+                ("Stabling Balance", "_run_stabling_balance", "Check stabling balance across yards, outputs Excel report"),
+                ("Stabling Count",   "_run_stabling_count",   "Count stabling movements across yards, outputs Excel report"),
+                ("Stabling Graph",   "_run_stabling_graph",   "Graph stabling over time, outputs Excel step graph"),
 
             ],
 
             "Renamers": [
-                ("Assign LineIDs",  "_run_assign_lineids", "Assign line IDs to services"),
-                ("Train Renamer",   "_run_train_renamer",  "Rename trains in RSX in bulk"),
-                ("Sectorise RSX",   "_run_sectorise",      "Sectorise RSX file"),
+                ("Assign LineIDs",  "_run_assign_lineids", "Assign line IDs to services, outputs new RSX file"),
+                ("Train Renamer",   "_run_train_renamer",  "Rename trains in RSX in bulk, outputs new RSX file"),
+                ("Sectorise RSX",   "_run_sectorise",      "Sectorise RSX file, outputs new RSX file"),
 
             ],
 
