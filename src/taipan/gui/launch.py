@@ -96,7 +96,7 @@ class ScriptCard(QWidget):
                 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 14)
-        layout.setSpacing(4)
+        layout.setSpacing(6)
         title_lbl = QLabel(title)
         title_lbl.setObjectName("card_title_orange" if is_orange else "card_title_normal")
         title_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -105,14 +105,16 @@ class ScriptCard(QWidget):
         div.setObjectName("div_orange" if is_orange else "div_normal")
         div.setFrameShape(QFrame.Shape.HLine)
         layout.addWidget(div)
-        layout.addSpacing(4)
+        layout.addSpacing(6)
 
         for group_name, items in data["groups"].items():
             if group_name:
+                layout.addSpacing(8)
                 sub = QLabel(group_name)
                 sub.setObjectName("subcat_orange" if is_orange else "subcat_normal")
                 sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 layout.addWidget(sub)
+                layout.addSpacing(6)
 
             for label, func_name, tooltip in items:
                 btn = QPushButton(label)
@@ -762,6 +764,8 @@ def main():
     app.setStyleSheet(STYLESHEET) 
     window = TaipanLauncher()
     window.show()
+    window.activateWindow()
+    window.raise_()
     sys.exit(app.exec())
 
 

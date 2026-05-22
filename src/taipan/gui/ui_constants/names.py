@@ -7,19 +7,19 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("Working Timetable",  "_run_wtt",               "Generate the working timetable from RSX"),
-                ("Public Timetable",   "_run_ptt",               "Generate public timetable workbooks from RSX"),
-                ("RunInfo",            "_run_runinfo",           "Generate run information report from RSX"),
-                ("Train Movements",    "_run_movements",         "Generate train movements report from RSX"),
-                ("TripCount",          "_run_tripcount",         "Count trips by line and period from RSX"),
-                ("Runtime Dashboard",  "_run_runtime",           "Generate runtime dashboard from RSX"),
-                ("KM Calculation",     "_run_km",                "Calculate kilometres by service from Excel export of RSX"),
+                ("Working Timetable",  "_run_wtt",               "Generate working timetable excel files from RSX"),
+                ("Public Timetable",   "_run_ptt",               "Generate public timetable excel files from RSX"),
+                ("RunInfo",            "_run_runinfo",           "Generate run information Excel report from RSX"),
+                ("Train Movements",    "_run_movements",         "Generate train movements Excel report from RSX"),
+                ("TripCount",          "_run_tripcount",         "Generate trip count Excel report from RSX"),
+                ("Runtime Dashboard",  "_run_runtime",           "Generate runtime dashboard in browser from RSX"),
+                ("KM Calculation",     "_run_km",                "Calculate kilometres from Excel export of RSX"),
 
             ],
 
             "First Last": [
-                ("First Last",         "_run_first_last",        "Generate detailed first and last service report from RSX"),
-                ("Simple First Last",  "_run_simple_first_last", "Simplified first and last service report from RSX"),
+                ("First Last",         "_run_first_last",        "Generate detailed first and last service Excel report from two RSX files"),
+                ("Simple First Last",  "_run_simple_first_last", "Simplified first and last service Excel report from RSX"),
                 ("First Last Graph",   "_run_first_last_graph",  "Graph first and last services from single or multiple RSX files"),
 
             ],
@@ -33,7 +33,7 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("QA",     "_run_qa",     "Run quality assurance checks on RSX, saves text report"),
+                ("QA",     "_run_qa",     "Run QA checks on RSX, saves text report of results"),
                 ("Slicer", "_run_slicer", "Slice timetable data by blocks and days, saves new RSX file"),
 
             ],
@@ -46,7 +46,7 @@ SCRIPTS = {
             ],
 
             "Renamers": [
-                ("Assign LineIDs",  "_run_assign_lineids", "Assign line IDs to services, outputs new RSX file"),
+                ("Assign LineIDs",  "_run_assign_lineids", "Assign line IDs to services in RSX, outputs new RSX file"),
                 ("Train Renamer",   "_run_train_renamer",  "Rename trains in RSX in bulk, outputs new RSX file"),
                 ("Sectorise RSX",   "_run_sectorise",      "Sectorise RSX file, outputs new RSX file"),
 

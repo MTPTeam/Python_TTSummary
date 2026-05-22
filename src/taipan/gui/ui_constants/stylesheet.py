@@ -76,7 +76,8 @@ STYLESHEET = f"""
     QLabel#app_title {{
     color: {WHITE};
     font-size: 30px;
-    font-weight: 800;
+    font-weight: 900;
+    letter-spacing: 2px;
     }}
     QLabel#app_subtitle {{
     color: rgba(250, 210, 129, 0.90);
@@ -93,7 +94,7 @@ STYLESHEET = f"""
     }}
     QLabel#card_title_normal {{
     color: #fffaf0;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 800;
     background: transparent;
     padding: 2px 0px 4px 0px;
@@ -122,7 +123,7 @@ STYLESHEET = f"""
     }}
     QLabel#card_title_orange {{
     color: #ffe8c8;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 800;
     background: transparent;
     padding: 2px 0px 4px 0px;
@@ -146,7 +147,7 @@ STYLESHEET = f"""
     ════════════════════════════════════════════ */
     QLabel#card_note {{
     color: #fffaf0;
-    font-size: 12px;
+    font-size: 13px;
     font-style: italic;
     background: transparent;
     padding: 4px 2px;
@@ -161,8 +162,8 @@ STYLESHEET = f"""
     border-bottom: 2px solid rgba(180, 120, 30, 0.55);
     border-radius: 7px;
     padding: 8px 14px;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 650;
     text-align: left;
     }}
     QPushButton#btn_normal:hover {{
@@ -220,11 +221,12 @@ STYLESHEET = f"""
     color: #f5e8c8;
     font-size: 14px;
     letter-spacing: 2px;
-    font-weight: 500;
+    font-weight: 400;
     }}
     QLabel#status_file {{
     color: rgba(245, 232, 200, 0.65);
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 400;
     }}
     QPushButton#clear_btn {{
     background: rgba(200, 60, 40, 0.20);
@@ -243,11 +245,12 @@ STYLESHEET = f"""
     TOOLTIPS
     ════════════════════════════════════════════ */
     QToolTip {{
-    background: rgba(30, 15, 3, 0.92);
-    color: #f1dfb6;
-    border: 1px solid rgba(203, 150, 46, 0.60);
-    padding: 6px 10px;
-    border-radius: 10px;
+    background: rgba(20, 10, 2, 0.96);
+    color: #fde8c0;
+    border: 1px solid rgba(239, 119, 64, 0.55);
+    padding: 8px 14px;
     font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
     }}
 """
