@@ -13,7 +13,7 @@ from taipan.stabling.StablingCount import capacity_exceeded
 import traceback
 import logging
 
-from taipan.constants.locations import YARDS, NON_STABLE_LOCATIONS
+from taipan.constants.locations import YARDS, NON_STABLE_LOCATIONS, inject_yard
 from taipan.constants.days import ID_TO_SHORT, SORT_ORDER_WEEK, WEEKDAY_KEYS_MASTER
 from taipan.constants.trains import SORT_ORDER_UNIT
 from taipan.constants.styles import STEPS_COL
@@ -48,6 +48,13 @@ def TTS_SB(path, mypath = None):
         want_duplicates=True)
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
+
+
+        ### VYST change!
+        vyst_runs = {k for k, rec in run_dict.items() if rec[3] == 'VYST' or rec[4] == 'VYST'}
+        if vyst_runs:
+            inject_yard(YARDS, 'Varsity', {'capacity': None, 'sector': 1, 'yards': ['VYST'], 'ngr_only': False, 'qr_only': False})
+
 
         if duplicates:
             print("Error - duplicate train numbers")
@@ -249,7 +256,7 @@ def TTS_SB(path, mypath = None):
         for yard_name, info in YARDS.items():
             build_weeklists_into_store(
                 store, yard_name, info['yards'], # Access 'yards' here
-                SORT_ORDER_WEEK, d_list, run_dict, count=False
+                SORT_ORDER_WEEK, d_list, run_dict, count=False, vyst_runs=vyst_runs
         )
 
         # Create yard worksheets ONCE (no sheet_dict)
@@ -259,7 +266,7 @@ def TTS_SB(path, mypath = None):
         for yard_name, info in YARDS.items():
             build_weeklists_into_store(
                 store_for_cap, yard_name, info['yards'],
-                SORT_ORDER_WEEK, d_list, run_dict, count=True
+                SORT_ORDER_WEEK, d_list, run_dict, count=True, vyst_runs=None
             )
         
         

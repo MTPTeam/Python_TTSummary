@@ -17,7 +17,7 @@ def init_store(locations_dict, day_codes):
 
 
 
-def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge_for_count=False):
+def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge_for_count=False, vyst_runs=None):
     DoO = resolve_DoO(wkdk)
 
     # OLD RULES preserve historical delta rules for each mode:
@@ -31,19 +31,22 @@ def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge
         unit, cars, trips, start_sID, end_sID, start_t, finish_t, *_ = v        
         delta = 0.5 if cars == 3 else 1
 
-        if D_o_run in wkdk:
-            # STARTS at a stable location
-            if start_sID in stable:
-                signed_delta = -delta if count else delta
-                daylist_out.append([
-                    run, DoO, unit, cars, trips, start_sID, end_sID, start_t, signed_delta
-                ])
 
+        if D_o_run in wkdk:
+           # Skip VYST unless this run starts/ends there
+           if start_sID == 'VYST' and (vyst_runs is None or k not in vyst_runs):
+               pass
+           # STARTS at a stable location
+           elif start_sID in stable:
+               signed_delta = -delta if count else delta
+               daylist_out.append([run, DoO, unit, cars, trips, start_sID, end_sID, start_t, signed_delta])
             # ENDS at a stable location
-            if end_sID in stable:
-                daylist_in.append([
-                    run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, +delta
-                ])
+           if end_sID == 'VYST' and (vyst_runs is None or k not in vyst_runs):
+               pass
+           elif end_sID in stable:
+               daylist_in.append([run, DoO, unit, cars, trips, start_sID, end_sID, finish_t, +delta])
+
+        
 
     # Sort by time first
     daylist_out.sort(key=lambda v: v[7])
@@ -76,30 +79,30 @@ def build_daylists(daylist_out,daylist_in,wkdk,stable,run_dict,count=False,merge
 
 def build_weeklists(mon_out, tue_out, wed_out, thu_out, mth_out, fri_out, sat_out, sun_out,
                     mon_in,  tue_in,  wed_in,  thu_in,  mth_in,  fri_in,  sat_in,  sun_in,
-                    stableoptions, d_list, run_dict, count):
+                    stableoptions, d_list, run_dict, count, vyst_runs=None):
     if '120' in d_list:
-        build_daylists(mth_out, mth_in, ('120',), stableoptions, run_dict, count)
+        build_daylists(mth_out, mth_in, ('120',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '64' in d_list:
-        build_daylists(mon_out, mon_in, ('64',), stableoptions, run_dict, count)
+        build_daylists(mon_out, mon_in, ('64',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '32' in d_list:
-        build_daylists(tue_out, tue_in, ('32',), stableoptions, run_dict, count)
+        build_daylists(tue_out, tue_in, ('32',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '16' in d_list:
-        build_daylists(wed_out, wed_in, ('16',), stableoptions, run_dict, count)
+        build_daylists(wed_out, wed_in, ('16',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '8' in d_list:
-        build_daylists(thu_out, thu_in, ('8',), stableoptions, run_dict, count)
+        build_daylists(thu_out, thu_in, ('8',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '4' in d_list:
-        build_daylists(fri_out, fri_in, ('4',), stableoptions, run_dict, count)
+        build_daylists(fri_out, fri_in, ('4',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '2' in d_list:
-        build_daylists(sat_out, sat_in, ('2',), stableoptions, run_dict, count)
+        build_daylists(sat_out, sat_in, ('2',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
     if '1' in d_list:
-        build_daylists(sun_out, sun_in, ('1',), stableoptions, run_dict, count)
+        build_daylists(sun_out, sun_in, ('1',), stableoptions, run_dict, count, vyst_runs=vyst_runs)
 
 
 
-def build_weeklists_into_store(store, yard_name, options, day_order, d_list, run_dict, count):
+def build_weeklists_into_store(store, yard_name, options, day_order, d_list, run_dict, count, vyst_runs=None):
     outs = [store[yard_name][c]['out'] for c in day_order]
     ins  = [store[yard_name][c]['in']  for c in day_order]
-    build_weeklists(*outs, *ins, options, d_list, run_dict, count)
+    build_weeklists(*outs, *ins, options, d_list, run_dict, count, vyst_runs=vyst_runs)
 
 
 

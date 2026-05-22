@@ -301,6 +301,8 @@ def station_lookup(code):
 
 
 #### STABLING YARDS DICTIONARY
+### if VYST is start or end of run, append it as a stabling yard for only that train...
+# dynamically update dict per run to add VYST, then reset to global dictionary...
 
 YARDS = {
    'Petrie':        {'capacity': 1,   'qr_only': True,   'yards': ['PETS'],               'sector': 1},
@@ -328,6 +330,24 @@ YARDS = {
 }
 
 
+
+def inject_yard(yards, name, meta):
+   """Insert a yard into the dict in sector order."""
+   # USED FOR VYST insertion into sector 1 ordering
+   new_yards = {}
+   inserted = False
+   target_sector = meta.get('sector', 99)
+   for k, v in yards.items():
+       if not inserted and v.get('sector', 99) > target_sector:
+           new_yards[name] = meta
+           inserted = True
+       new_yards[k] = v
+   if not inserted:
+       new_yards[name] = meta
+   yards.clear()
+   yards.update(new_yards)
+
+
 # other locations that are not stations and not yards
 
 MISC_LOCATIONS = {
@@ -353,3 +373,6 @@ MISC_LOCATIONS = {
 
 # update internal list of non stable yards 
 NON_STABLE_LOCATIONS = ['IPS','MNY','CAB','NBR','GYN','RS','BHI']
+
+
+

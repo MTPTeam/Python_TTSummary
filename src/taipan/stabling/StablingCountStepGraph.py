@@ -9,7 +9,7 @@ from taipan.gui.base import open_file_crossplatform, show_info, select_file
 from taipan.core.xml_parser import parse_rsx, normalise_days, sort_days, sort_units
 from taipan.core.xml_processor import init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount
 import time
-from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS
+from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, inject_yard
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
 from taipan.core.utils import mins_to_excel_time, hhmm_to_mins
 import win32com.client
@@ -475,12 +475,19 @@ def TTS_Graph(path):
     run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
     d_list   = [str(d) for d in d_list]
     d_list   = normalise_days(sort_days(d_list), collapse_mon_thu=False)
+
+
+    ## VYST run
+    vyst_runs = {k for k, rec in run_dict.items() if rec[3] == 'VYST' or rec[4] == 'VYST'}
+    if vyst_runs:
+        inject_yard(YARDS, 'Varsity', {'capacity': None, 'sector': 1, 'yards': ['VYST'], 'ngr_only': False, 'qr_only': False})
+
     u_list   = sort_units(u_list)
     change_matrix = build_change_matrix(u_list)
     store = init_store(YARDS, SORT_ORDER_WEEK)
 
     for yard_name, meta in YARDS.items():
-        build_weeklists_into_store(store, yard_name=yard_name, options=meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count=True)
+        build_weeklists_into_store(store, yard_name=yard_name, options=meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count=True, vyst_runs=vyst_runs)
 
     stables_dict = {}
     for yard_name in YARDS:

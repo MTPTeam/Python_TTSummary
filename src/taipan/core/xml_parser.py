@@ -92,6 +92,18 @@ def normalise_train_type(raw):
 
     return s
 
+def tag_vyst_trains(trains, run_dict):
+   """
+   For each train, stamp .vyst_is_yard = True if its runID's
+   first origin or last destination is VYST.
+   """
+   vyst_runs = {
+       key for key, rec in run_dict.items()
+       if rec[3] == 'VYST' or rec[4] == 'VYST'
+   }
+   for t in trains:
+       t.vyst_is_yard = (t.run, t.weekday) in vyst_runs
+
 
 class TrainInfo:
 
@@ -161,6 +173,8 @@ class TrainInfo:
         self.station_ids = [e.attrib['stationID'] for e in self.entries]
         self.track_ids   = [e.attrib['trackID'] for e in self.entries]
         self.daycode     = ID_TO_SHORT[self.weekday]
+
+        self.vyst_is_yard = False  # to be set later based on run info DELETE when VYST is actual yard 
             
 
     @staticmethod
@@ -274,6 +288,12 @@ def parse_rsx(path, *, want_trains = False, want_duplicates = False, want_days =
     duplicates = detect_duplicates(trains) if want_duplicates else None
     d_list, u_list = extract_day_and_unit_lists(trains) if (want_days or want_units) else (None, None)
     run_dict = build_run_dict(trains) if want_runs else None
+
+
+    if run_dict and trains:
+        # tag whether VYST should be treated as stabling based on start and end run
+        # REMOVE and add VYST to the master list of yards in locations.py once it becomes one!
+        tag_vyst_trains(trains, run_dict)
 
     if UNKNOWN_UNITS:
         msg = "Unrecognised train units found:\n\n"

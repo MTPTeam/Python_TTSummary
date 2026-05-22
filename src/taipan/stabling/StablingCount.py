@@ -13,7 +13,7 @@ from taipan.core.utils import timetrim, csl
 from taipan.core.xml_parser import parse_rsx, TrainInfo, sort_days, sort_units, normalise_days, resolve_DoO
 from taipan.core.xml_processor import build_singletrip_col, find_runs_without_stable, init_store, build_weeklists_into_store, merge_out_in_per_day, startofdayunitcount, endofdayunitcount, overnightstabling, interpeakstabling
 from taipan.core.ExcelWriter import build_excel_formats, summary_writerow, summary_writetotals, summary_totalheaders
-from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS
+from taipan.constants.locations import NON_STABLE_LOCATIONS, YARDS, NON_STABLE_LOCATIONS, inject_yard
 from taipan.constants.days import SORT_ORDER_WEEK, ID_TO_SHORT, WEEKDAY_KEYS_MASTER
 from taipan.constants.styles import STEPS_COL
 
@@ -93,6 +93,13 @@ def TTS_SC(path, mypath = None):
         run_dict = {(run, str(day)): v for (run, day), v in run_dict.items()}
         d_list   = [str(d) for d in d_list]
         
+
+
+        ### VYST change!
+        vyst_runs = {k for k, rec in run_dict.items() if rec[3] == 'VYST' or rec[4] == 'VYST'}
+        if vyst_runs:
+            inject_yard(YARDS, 'Varsity', {'capacity': None, 'sector': 1, 'yards': ['VYST'], 'ngr_only': False, 'qr_only': False})
+
         filename = filename[:-4]
         filename_xlsx = f'StablingCount-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
@@ -223,7 +230,7 @@ def TTS_SC(path, mypath = None):
         print(store)
         # Fill the empty lists with runs given it starts or finishes at one of the options
         for yard_name, meta in YARDS.items():
-            build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True)
+            build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True, vyst_runs=vyst_runs)
         
         # Create blank worksheets for each stabling yard
         Info = workbook.add_worksheet('Info')

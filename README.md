@@ -27,7 +27,7 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - The excel macros file has been replaced with a unified frontend, implemented in PyQT6. PyQT6 is an incredibly flexible UI library, so get creative here `:)`
 - This launcher file is referenced in launch_TAIPAN.bat and is the entry point for TAIPAN. The .bat file should not need to be modified.
 - To add a new button, a new function must be defined in the `TaipanLauncher` class. To link this function to a button, add the function to the `SCRIPTS` dictionary in `gui/names.py` in the `groups` variable in the appropriate category. The ordering is `("BUTTON_TEXT",   "FUNCTION_NAME",   "TOOLTIP_TEXT")`. Please note the FUNCTION_NAME is the name of the function you added in the `TaipanLauncher` class, so please import it as well. You can also rearrange this dictionary and play around with the formatting...
-- You can also modify the styling and colouring of the UI in `gui/stylesheet` - which just uses standard CSS. 
+- You can also modify the styling, ordering, and colouring of the UI in `gui/stylesheet` - which just uses standard CSS. 
 - If a code file has no clear return or exit point (e.g RuntimeDashboard since it uses dash), it must be run as a subprocess. This is so it does not occupy the thread that the actual UI is operating on and freeze it. To see an example, see `_run_runtime` in `launch.py`. 
 - The user interface is multi-threaded. This is so multiple scripts can be running simultaneously and so the main UI doesn't crash during processing. The main UI stays on the main thread, and the functions run on Worker threads.  
 - Managing the thread state is **incredibly important** - if you don't, the application will crash or hang because of cross thread memory access. See below on how to do this...
@@ -76,6 +76,7 @@ If it doesn't return anything, just run call_on_main_thread().
 ```
 - If you see `QObject: Cannot create children for a parent that is in a different thread`, you likely called a Qt widget directly from a worker thread.
 - If you see functions/buttons that use COM/win32 freezing or crashing, add pythoncom.CoInitialize() at the top of your tool function and pythoncom.CoUninitialize() in a finally block. COM objects have thread affinity and must be initialised on the thread that uses them.
+
 
 
 **`requirements.txt`**
@@ -182,6 +183,17 @@ If it doesn't return anything, just run call_on_main_thread().
 - User can specify what day's timetables they want generated (generated list from all possible days in input rsx)
 
 
+
+**`VYST counting as a yard`** 
+
+- Currently VYST is treated as a yard only when: within a runID, VYST is the origin or destination. NOTE, the logic is per run. 
+- When VYST turns into a proper yard you must revert the above logic. To do this, make the following changes:
+> - In all files - delete all references to `vyst_runs` and `inject_yards`.
+> - `xml_processor.py` - remove all `vyst_runs` function arguments and checks in if statements (leave structure as is).
+> - `xml_parser.py` - remove all references to VYSTt. In `TrainInfo` class (`self.vyst_is_yard = False`), `parse_rsx` etc.
+> - move VYST permanently into `YARDS` constant (located in `locations.py`) with a proper capacity and train type condition (leave none if Unknown). Delete `inject_yard` function.
+
+
 ## Testing
  - Run all tests; copy into cmd
 
@@ -230,3 +242,10 @@ This step sets up the virtual environment and installs all dependencies.
 ### 5. Run 🚀
 This launches TAIPAN
 - Double click launch_TAIPAN (.bat file)
+
+
+
+## Updating Files
+
+If code has changed -> pull/fetch via github desktop
+If requirements.txt has changed -> run updater script (update_TAIPAN.bat)
