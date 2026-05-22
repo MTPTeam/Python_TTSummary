@@ -15,7 +15,6 @@ TAIPAN has been restructured to improve modularity, maintainability, and separat
 - `plans/` - NGR daily plan etc
 - `reports/` - QA reports, tripcount, error checker
 - `rsx/` - functions that modify, extract or return specific parts of an RSX file (sectoriseRSX, slicer).
-- `run_renamer/` - all run renaming functionality 
 - `stabling/` - all outputs relating to stabling (stabling count/balance).
 - `timetables/` - all outputs relating to timetabling (public and working timetable).
 
@@ -140,8 +139,8 @@ If it doesn't return anything, just run call_on_main_thread().
 - To add new tests, add a new file in the folder with unit tests, and it will automatically be discovered by pytest (see Testing). 
 - So far contains tests for `xml_parser.py`, `TrainInfo`, `SectoriseRSX.py`, needs extending. 
 
-**`run_renamers/run_renamer_new.py`**
-- Run renamer and block creator buttons (and their variants) in TAIPAN's excel file have been replaced with a single unified button/code file (button: Assign LineIDs -> `run_renamer_new.py`). Original code files have been retained and are available in the `run_renamers` folder 
+**`rsx/run_renamer_new.py`**
+- Run renamer and block creator buttons (and their variants) in TAIPAN's excel file have been replaced with a single unified button/code file (button: Assign LineIDs -> `run_renamer_new.py`). 
 - new renamer automatically assigns and normalises LineIDs to trains in an RSX file based on (unit type, operating day, yard departure order, connecting trains).
 - Broadly the scripts steps are:
 > - parse all trains from rsx and filter to supported unit types (see LineID range table)

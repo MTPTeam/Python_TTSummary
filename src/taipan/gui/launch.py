@@ -13,7 +13,7 @@ from taipan.gui.ui_constants.background import BlurredBackground
 
 import importlib
 def _lazy(module, attr):
-
+ 
     # these imports are hefty which affects the startup time - lazy load them (so the user sees the UI right away although imports are still loading in the background)
    _cache = {}
    def _loader(*args, **kwargs):
@@ -29,7 +29,7 @@ TTS_PTT         = _lazy("taipan.timetables.PublicTimetable",     "TTS_PTT")
 TTS_SB          = _lazy("taipan.stabling.StablingBalance",       "TTS_SB")
 TTS_SC          = _lazy("taipan.stabling.StablingCount",         "TTS_SC")
 TTS_Graph       = _lazy("taipan.stabling.StablingCountStepGraph","TTS_Graph")
-assign_line_ids = _lazy("taipan.run_renamers.run_renamer_new",   "assign_line_ids")
+assign_line_ids = _lazy("taipan.rsx.run_renamer_new",   "assign_line_ids")
 sectorise       = _lazy("taipan.rsx.SectoriseRSX",               "sectorise")
 rename_trains   = _lazy("taipan.rsx.train_renamer",              "main")
 TTS_TM          = _lazy("taipan.reports.TrainMovements",         "TTS_TM")
@@ -445,6 +445,9 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(lambda: TTS_TC(path),"● RUNNING — TRIP COUNT...","● DONE — TRIP COUNT")
 
+
+
+    
     def _run_runtime(self, button=None):
         # run this as subprocess since dash doesn't exit 
         
@@ -504,7 +507,7 @@ class TaipanLauncher(QMainWindow):
         "● DONE — FIRST LAST"
         )
 
-
+    
 
     def _run_simple_first_last(self, button=None):
         path = self.get_file(filter_str="RSX Files (*.rsx)")
@@ -689,6 +692,7 @@ class TaipanLauncher(QMainWindow):
             "● RUNNING — CLOSURE IMPACTS...",
             "● DONE — CLOSURE IMPACTS"
         )
+
 
     def _run_archiver(self, button=None):
 
