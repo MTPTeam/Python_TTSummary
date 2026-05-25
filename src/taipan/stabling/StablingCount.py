@@ -43,7 +43,7 @@ def capacity_exceeded(yard_name, meta, os_total, os_bkdwn, u_list):
    unit_counts = {
        u: float(v)
        for u, v in zip(u_list, os_bkdwn)
-       if u != 'QMU'
+       #if u != 'QMU' # include qmu
    }
    ngr_count = unit_counts.get('NGR', 0) + unit_counts.get('NGRE', 0)
    qr_count  = sum(v for u, v in unit_counts.items() if u not in ('NGR', 'NGRE'))
@@ -416,8 +416,8 @@ def TTS_SC(path, mypath = None):
 
                     ip_total_fmt = boldborderred if weekend_exceeds(ip_total, weekday_max_ip_total, is_weekend, has_weekdays) else boldborder
 
-                    if ip_total > os_total:
-                        ip_total_fmt = interpeak_flag
+                    #if ip_total > os_total:
+                        #ip_total_fmt = interpeak_flag
                     Summary.write(row_ptr, 7 + 2 * n, ip_total, ip_total_fmt)
                     
                     for ui in range(n):  
