@@ -13,6 +13,7 @@ import logging
 from taipan.core.xml_parser import load_rsx, extract_trains, detect_duplicates, sort_days
 from taipan.gui.base import open_file_crossplatform, select_file
 from taipan.core.utils import _time_key, timetrim
+from taipan.constants.locations import STATIONS_MASTER, YARDS
 from PyQt6.QtWidgets import QApplication
 
 
@@ -44,6 +45,20 @@ entries_to_exclude = ['RSWJ','YNA','RSF',
                       'TNYBCHJ','YLYJ','STP','NTP',
                       'BHNJ','LBR','MEJ','SLYJ','MNYE',
                       'BWJ','BEJ','ORMJ','CYJ','FRK']
+
+
+
+line_station_lookup = {
+   code: s['line']
+   for code, s in STATIONS_MASTER['stations'].items()
+}
+CITY_TERMINUS = {
+   ('south', False): 'BHI',
+   ('south', True):  'EXH',
+   ('north', False): 'RS',
+   ('north', True):  'BOG',
+}
+
 
 ### Some stations will have a double entry if dwelling at the station for long enough, one for arrive and one for depart
 ### Stations or locations in this list should only have a single entry regardless of dwell time otherwise it causes errors in the HASTUS Importer
@@ -85,7 +100,13 @@ HASTUS_stableconverter = {
     # '':'',
     }
 
+yard_codes = {
+   code for y in YARDS.values()
+   for code in y['yards']
+   if code not in STATIONS_MASTER['stations']
+}
 
+terminus_codes = {v['terminus'] for v in STATIONS_MASTER['lines'].values() if v.get('terminus')}
 
 
 def TTS_H(path, mypath = None):
@@ -232,6 +253,61 @@ def TTS_H(path, mypath = None):
     
         SORT_ORDER_WEEK = ['1','2','4','120']
         d_list = sort_days(d_list)
+
+
+        city_codes = {'RS', 'BNC', 'BRC', 'BHI', 'PKR', 'SBE', 'SBA', 'EXH', 'BOG', 'RTL'}
+        line_codes_cache = {
+        line: {code for code, s in STATIONS_MASTER['stations'].items() if s['line'] == line}
+        for line in STATIONS_MASTER['lines']
+        }
+
+
+        print('IPS in Ipswich-Rosewood codes:', 'IPS' in line_codes_cache.get('Ipswich - Rosewood', set()))
+        print('DAR in Ipswich-Rosewood codes:', 'DAR' in line_codes_cache.get('Ipswich - Rosewood', set()))
+        print('BNH in Ipswich-Rosewood codes:', 'BNH' in line_codes_cache.get('Ipswich - Rosewood', set()))
+        print('Ipswich - Rosewood codes:', line_codes_cache.get('Ipswich - Rosewood'))
+
+        revenue_trains = [t for t in non_dept_trains if not t.is_empty_train]
+        line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
+        for line in STATIONS_MASTER['lines']:
+            corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
+            all_train_entries = []
+            for t in revenue_trains:
+                train_station_ids = set(t.stations)
+                build_codes = line_codes_cache.get(line, set())
+                o_line_t = line_station_lookup.get(t.start_id)
+                d_line_t = line_station_lookup.get(t.end_id)
+                if corridor is None:
+                    condition = o_line_t == line or d_line_t == line
+                else:
+                    condition = (o_line_t == line or d_line_t == line) and bool(train_station_ids & build_codes)
+                if not condition:
+                    continue
+                train_entries = [(e.attrib['stationName'], e.attrib['stationID']) for e in t.entries
+                                    if e.attrib['stationID'] in build_codes]
+                if train_entries:
+                    all_train_entries.append(train_entries)
+               
+            all_train_entries.sort(key=len, reverse=True)
+            canonical = []
+            for train_entries in all_train_entries:
+                last_idx = -1
+                for stop in train_entries:
+                    if stop in canonical:
+                        last_idx = canonical.index(stop)
+                    else:
+                        last_idx += 1
+                        canonical.insert(last_idx, stop)
+            line_station_order[line] = canonical
+
+
+
+            for line, canonical in line_station_order.items():
+                terminus = STATIONS_MASTER['lines'].get(line, {}).get('terminus')
+                if canonical and terminus and canonical[0][1] == terminus:
+                    line_station_order[line] = list(reversed(canonical))
+
+
         
         
         
@@ -241,359 +317,6 @@ def TTS_H(path, mypath = None):
         ### Extra logic needed for Inner city trains that have no obvious line
         ### The most error-prone function of the exporter, direction is regularly an issue
         ### Might need new method for direction selection (line irrelevant in this report)
-        vrt_2Beenleigh = {
-			'ORMS':	   (31, 4010),
-            'BNT':     (30, 3910),
-            'BNHS':    (29, 3990),
-            'BNH':     (28, 2879),
-            'HVW':     (27, 2745),
-            'EDL':     (26, 2624),
-            'BTI':     (25, 2518),
-            'LGL':     (24, 2353),
-            'KGT':     (23, 2208),
-            'WOI':     (22, 2027),
-            'TDP':     (21, 1951),
-            'KRY':     (20, 2070), 
-            'FTG':     (19, 1636),
-            'RUC':     (18, 1556),
-            'ATI':     (17, 1463),
-            'SYK':     (16, 1368),
-            'BQO':     (15, 1279),
-            'CEP':     (14, 1600),
-            'SLY':     (13, 1039),
-            'RKET':    (12, 1100),
-            'RKE':     (11, 949),
-            'MQK':     (10, 869),
-            'MBN':     (9,  963),
-            'TNY':     (8,  902),
-            'YLY':     (7,  779),
-            'YRG':     (6,  707),
-            'FFI':     (5,  603),
-            'DUP':     (4,  519),
-            'PKR':     (3,  441),
-            'SBA':     (2,  286),
-            'SBE':     (1,  205),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2GympieNth = {
-            # 'CRD': (),
-            # 'AUR': (),
-            'GYN':     (41, 10613),
-            'GMR':     (40, 9187),
-            'WOO':     (39, 8811),
-            'TRA':     (38, 8393),
-            'COZ':     (37, 8163),
-            'PMQ':     (36, 7673),
-            'COO':     (35, 7223),
-            'SSE':     (34, 6978),
-            'EUM':     (33, 6893),
-            'NHR':     (32, 4300),
-            'YAN':     (31, 6503),
-            'NBR':     (30, 7000), 
-            'WOB':     (29, 5693),
-            'WOBS':    (28, 5363),
-            'PAL':     (27, 5483),
-            'EUD':     (26, 5153),
-            'MOH':     (25, 4763),
-            'LSH':     (24, 4433),
-            'BWH':     (23, 4163),
-			'BWHS':    (22, 4163),
-            'GSS':     (21, 3893),
-            'BEB':     (20, 3413),
-            'EMH':     (19, 3143),
-            'EMHS':    (18, 3768),
-            'CEN':     (17, 2961),
-            'CAW':     (16, 3443),
-            # 'CAE':     (15, 3400), 
-            'CAB':     (14, 3218), 
-            'MYE':     (13, 2636),
-            'BPY':     (12, 2414),
-            'NRB':     (11, 2653),
-            'DKB':     (10, 1880),
-            'PET':     (9,  1853),
-            'PETS':    (8,  1711),
-            'LWO':     (7,  1757),
-            'VGI':     (6,  1300),
-            'NTG':     (5,  1082),
-            'EGJ':     (4,  713),
-            'BHI':     (3,  500),
-            'BRC':     (2,  0),
-            'BNC':     (1,  0),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Cleveland = {
-            'CVN':     (22, 2875),
-            'ORO':     (21, 2743),
-            'WPT':     (20, 2592),
-            'BDE':     (19, 2436),
-            'TNS':     (18, 2285),
-            'LOT':     (17, 2156),
-            'MNY':     (16, 1814),
-            'WNC':     (15, 1863),
-            'WNM':     (14, 1781),
-            'WYH':     (13, 1691),
-            'LJN':     (12, 1574),
-            'LDM':     (11, 1528),
-            'HMM':     (10, 1414),
-            'MJE':     (9,  1203),
-            'CNQ':     (8,  1053),
-            'MGS':     (7,  921),
-            'NPR':     (6,  769),
-            'CRO':     (5,  680),
-            'BRD':     (4,  574),
-            'PKR':     (3,  700),
-            'SBA':     (2,  316),
-            'SBE':     (1,  226),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Doomben = {
-            'DBN':     (10, 1165),
-            'ACO':     (9,  1016),
-            'HDR':     (8,  928),
-            'CYF':     (7,  867),
-            'EGJ':     (6,  759),
-            'WWI':     (5,  676),
-            'AIN':     (4,  676),
-            'BHI':     (3,  398),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2FernyGrove = {
-            'FYG':     (15, 1445),
-            'KEP':     (14, 1260),
-            'GOQ':     (13, 1190),
-            'OXP':     (12, 1118),
-            'MHQ':     (11, 1038),
-            'GAO':     (10, 941),
-            'EGG':     (9,  873),
-            'ADY':     (8,  800),
-            'NWM':     (7,  701),
-            'WLQ':     (6,  617),
-            'WID':     (5,  537),
-            'EDJ':     (4,  470),
-            'BHI':     (3,  537),
-            'BRC':     (2,  257),
-            'BNC':     (1,  107),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2VarsityLs = {
-            'VYST':    (17,  4086),
-            'VYS':     (16,  3996),
-            'ROB':     (15,  3822),
-            'ROBS':    (14,  4542),
-            'MRC':     (13,  3686),
-            'NRG':     (12,  3524),
-            'HLN':     (11,  3242),
-            'HID':     (10,  3094),
-            'CXM':     (9,   2962),
-            'PPA':     (8,   2846),
-            'ORM':     (7,   2728),
-            'BNH':     (6,   2336),
-            'LGL':     (5,   1903),
-            'ATI':     (4,   1194),
-            'PKR':     (3,   431),
-            'SBA':     (2,   278),
-            'SBE':     (1,   198),
-            'RS':      (0,   0),
-            'BNC':     (-1, -127),
-            'BRC':     (-2, -244),
-            'BHI':     (-3, -341),
-            'AIN':     (-4, -532),
-            'WWI':     (-5, -614),
-            'EGJ':     (-6, -696),
-            'AJN':     (-7, -747),
-            'BIT':     (-8, -1092),
-            'BDT':     (-9, -1248)
-            }
-        
-        vrt_2Rosewood = {
-            'RSW':     (37, 4025),
-            'YLE':     (36, 3422),
-            'TAO':     (35, 3367),
-            'WOQ':     (34, 3138),
-            'FWE':     (33, 2933),
-            'WFW':     (32, 2962),
-            'KRA':     (31, 3380),
-            'WUL':     (30, 2762),
-            'WFE':     (29, 3642),
-            'FEE':     (28, 3012),
-            'THS':     (27, 2682),
-            'IPSS':    (26, 3125),
-            'IPS':     (25, 2940), 
-            'EIP':     (24, 2436),
-            'BOV':     (23, 2343),
-            'BDX':     (22, 2244), 
-            'EBV':     (21, 2117),
-            'DIR':     (20, 2024),
-            'RVV':     (19, 1918),
-            
-            'RDKS':    (18, 1960),
-            'RDK':     (17, 1760),
-            
-            'GDQ':     (16, 1588),
-            'GAI':     (15, 1464),
-            'WAC':     (14, 1366),
-            'DAR':     (13, 1475),
-            'OXL':     (12, 993),
-            # 'TNY':     (11, 600),
-            # 'MBN':     (10, 500),
-            'CQD':     (9,  900),
-            'SHW':     (8,  780),    
-            'GVQ':     (7,  696),
-            'CMZ':     (6,  619),
-            'IDP':     (5,  526),
-            'TIQ':     (4,  417),
-            'TWG':     (3,  309),
-            'AHF':     (2,  231),
-            'MTZ':     (1,  138),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2KippaRing = {
-            'KPR':     (22, 2850),
-            'KPRS':    (21, 3030),
-            'RWL':     (20, 2640),
-            'MGE':     (19, 2550),
-            'MGH':     (18, 2400),
-            'MRD':     (17, 2310),
-            'KGR':     (16, 2220),
-            'PET':     (15, 2070),
-            'LWO':     (14, 2400),
-            'BPR':     (13, 1830),
-            'SPN':     (12, 1740),
-            'BDS':     (11, 1590),
-            'CDE':     (10, 1380),
-            'ZLL':     (9,  1290),
-            'GEB':     (8,  1200),
-            'SSN':     (7,  1110),
-            'VGI':     (6,  1020),
-            'NTG':     (5,  870),
-            'EGJ':     (4,  660),
-            'BHI':     (3,  510),
-            'BRC':     (2,  240),
-            'BNC':     (1,  120),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Shorncliffe = {
-            'SHC':     (19, 2290),
-            'SGE':     (18, 2025),
-            'DEG':     (17, 1586),
-            'NBD':     (16, 1499),
-            'BZL':     (15, 1422),
-            'NUD':     (14, 1261),
-            'BQY':     (13, 1182),
-            'BQYS':    (12, 1740),
-            'BHA':     (11, 1106),
-            'NTG':     (10, 1350), 
-            'NND':     (9,  903),
-            'TBU':     (8,  834),
-            'AJN':     (7,  800),
-            'EGJ':     (6,  714), 
-            'WWI':     (5,  631),
-            'AIN':     (4,  551),
-            'BHI':     (3,  520),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Springfield = {
-            'SFC':     (14, 1920),
-            'SFD':     (13, 1770),
-            'RHD':     (12, 1440),
-            'DAR':     (11, 1230),
-            'OXL':     (10, 1080),
-            'CQD':     (9,  930),
-            'SHW':     (8,  840),
-            'GVQ':     (7,  750),
-            'CMZ':     (6,  660),
-            'IDP':     (5,  570),
-            'TIQ':     (4,  480),
-            'TWG':     (3,  330),
-            'AHF':     (2,  240),
-            'MTZ':     (1,  150),
-            'RS':      (0,  0)
-            }
-        
-        vrt_2InnerCity = {
-            'MNS':     (7,   1024),
-            'YN':      (6,   1024 ),
-            'YNA':     (5,   649 ),
-            'MNE':     (4,   544 ),
-            'BHI':     (3,   324 ),
-            # 'BRC':     (2,   264 ),
-            # 'BNC':     (1,   140 ),
-            
-            # 'RS':      (0,   0 ),
-            # 'RSWJ':    (-1,  -60),
-            # 'SBE':     (-1, -226 ),
-            'SBA':     (-2, -316 ),
-            
-    
-            'PKR':     (-4, -447 ),
-            }
-        
-        vrt_2Milton = {
-            'MES':      (7,1000), 
-            'ETS':      (6,800),
-            'CAM':      (5,680),
-            'EXH':      (4,560),
-            'NBY':      (3,410),
-            'RSF':      (2,170),
-            'RSWJ':     (1,140),
-            'MTZ':      (0,0),
-            'MBN':      (-1,-340),
-            'TNY':      (-2,-350),
-            'DUP':      (-3,-400),
-            'PKR':      (-4,-450),
-            }
-        
-        network_vrt_dict = {
-            'Beenleigh':                  vrt_2Beenleigh,
-            'Caboolture - Gympie North':  vrt_2GympieNth,
-            'Cleveland':                  vrt_2Cleveland,
-            'Doomben':                    vrt_2Doomben,
-            'Ferny Grove':                vrt_2FernyGrove,
-            'Varsity Lakes - Airport':    vrt_2VarsityLs,   
-            'Springfield':                vrt_2Springfield,
-            'Ipswich - Rosewood':         vrt_2Rosewood,
-            'Redcliffe':                  vrt_2KippaRing,
-            'Shorncliffe':                vrt_2Shorncliffe,
-            'Inner City':                 vrt_2InnerCity,  
-            'Normanby':                   vrt_2Milton,
-            
-            
-            }
-        
-        uniquestations_dict = {
-            'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','BWHS','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
-            'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
-            'Doomben':                    ('CYF','HDR','ACO','DBN'),
-            'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT','MRC','HID','PPA'),
-            'Springfield':                ('RHD','SFD','SFC'),
-            'Ipswich - Rosewood':         ('WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'), #'MBN','TNY',
-            'Redcliffe':                  ('KGR','MRD','MGH','MGE','RWL','KPR','KPRS'),
-            'Shorncliffe':                ('BHA','BQY','BQYS','NUD','BZL','NBD','DEG','SGE','SHC'),
-            'Inner City':                 ('BHI','BRC','BNC'),
-            'Normanby':                   ('MES','ETS','CAM','EXH','NBY','RSF','MTZ'), #,'RSWJ'
-            }
         
         
         def create_textfile(weekdaykey):
@@ -617,6 +340,11 @@ def TTS_H(path, mypath = None):
                 departure = timetrim(departure)
     
                 return (arrival,departure)
+
+
+            
+
+            
             
             
             
@@ -650,6 +378,74 @@ def TTS_H(path, mypath = None):
                 sIDs       = set(t.stations)
                 sIDs_list  = t.stations
                 empt       = '3' if t.is_empty_train else '0'
+
+
+                entry_codes  = [e.attrib['stationID'] for e in entries]
+                o_line       = line_station_lookup.get(oID)
+                d_line       = line_station_lookup.get(dID)
+                
+
+                o_line = line_station_lookup.get(oID)
+                d_line = line_station_lookup.get(dID)
+                if o_line and o_line != 'Inner City' and d_line and d_line != 'Inner City' and o_line != d_line:
+                    matched_line = o_line
+                elif d_line and d_line != 'Inner City':
+                    matched_line = d_line
+                else:
+                    matched_line = o_line
+                if not matched_line:
+                    for line, codes in line_codes_cache.items():
+                        if sIDs.intersection(codes):
+                            matched_line = line
+                            break
+
+
+                
+                # explicit overrides
+                if oID == 'RDKS' and 'IPS' in sIDs_list:
+                    is_inbound = True
+                elif dID == 'PKR' and 'MBN' in sIDs_list:
+                    is_inbound = False
+                else:
+
+                    
+                    line_codes = line_codes_cache.get(matched_line, set())
+                    if oID in city_codes:
+                        is_inbound = False
+                    elif dID in city_codes:
+                        is_inbound = True
+            
+                    else:
+                        first_two = [c for c in entry_codes if c in line_codes][:2]
+                        if len(first_two) == 2:
+                            canonical = line_station_order.get(matched_line, [])
+                            canonical_codes = [c for _, c in canonical]
+                            a = canonical_codes.index(first_two[0]) if first_two[0] in canonical_codes else None
+                            b = canonical_codes.index(first_two[1]) if first_two[1] in canonical_codes else None
+                            if a is not None and b is not None:
+                                is_inbound = b < a
+                            else:
+                                is_inbound = True
+                        else:
+                            is_inbound = True
+
+                     
+                corridor = STATIONS_MASTER['lines'].get(matched_line, {}).get('corridor') if matched_line else None
+                if corridor == 'south':
+                    drct = '13' if is_inbound else '12'
+                else:
+                    drct = '12' if is_inbound else '13'
+
+                
+
+
+                if tn == 'E401':
+                    print(f'first_two={first_two} a={a} b={b} canonical_codes[:10]={canonical_codes[:10]}')
+
+                
+
+       
+
                 
                 
                 ### Some adjustments to the location+platform entry are made for special cases
@@ -745,90 +541,7 @@ def TTS_H(path, mypath = None):
                 
                 empt = '3' if 'Empty' in origin['trainTypeId'] else '0'
     
-                for line,vrt in network_vrt_dict.items():
-    
-                    line_stops = uniquestations_dict.get(line)
-                    condition = sIDs.intersection(line_stops)
-                    
-                    if line == 'Beenleigh':
-                        condition = condition and sIDs.isdisjoint(uniquestations_dict.get('Varsity Lakes - Airport'))
-                    
-                    elif line == 'Shorncliffe':
-                        condition = condition or ('NTG' in [oID,dID] and any([vrt.get(x) for x in sIDs if x != 'NTG']))
-                    
-                    elif line == 'Redcliffe':
-                        shared_line_rdp_stations = ['LWO', 'BPR', 'SPN', 'BDS', 'CDE', 'ZLL', 'GEB', 'SSN', 'VGI']
-                        condition = condition or dID in shared_line_rdp_stations or oID in shared_line_rdp_stations
-    
-            
-                    if condition:
-                        
-                            
-                        if oID == 'RDKS' and 'IPS' in sIDs_list:
-                            increasing = True
-                            decreasing = False
-                            break
-                            
-                        
-                        elif dID == 'PKR' and 'MBN' in sIDs_list:
-                            for n,entry in enumerate(reversed(entries)):
-    
-                                if entry.attrib['stationID'] in vrt:
-                                    firstonline = entry.attrib['stationID']                  
-                                    first_sIDinVRT = n
-                                    break
-                            
-                            for n,entry in enumerate(reversed(entries)):
-                                if n <= first_sIDinVRT:
-                                    secondonline = firstonline
-                                else:
-                                    if entry.attrib['stationID'] in vrt:
-                                        secondonline = entry.attrib['stationID']
-                                        break
-                            
-                            a = int(vrt.get(firstonline)[0])    
-                            b = int(vrt.get(secondonline)[0])
-                            increasing = b > a
-                            decreasing = b <= a
-                            break
-    
-                        else:
-                            for n,entry in enumerate(entries):
-                                
-                                if entry.attrib['stationID'] in vrt:
-                                    firstonline = entry.attrib['stationID']                  
-                                    first_sIDinVRT = n
-                                    break
-                            
-                            for n,entry in enumerate(entries):
-                                if n <= first_sIDinVRT:
-                                    secondonline = firstonline
-                                else:
-                                    if entry.attrib['stationID'] in vrt:
-                                        secondonline = entry.attrib['stationID']
-                                        break
-                            
-                            a = int(vrt.get(firstonline)[0])    
-                            b = int(vrt.get(secondonline)[0])
-                            increasing = b > a
-                            decreasing = b <= a
-                            break
                 
-                    else:
-                        count += 1
-    
-                no_line = count == len(network_vrt_dict)
-                if no_line:
-                    unassigned.append([tn,oID,dID])
-                    
-                
-                ### 13 is Down
-                ### 12 is Up                
-                elif line in ['Beenleigh','Cleveland','Varsity Lakes - Airport','Ipswich - Rosewood','Springfield']:
-                    drct = '13' if decreasing else '12'
-                elif line in ['Caboolture - Gympie North','Doomben','Ferny Grove','Inner City','Redcliffe','Shorncliffe','Normanby']:
-                    drct = '12' if decreasing else '13'
-                    
                     
                 # drcttest = 'Up' if drct == '12' else 'Down'
                 # if tn in ['EW03','EU06']:

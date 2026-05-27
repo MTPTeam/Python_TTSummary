@@ -29,7 +29,7 @@ STATIONS_MASTER = {
     'Cleveland':                 {'sector': 3, 'terminus': 'CVN', 'corridor': 'south'},
     'Doomben':                   {'sector': 2, 'terminus': 'DBN', 'corridor': 'north'},
     'Ferny Grove':               {'sector': 3, 'terminus': 'FYG', 'corridor': 'north'},
-    #'Varsity Lakes - Airport':   {'sector': 1, 'terminus': 'VYS', 'corridor': 'north'},
+    'Varsity Lakes - Airport':   {'sector': 1, 'terminus': 'VYS', 'corridor': 'north'},
     'Ipswich - Rosewood':        {'sector': 2, 'terminus': 'IPS', 'corridor': 'south'},
     'Redcliffe':                 {'sector': 1, 'terminus': 'KPR', 'corridor': 'north'},
     'Shorncliffe':               {'sector': 2, 'terminus': 'SHC', 'corridor': 'north'},
