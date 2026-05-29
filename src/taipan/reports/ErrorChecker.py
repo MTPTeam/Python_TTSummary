@@ -376,8 +376,6 @@ def main(path=None):
 				)
 
 
-
-
 		# inconsistent timing for trains with the same stop sequence
 		# builds a gap fingerprint (minute-level diffs between consecutive requestedDepartures)
 		# and flags any train whose fingerprint differs from others with the same stops
@@ -387,8 +385,11 @@ def main(path=None):
 			# skip empties 
 			if t.is_empty_train:
 				continue
-
-
+			
+			tn_type = train_numbers_dict.get(t.number[0], '')
+			if tn_type.startswith('Empty_'):
+				continue
+			
 			gaps = []
 			prev_rd = None
 			prev_sid = None
@@ -402,12 +403,10 @@ def main(path=None):
 
 				if rd and prev_rd:
 
-					if prev_stoptime <= 180: #### dwell check 
-						delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
-						total_mins = round(delta.total_seconds() / 60)
-						gaps.append((prev_sid, total_mins))
-					else:
-						gaps.append((prev_sid, None)) # this is just a placeholder to keep the sequencing aligned - ignored in print 
+					delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
+					total_mins = round(delta.total_seconds() / 60)
+					gaps.append((prev_sid, total_mins))
+					
 
 				prev_rd = rd
 				prev_sid = sid
