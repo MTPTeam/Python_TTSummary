@@ -270,14 +270,16 @@ def TTS_H(path, mypath = None):
         revenue_trains = [t for t in non_dept_trains if not t.is_empty_train]
         line_station_order = {line: [] for line in STATIONS_MASTER['lines']}
         for line in STATIONS_MASTER['lines']:
-            corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
+            line_corridor = STATIONS_MASTER['lines'].get(line, {}).get('corridor')
             all_train_entries = []
             for t in revenue_trains:
                 train_station_ids = set(t.stations)
                 build_codes = line_codes_cache.get(line, set())
                 o_line_t = line_station_lookup.get(t.start_id)
                 d_line_t = line_station_lookup.get(t.end_id)
-                if corridor is None:
+
+                
+                if line_corridor is None:
                     condition = o_line_t == line or d_line_t == line
                 else:
                     condition = (o_line_t == line or d_line_t == line) and bool(train_station_ids & build_codes)
@@ -302,10 +304,10 @@ def TTS_H(path, mypath = None):
 
 
 
-            for line, canonical in line_station_order.items():
-                terminus = STATIONS_MASTER['lines'].get(line, {}).get('terminus')
-                if canonical and terminus and canonical[0][1] == terminus:
-                    line_station_order[line] = list(reversed(canonical))
+        for line, canonical in line_station_order.items():
+            terminus = STATIONS_MASTER['lines'].get(line, {}).get('terminus')
+            if canonical and terminus and canonical[0][1] == terminus:
+                line_station_order[line] = list(reversed(canonical))
 
 
         
@@ -383,66 +385,33 @@ def TTS_H(path, mypath = None):
                 entry_codes  = [e.attrib['stationID'] for e in entries]
                 o_line       = line_station_lookup.get(oID)
                 d_line       = line_station_lookup.get(dID)
+                matched_line = (o_line if o_line and o_line != 'Inner City' else d_line)
+                corridor = STATIONS_MASTER['lines'].get(matched_line, {}).get('corridor') if matched_line else None
+
                 
 
-                o_line = line_station_lookup.get(oID)
-                d_line = line_station_lookup.get(dID)
-                if o_line and o_line != 'Inner City' and d_line and d_line != 'Inner City' and o_line != d_line:
-                    matched_line = o_line
-                elif d_line and d_line != 'Inner City':
-                    matched_line = d_line
+
+
+
+   
+                last_char = tn[-1]
+                if last_char.isnumeric():
+                    is_inbound = int(last_char) % 2 == 0
                 else:
-                    matched_line = o_line
-                if not matched_line:
-                    for line, codes in line_codes_cache.items():
-                        if sIDs.intersection(codes):
-                            matched_line = line
-                            break
+                    is_inbound = True
 
 
-                
+
                 # explicit overrides
                 if oID == 'RDKS' and 'IPS' in sIDs_list:
                     is_inbound = True
                 elif dID == 'PKR' and 'MBN' in sIDs_list:
                     is_inbound = False
-                else:
-
-                    
-                    line_codes = line_codes_cache.get(matched_line, set())
-                    if oID in city_codes:
-                        is_inbound = False
-                    elif dID in city_codes:
-                        is_inbound = True
-            
-                    else:
-                        first_two = [c for c in entry_codes if c in line_codes][:2]
-                        if len(first_two) == 2:
-                            canonical = line_station_order.get(matched_line, [])
-                            canonical_codes = [c for _, c in canonical]
-                            a = canonical_codes.index(first_two[0]) if first_two[0] in canonical_codes else None
-                            b = canonical_codes.index(first_two[1]) if first_two[1] in canonical_codes else None
-                            if a is not None and b is not None:
-                                is_inbound = b < a
-                            else:
-                                is_inbound = True
-                        else:
-                            is_inbound = True
-
-                     
-                corridor = STATIONS_MASTER['lines'].get(matched_line, {}).get('corridor') if matched_line else None
                 if corridor == 'south':
-                    drct = '13' if is_inbound else '12'
+                    drct = '12' if is_inbound else '13'
                 else:
                     drct = '12' if is_inbound else '13'
-
-                
-
-
-                if tn == 'E401':
-                    print(f'first_two={first_two} a={a} b={b} canonical_codes[:10]={canonical_codes[:10]}')
-
-                
+                                
 
        
 
