@@ -45,6 +45,12 @@ train_numbers_dict = {
 # Check whether connecting trains share the same lineID on the same day (mismatched line IDs)
 # Check if connecting train is missing for the same day (missing connecting train)
 # check if the same trains have the same difference between requested departure and requested departure of next station. same train = same stops
+# IGNORE if dwell > 120,180 etc, ignoring empties? 
+# turnback condition - 
+# short turnbacks if direction changes - check dir
+# anything sub 4 minutes turnback 
+# anything sub 8 but not lt 4
+# train x on y day (FROM-TO) 
 # ??? Less than 8min tb
 #
 #
@@ -66,9 +72,99 @@ non_revenue_stations = {
 	if s['non_revenue']
 } | yard_codes | misc_codes
 
+def make_section(title, items):
+	if not items:
+		return ''
+	rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
+	return f'''
+	<details open>
+	<summary>{title} <span class="count">({len(items)})</span></summary>
+	<ul>{rows}</ul>
+	</details>'''
+
+def make_timing_section(title, items):
+	if not items:
+		return ''
+	tables = []
+	for item in items:
+		lines = item.split('\n')
+		header = lines[0]
+		table_rows = ''
+		diffs_str = ''
+		for line in lines[1:]:
+			line = line.strip()
+			if not line:
+				continue
+			if line.startswith('Differing runtimes:'):
+				diffs_str = line[len('Differing runtimes:'):].strip()
+			elif line.startswith('->'):
+				trains = line[2:].strip()
+				# collect all diffs for this outlier group into one row
+				diff_parts = []
+				for part in diffs_str.split('), '):
+					part = part.strip().rstrip(')')
+					m = re.match(r'(\w+)\s+(\d+)m\s+\(expected\s+(\d+)m', part)
+					if m:
+						sid, actual, expected = m.group(1), m.group(2), m.group(3)
+						diff_parts.append(f'{sid}: {actual}m (expected {expected}m)')
+				if diff_parts:
+					diffs_cell = '<br>'.join(diff_parts)
+					table_rows += f'<tr><td class="trains">{trains}</td><td>{diffs_cell}</td></tr>'
+		if table_rows:
+			tables.append(f'''
+			<table>
+			<caption>{header}</caption>
+			<thead><tr><th style="width:65%">Train(s)</th><th style="width:35%">Differs</th></tr></thead>
+			<tbody>{table_rows}</tbody>
+			</table>''')
+	return f'''
+	<details open>
+	<summary>{title} <span class="count">({len(items)})</span></summary>
+		{''.join(tables)}
+	</details>'''
+
+def write_html(filename_html, filename, sections, inconsistent_timing):
+	total_issues = sum(len(items) for _, items in sections) + len(inconsistent_timing)
+	html = f'''<!DOCTYPE html>
+	<html lang="en">
+	<head>
+	<meta charset="utf-8">
+	<title>Errors - {filename}</title>
+	<style>
+	body {{ font-family: monospace; background: #1e1e1e; color: #d4d4d4; padding: 2em; font-size: 15px; }}
+	h1 {{ color: #ffffff; }}
+	.meta {{ color: #888; margin-bottom: 2em; }}
+	
+	td.trains {{ word-break: break-word; white-space: normal; }}
+	td.trains div {{ margin-bottom: 2px; }}
+	details {{ margin-bottom: 1em; border: 1px solid #444; border-radius: 4px; }}
+	summary {{ background: #2d2d2d; padding: 0.6em 1em; cursor: pointer; font-weight: bold; color: #ce9178; }}
+	summary:hover {{ background: #3a3a3a; }}
+	.count {{ color: #888; font-weight: normal; }}
+	ul {{ margin: 0; padding: 1em 1em 1em 2em; }}
+	li {{ margin-bottom: 0.4em; }}
+	pre {{ margin: 0; white-space: pre-wrap; word-break: break-word; color: #d4d4d4; }}
+	table {{ border-collapse: collapse; width: 60%; margin: 0 0 1.5em 0; table-layout: fixed; }}
+	caption {{ font-size: 1.1em; font-weight: bold; color: #9cdcfe; padding: 0.5em; text-align: center; letter-spacing: 0.05em; }}
+
+	th {{ background: #3a3a3a; color: #ce9178; padding: 0.4em 0.8em; text-align: left; font-size: 14px; }}
+	td {{ padding: 0.4em 0.8em; border-bottom: 1px solid #333; vertical-align: top; font-size: 14px; }}
+	tr:hover td {{ background: #2a2a2a; }}
+	</style>
+	</head>
+	<body>
+	<h1>Taipan Error Checker</h1>
+	<div class="meta">{filename} &mdash; {total_issues} issue(s) found</div>
+	{''.join(make_section(title, items) for title, items in sections)}
+	{make_timing_section('Same stops but inconsistent requested departure gaps', inconsistent_timing)}
+	</body>
+	</html>'''
+	with open(filename_html, 'w', encoding='utf-8') as f:
+		f.write(html)
+
 
 def extract_lineid_num(lineid):
-   match = re.search(r'\{(\d+)\}', lineid)
+   match = re.search(r'~\s*(\d+)', lineid)
    return match.group(1) if match else lineid
 
 def get_direction(t):
@@ -280,53 +376,86 @@ def main(path=None):
 					f'Connected trips: {connections.get(key)}\n'
 				)
 
+
+
+
 		# inconsistent timing for trains with the same stop sequence
 		# builds a gap fingerprint (minute-level diffs between consecutive requestedDepartures)
 		# and flags any train whose fingerprint differs from others with the same stops
-		tn_day_lineid = defaultdict(list)
-		for t in trains:
-			tn_day_lineid[t.number].append((t.weekday, t.lineID))
+		
 		train_fingerprints = {}
 		for t in trains:
 			gaps = []
 			prev_rd = None
+			prev_sid = None
+
 			for e in t.entries:
 				rd = e.attrib.get('requestedDeparture')
+				sid = e.attrib.get('stationID')
+
 				if rd and prev_rd:
 					delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
 					total_mins = round(delta.total_seconds() / 60)
-					gaps.append(total_mins)
+					gaps.append((prev_sid, total_mins))
+
 				prev_rd = rd
-			train_fingerprints[t.number] = (tuple(t.station_ids), tuple(gaps))
+				prev_sid = sid
+
+			train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
 		station_seq_groups = defaultdict(list)
-		for tn, (station_seq, gaps) in train_fingerprints.items():
-			station_seq_groups[station_seq].append((tn, gaps))
+
+		for key, (station_seq, gaps, tn, weekday, lineid) in train_fingerprints.items():
+			station_seq_groups[station_seq].append((tn, weekday, lineid, gaps))
+
 		inconsistent_timing = []
 
 		for station_seq, members in station_seq_groups.items():
 			if len(members) < 2:
 				continue
+
 			gap_groups = defaultdict(list)
-			for tn, gaps in members:
-				gap_groups[gaps].append(tn)
+
+			for tn, weekday, lineid, gaps in members:
+				gap_groups[gaps].append((tn, weekday, lineid))
+
 			if len(gap_groups) < 2:
 				continue
-			majority_gaps, majority_trains = max(gap_groups.items(), key=lambda x: len(x[1]))
-			outlier_lines = []
-			for gaps, tns in gap_groups.items():
+
+			majority_gaps, majority_members = max(gap_groups.items(), key=lambda x: len(x[1]))
+			header = f'Route: {station_seq[0]} -> {station_seq[-1]}'
+			majority_str = ', '.join(f'{sid} {m}m' for sid, m in majority_gaps)
+
+			diff_groups = defaultdict(list)
+
+			for gaps, members_list in gap_groups.items():
 				if gaps == majority_gaps:
 					continue
+
+				# compare by index position to preserve ordering
+				diffs = tuple(
+					(maj_sid, out_mins, maj_mins)
+					for (maj_sid, maj_mins), (out_sid, out_mins) in zip(majority_gaps, gaps)
+					if maj_mins != out_mins
+
+				)
+
+				diff_groups[diffs].extend(members_list)
+			outlier_lines = []
+
+			for diffs, members_list in diff_groups.items():
+				diff_str = ', '.join(f'{sid} {actual}m (expected {expected}m)' for sid, actual, expected in diffs)
 				train_info = ', '.join(
-					f'{tn} ({" / ".join(WEEKDAY_KEYS_MASTER.get(wk, {}).get("short", wk) + " #" + extract_lineid_num(lid) for wk, lid in tn_day_lineid[tn])})'
-					for tn in tns
+					f'{tn} ({WEEKDAY_KEYS_MASTER.get(wk, {}).get("short", wk)} #{extract_lineid_num(lid)})'
+					for tn, wk, lid in members_list
 				)
-				outlier_lines.append(f'  Outlier {list(gaps)} mins -> {train_info}')
+				outlier_lines.append(f'  Differing runtimes: {diff_str}\n    -> {train_info}')
+
 			if outlier_lines:
-				inconsistent_timing.append(
-					f'Stops: {", ".join(station_seq)}\n'
-					f'  Majority {list(majority_gaps)} mins -> {", ".join(majority_trains)}\n' +
-					'\n'.join(outlier_lines)
-				)
+				inconsistent_timing.append(f'{header}\n' + '\n'.join(outlier_lines))
+ 
+		
+
+		
 
 		# ── output ────────────────────────────────────────────────────────────
 		filename_txt = f'Errors-{filename}.txt'
@@ -375,9 +504,39 @@ def main(path=None):
 		if inconsistent_timing:
 			printwl('\n\nTrains with same stops but inconsistent requested departure gaps')
 			for x in inconsistent_timing: printwl(x)
+		
+		"""if shortturnbacks:
+			printwl('\n\n Short turnbacks')
+			for x in shortturnbacks: printwl(x)"""
 
 		o.close()
 		print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
+
+
+		
+		tn_doubles_fmt = [
+		f'Train {tn} already running on {WEEKDAY_KEYS_MASTER.get(day, {}).get("short", day)}'
+		for tn, day in tn_doubles
+		]
+		sections = [
+		('Runs starting/ending at non-stabling locations',      stablingissue),
+		('First/last station pass through a revenue location',          originpass + destinpass),
+		('Runs that change platforms either side of connection', mismatchedplatforms),
+		#('Short turnbacks',                                      shortturnbacks),
+		('Runs with more than one unit type',                    multiunitrun),
+		('Runs missing connections',                             missingconnects),
+		('Non-standardised train numbers',                       dodgy_tns),
+		('Train numbers not matching unit type',                 wrong_tn),
+		('Trains with more than 1 unit type',                    multiunittrain),
+		('Duplicate train numbers',                              tn_doubles_fmt),
+		('Connected trains with mismatched lineIDs',             lineid_mismatches),
+		('Connections referencing train not found on same day',  lineid_missing),
+		#('Same stops but inconsistent requested departure gaps', inconsistent_timing),
+		]
+		
+
+		write_html(f'Errors-{filename}.html', filename, sections, inconsistent_timing)
+		print(f'HTML report: Errors-{filename}.html')
 
 	except Exception as e:
 		logging.error(traceback.format_exc())
@@ -387,3 +546,6 @@ def main(path=None):
 
 if __name__ == "__main__":
 	main()
+
+
+
