@@ -44,12 +44,11 @@ train_numbers_dict = {
 # Trains with duplicate train numbers
 # Check whether connecting trains share the same lineID on the same day (mismatched line IDs)
 # Check if connecting train is missing for the same day (missing connecting train)
-# check if the same trains have the same difference between requested departure and requested departure of next station. same train = same stops
-# IGNORE if dwell > 120,180 etc, ignoring empties? 
+# check if the trains that stop at the same stations have the same difference between requested departure of current and requested departure of next station (aka run time). Ignores if dwell > 180 and ignores empties. 
 # turnback condition - 
 # short turnbacks if direction changes - check dir
 # anything sub 4 minutes turnback 
-# anything sub 8 but not lt 4
+# anything sub 8 but not < 4
 # train x on y day (FROM-TO) 
 # ??? Less than 8min tb
 #
@@ -385,23 +384,37 @@ def main(path=None):
 		
 		train_fingerprints = {}
 		for t in trains:
+			# skip empties 
+			if t.is_empty_train:
+				continue
+
+
 			gaps = []
 			prev_rd = None
 			prev_sid = None
+			prev_stoptime = 0   # new dwell check - skip dwells over 180
 
 			for e in t.entries:
 				rd = e.attrib.get('requestedDeparture')
 				sid = e.attrib.get('stationID')
+				stoptime = int(e.attrib.get('stopTime', 0))
+
 
 				if rd and prev_rd:
-					delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
-					total_mins = round(delta.total_seconds() / 60)
-					gaps.append((prev_sid, total_mins))
+
+					if prev_stoptime <= 180: #### dwell check 
+						delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
+						total_mins = round(delta.total_seconds() / 60)
+						gaps.append((prev_sid, total_mins))
+					else:
+						gaps.append((prev_sid, None)) # this is just a placeholder to keep the sequencing aligned - ignored in print 
 
 				prev_rd = rd
 				prev_sid = sid
+				prev_stoptime = stoptime
 
 			train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
+
 		station_seq_groups = defaultdict(list)
 
 		for key, (station_seq, gaps, tn, weekday, lineid) in train_fingerprints.items():
@@ -431,12 +444,11 @@ def main(path=None):
 				if gaps == majority_gaps:
 					continue
 
-				# compare by index position to preserve ordering
+				# compare by index position to preserve ordering. ignore nones 
 				diffs = tuple(
-					(maj_sid, out_mins, maj_mins)
-					for (maj_sid, maj_mins), (out_sid, out_mins) in zip(majority_gaps, gaps)
-					if maj_mins != out_mins
-
+				(maj_sid, out_mins, maj_mins)
+				for (maj_sid, maj_mins), (out_sid, out_mins) in zip(majority_gaps, gaps)
+				if maj_mins != out_mins and maj_mins is not None and out_mins is not None
 				)
 
 				diff_groups[diffs].extend(members_list)
