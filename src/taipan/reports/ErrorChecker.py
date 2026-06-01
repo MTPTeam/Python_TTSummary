@@ -71,6 +71,18 @@ non_revenue_stations = {
 	if s['non_revenue']
 } | yard_codes | misc_codes
 
+
+
+def to_seconds(t_str):
+	h, m, s = map(int, t_str.split(':'))
+	return (h * 3600) + (m * 60) + s
+
+
+def to_minutes_only(t_str):
+	h, m, s = map(int, t_str.split(':'))
+	# Ignore 's' entirely to force minute-level comparisons
+	return (h * 60) + m
+
 def make_section(title, items):
 	if not items:
 		return ''
@@ -167,6 +179,9 @@ def extract_lineid_num(lineid):
    return match.group(1) if match else lineid
 
 def get_direction(t):
+
+
+	### CHANGE TO ODD/EVEN
 	"""Determine Up/Down direction for a train using STATIONS_MASTER. Direction is relative to city"""
 	city_codes = {'RS', 'BNC', 'BRC', 'BHI', 'PKR', 'SBE', 'SBA', 'RTL', 'EXH', 'BOG', 'WLG', 'ALB'}
 	entry_codes = t.station_ids
@@ -353,7 +368,7 @@ def main(path=None):
 					)
 				# short turnbacks
 				turnback = pd.Timedelta(entry['odep']) - pd.Timedelta(prev['darr'])
-				if turnback < pd.Timedelta(minutes=8) and entry['direction'] != prev['direction']:
+				if turnback < pd.Timedelta(minutes=8) and entry['direction'] != prev['direction']: # check if direction is different 
 					tb_mins, tb_secs = map(int, str(turnback)[-5:].split(':'))
 					spacer = " " if len(run) == 2 else ''
 					shortturnbacks.append(
@@ -393,25 +408,53 @@ def main(path=None):
 			gaps = []
 			prev_rd = None
 			prev_sid = None
-			prev_stoptime = 0   # new dwell check - skip dwells over 180
 
 			for e in t.entries:
 				rd = e.attrib.get('requestedDeparture')
 				sid = e.attrib.get('stationID')
-				stoptime = int(e.attrib.get('stopTime', 0))
+
+				stoptime_attr = e.attrib.get('stopTime')
+
+				if stoptime_attr is None:
+					# Train doesn't stop - skip check, label with current destination sid
+					gaps.append((sid, None))
+					prev_rd = None
+					continue
+
+				stoptime = int(stoptime_attr) 
+				
+
+				# It's the first station (no prev)
+				if prev_rd is None:
+					gaps.append((sid, None))
+					prev_rd = rd 
+					prev_sid = sid
+
+				# Attributes are missing
+				elif rd is None:
+					gaps.append((sid, None))
+					prev_rd = None
+					prev_sid = sid
+
+				# Skip if dwell is 3min or less
+				elif stoptime <= 180:
+					try:
+						total_mins = to_minutes_only(rd) - to_minutes_only(prev_rd)
+						gaps.append((sid, total_mins))
+					except (ValueError, AttributeError):
+						gaps.append((sid, None))
+
+					prev_rd = rd
+					prev_sid = sid
+
+				# Dwell is over 180s
+				else:
+					gaps.append((sid, None))
+					prev_rd = None  
+					prev_sid = sid
 
 
-				if rd and prev_rd:
-
-					delta = pd.Timedelta(rd) - pd.Timedelta(prev_rd)
-					total_mins = round(delta.total_seconds() / 60)
-					gaps.append((prev_sid, total_mins))
-					
-
-				prev_rd = rd
-				prev_sid = sid
-				prev_stoptime = stoptime
-
+			
 			train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
 
 		station_seq_groups = defaultdict(list)
@@ -435,22 +478,32 @@ def main(path=None):
 
 			majority_gaps, majority_members = max(gap_groups.items(), key=lambda x: len(x[1]))
 			header = f'Route: {station_seq[0]} -> {station_seq[-1]}'
-			majority_str = ', '.join(f'{sid} {m}m' for sid, m in majority_gaps)
+			
+			majority_str = ', '.join(f'{sid} {m}m' for sid, m in majority_gaps if m is not None)
 
+			# --- FIX: Convert the majority gaps into a dictionary for precise key lookups ---
+			majority_dict = {sid: m for sid, m in majority_gaps if m is not None}
 			diff_groups = defaultdict(list)
 
 			for gaps, members_list in gap_groups.items():
 				if gaps == majority_gaps:
 					continue
 
-				# compare by index position to preserve ordering. ignore nones 
-				diffs = tuple(
-				(maj_sid, out_mins, maj_mins)
-				for (maj_sid, maj_mins), (out_sid, out_mins) in zip(majority_gaps, gaps)
-				if maj_mins != out_mins and maj_mins is not None and out_mins is not None
-				)
+				# Compare station gaps explicitly by matching their station IDs, not their positions
+				diffs_list = []
+				for out_sid, out_mins in gaps:
+					if out_mins is None:
+						continue
+					
+					# Look up what the runtime SHOULD be for this specific station ID
+					maj_mins = majority_dict.get(out_sid)
+					if maj_mins is not None and out_mins != maj_mins:
+						diffs_list.append((out_sid, out_mins, maj_mins))
 
-				diff_groups[diffs].extend(members_list)
+				if diffs_list:
+					diff_groups[tuple(diffs_list)].extend(members_list)
+			# --------------------------------------------------------------------------------
+					
 			outlier_lines = []
 
 			for diffs, members_list in diff_groups.items():
@@ -463,6 +516,7 @@ def main(path=None):
 
 			if outlier_lines:
 				inconsistent_timing.append(f'{header}\n' + '\n'.join(outlier_lines))
+
  
 		
 
@@ -516,9 +570,9 @@ def main(path=None):
 			printwl('\n\nTrains with same stops but inconsistent requested departure gaps')
 			for x in inconsistent_timing: printwl(x)
 		
-		"""if shortturnbacks:
+		if shortturnbacks:
 			printwl('\n\n Short turnbacks')
-			for x in shortturnbacks: printwl(x)"""
+			for x in shortturnbacks: printwl(x)
 
 		o.close()
 		print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
@@ -533,7 +587,7 @@ def main(path=None):
 		('Runs starting/ending at non-stabling locations',      stablingissue),
 		('First/last station pass through a revenue location',          originpass + destinpass),
 		('Runs that change platforms either side of connection', mismatchedplatforms),
-		#('Short turnbacks',                                      shortturnbacks),
+		('Short turnbacks',                                      shortturnbacks),
 		('Runs with more than one unit type',                    multiunitrun),
 		('Runs missing connections',                             missingconnects),
 		('Non-standardised train numbers',                       dodgy_tns),
