@@ -83,15 +83,51 @@ def to_minutes_only(t_str):
 	# Ignore 's' entirely to force minute-level comparisons
 	return (h * 60) + m
 
+
+
+def make_subsection(title, items):
+    if not items:
+        return ''
+
+    rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
+
+    return f'''
+    <details>
+        <summary>{title} <span class="count">({len(items)})</span></summary>
+        <ul>{rows}</ul>
+    </details>
+    '''
+
+
+def count_items(items):
+    if isinstance(items, dict):
+        return sum(len(v) for v in items.values())
+    return len(items)
+
+
 def make_section(title, items):
-	if not items:
-		return ''
-	rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
-	return f'''
-	<details open>
-	<summary>{title} <span class="count">({len(items)})</span></summary>
-	<ul>{rows}</ul>
-	</details>'''
+    if not items:
+        return ''
+
+    # If dictionary → subsections
+    if isinstance(items, dict):
+        content = ''.join(
+            make_subsection(subtitle, subitems)
+            for subtitle, subitems in items.items()
+            if subitems
+        )
+    else:
+        rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
+        content = f'<ul>{rows}</ul>'
+
+    return f'''
+    <details open>
+        <summary>{title} <span class="count">({count_items(items)})</span></summary>
+        {content}
+    </details>
+    '''
+
+
 
 def make_timing_section(title, items):
 	if not items:
@@ -178,33 +214,33 @@ def extract_lineid_num(lineid):
    match = re.search(r'~\s*(\d+)', lineid)
    return match.group(1) if match else lineid
 
+
 def get_direction(t):
+    """
+    Determine Up/Down direction based on 4th character of train number:
+    - Odd → Down
+    - Even → Up
+    """
 
+    tn = t.number
 
-	### CHANGE TO ODD/EVEN
-	"""Determine Up/Down direction for a train using STATIONS_MASTER. Direction is relative to city"""
-	city_codes = {'RS', 'BNC', 'BRC', 'BHI', 'PKR', 'SBE', 'SBA', 'RTL', 'EXH', 'BOG', 'WLG', 'ALB'}
-	entry_codes = t.station_ids
-	sIDs = set(entry_codes)
-	for candidate in LINES_TO_CHECK:
-		line_codes = {
-			code for code, s in STATIONS_MASTER['stations'].items()
-			if s['line'] == candidate and s.get('unique', True)
-		}
-		if not sIDs & line_codes:
-			continue
-		line_all_codes = {
-			code for code, s in STATIONS_MASTER['stations'].items()
-			if s['line'] == candidate
-		}
-		line_indices = [i for i, c in enumerate(entry_codes) if c in line_all_codes]
-		city_indices = [i for i, c in enumerate(entry_codes) if c in city_codes]
-		if line_indices and city_indices:
-			increasing = min(line_indices) > min(city_indices)
-		else:
-			increasing = False
-		return 'Down' if increasing else 'Up'
-	return None
+    # Make sure train number is long enough
+    if len(tn) < 4:
+        return None  # or return 'Unknown'
+
+    char = tn[3]
+
+    # Make sure it's a digit
+    if not char.isdigit():
+        return None  # or 'Unknown'
+
+    digit = int(char)
+
+    if digit % 2 == 1:
+        return 'Down'
+    else:
+        return 'Up'
+
 
 def main(path=None):
 	try:
@@ -273,13 +309,21 @@ def main(path=None):
 		multiunitrun        = []
 		mismatchedplatforms = []
 		stablingissue       = []
-		shortturnbacks      = []
+		#shortturnbacks      = []
 		missingconnects     = []
 		lineid_mismatches   = []
 		lineid_missing      = []
 		originpass          = []
 		destinpass          = []
 		connections         = {}
+
+		shortturnbacks = {
+			'Turnbacks < 4 minutes': [],
+			'Turnbacks 4-8 minutes': []
+		}
+
+
+	
 
 		for t in trains:
 			day = WEEKDAY_KEYS_MASTER.get(t.weekday, {}).get('short', t.weekday)
@@ -368,12 +412,21 @@ def main(path=None):
 					)
 				# short turnbacks
 				turnback = pd.Timedelta(entry['odep']) - pd.Timedelta(prev['darr'])
-				if turnback < pd.Timedelta(minutes=8) and entry['direction'] != prev['direction']: # check if direction is different 
+				
+				if entry['direction'] != prev['direction']:
 					tb_mins, tb_secs = map(int, str(turnback)[-5:].split(':'))
-					spacer = " " if len(run) == 2 else ''
-					shortturnbacks.append(
-						f'The turnback between {prev["tn"]} and {entry["tn"]} in run {run} on {day} is: {spacer}   {tb_mins}m {tb_secs}s'
+
+					msg = (
+						f'The turnback between {prev["tn"]} and {entry["tn"]} '
+						f'in run {run} on {day} is: {tb_mins}m {tb_secs}s'
 					)
+
+					if turnback < pd.Timedelta(minutes=4):
+						shortturnbacks['Turnbacks < 4 minutes'].append(msg)
+
+					elif turnback < pd.Timedelta(minutes=8):
+						shortturnbacks['Turnbacks 4-8 minutes'].append(msg)
+
 
 		# missing connections
 		run_dict_tns = {}
@@ -502,7 +555,6 @@ def main(path=None):
 
 				if diffs_list:
 					diff_groups[tuple(diffs_list)].extend(members_list)
-			# --------------------------------------------------------------------------------
 					
 			outlier_lines = []
 
@@ -571,8 +623,12 @@ def main(path=None):
 			for x in inconsistent_timing: printwl(x)
 		
 		if shortturnbacks:
-			printwl('\n\n Short turnbacks')
-			for x in shortturnbacks: printwl(x)
+			for sub, items in shortturnbacks.items():
+				if items:
+					printwl(f'\n{sub}')
+					for x in items:
+						printwl(x)
+
 
 		o.close()
 		print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
@@ -596,6 +652,7 @@ def main(path=None):
 		('Duplicate train numbers',                              tn_doubles_fmt),
 		('Connected trains with mismatched lineIDs',             lineid_mismatches),
 		('Connections referencing train not found on same day',  lineid_missing),
+		#('test subs', {'missing numbers':[2,4,5,6]})
 		#('Same stops but inconsistent requested departure gaps', inconsistent_timing),
 		]
 		
