@@ -217,17 +217,9 @@ def extract_lineid_num(lineid):
 
 
 
-def main(path=None):
+
+def TTS_ERR(path, mypath = None):
 	try:
-		app = QApplication.instance() or QApplication(sys.argv)
-		if not path:
-			path = select_file(
-				caption="Select RSX file",
-				directory="",
-				filter_str="RSX Files (*.rsx);;All Files (*.*)"
-			)
-		if not path:
-			return
 		directory = '\\'.join(path.split('/')[0:-1])
 		os.chdir(directory)
 		filename = path.split('/')[-1][:-4]
@@ -637,12 +629,13 @@ def main(path=None):
 
 	except Exception as e:
 		logging.error(traceback.format_exc())
-		if ProcessDoneMessagebox:
-			time.sleep(15)
 
 
 if __name__ == "__main__":
-	main()
+	app = QApplication.instance() or QApplication(sys.argv)
+	path = select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
+	if path:
+		TTS_ERR(path)
 
 
 

@@ -15,9 +15,6 @@ from PyQt6.QtCore import QMetaObject, Qt, Q_ARG
 #_FAST_OPTIONS = QFileDialog.Option.DontUseNativeDialog
 
 
-
-
-
 def ensure_app() -> QApplication:
     app = QApplication.instance()
     if app is None:
@@ -56,10 +53,6 @@ def select_option(title: str, message: str, options: list[tuple[str, str]]) -> s
 
     dialog = QDialog()
     dialog.setWindowTitle(title)
-
-
-    
-
     layout = QVBoxLayout()
 
     label = QLabel(message)
@@ -130,12 +123,11 @@ def show_info_scroll(title: str, message: str) -> None:
     text = QTextEdit()
     text.setPlainText(message)
     text.setReadOnly(True)
-    text.setMinimumWidth(700)      # ✅ control width
-    text.setMinimumHeight(300)     # ✅ prevent tiny box
+    text.setMinimumWidth(700)      
+    text.setMinimumHeight(300)     
     text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
 
     msg.layout().addWidget(text, 0, 0, 1, msg.layout().columnCount())
-
     msg.exec()
 
 
@@ -201,7 +193,7 @@ def call_on_main_thread(func):
    )
    return result[0]
 
-# wrap  existing dialogs
+# wrap existing dialogs
 def show_info_safe(title, message):
    call_on_main_thread(lambda: show_info(title, message))
 def show_info_scroll_safe(title, message):

@@ -24,11 +24,11 @@ def _lazy(module, attr):
 
 
 # update this with functions as required 
-run_qa          = _lazy("taipan.reports.ErrorChecker",           "main")
+TTS_ERR         = _lazy("taipan.reports.ErrorChecker",           "TTS_ERR")
 TTS_PTT         = _lazy("taipan.timetables.PublicTimetable",     "TTS_PTT")
 TTS_SB          = _lazy("taipan.stabling.StablingBalance",       "TTS_SB")
 TTS_SC          = _lazy("taipan.stabling.StablingCount",         "TTS_SC")
-TTS_Graph       = _lazy("taipan.stabling.StablingCountStepGraph","TTS_Graph")
+TTS_GRAPH       = _lazy("taipan.stabling.StablingCountStepGraph","TTS_Graph")
 assign_line_ids = _lazy("taipan.rsx.run_renamer_new",   "assign_line_ids")
 sectorise       = _lazy("taipan.rsx.SectoriseRSX",               "sectorise")
 rename_trains   = _lazy("taipan.rsx.train_renamer",              "main")
@@ -492,22 +492,12 @@ class TaipanLauncher(QMainWindow):
 
     def _run_first_last(self, button=None):
         
-        
-        
-        path = select_file(
-                caption="Select RSX file",
-                filter_str="RSX Files (*.rsx)",
-            )
+        paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
 
-        if not path:
-            return
-
-
-        self.run_task(
-        lambda: TTS_FL(path),  
-        "● RUNNING — FIRST LAST...",
-        "● DONE — FIRST LAST"
-        )
+        if len(paths) != 2:
+            self._set_status("● ERROR — Please select exactly two RSX files.")
+        else:
+            self.run_task(lambda: TTS_FL(paths),  "● RUNNING — FIRST LAST...","● DONE — FIRST LAST")
 
     
 
@@ -561,7 +551,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_Graph(path),"● RUNNING — STABLING GRAPH...","● DONE — STABLING GRAPH")
+        self.run_task(lambda: TTS_GRAPH(path),"● RUNNING — STABLING GRAPH...","● DONE — STABLING GRAPH")
 
     def _run_assign_lineids(self, button=None):
         
@@ -753,7 +743,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: run_qa(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
+        self.run_task(lambda: TTS_ERR(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
 
 
 

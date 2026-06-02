@@ -33,7 +33,7 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("QA",     "_run_qa",     "Run QA checks on RSX, saves text report of results"),
+                ("QA",     "_run_qa",     "Run QA checks on RSX, saves text + HTML report of results"),
                 ("Slicer", "_run_slicer", "Slice timetable data by blocks and days, saves new RSX file"),
 
             ],

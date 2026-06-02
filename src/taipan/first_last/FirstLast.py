@@ -10,9 +10,10 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 
 from PyQt6.QtWidgets import QApplication
-from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
+from taipan.gui.base import open_file_crossplatform, show_info_safe, select_multi_rsx_files
 from taipan.constants.locations import STATIONS_MASTER
 from taipan.core.xml_parser import parse_rsx
+from taipan.first_last.first_last_graph import make_output_path
 
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, ID_TO_SHORT
 import traceback
@@ -59,10 +60,11 @@ for x in [x[0] for x in bystation_list]:
     file2_enddict[x]   = [['00:00:00','00:00:00'],['00:00:00','00:00:00'],['00:00:00','00:00:00'],['00:00:00','00:00:00']]
     
 
-def TTS_FL(path, mypath = None):
 
-    source_dir = os.path.abspath(os.path.dirname(path))
-    dest_dir = os.path.abspath(mypath) if mypath is not None else None
+def TTS_FL(rsx_files: list[str], mypath=None):
+
+    source_dir = os.path.abspath(os.path.dirname(rsx_files[0]))
+    dest_dir = make_output_path(rsx_files)
     copyfile = dest_dir is not None and source_dir != dest_dir
 
     try:
@@ -70,19 +72,20 @@ def TTS_FL(path, mypath = None):
         ### File 1
         ###############################################################################################
 
-        directory = '\\'.join(path.split('/')[0:-1])
+        first_file = rsx_files[0]
+        directory = '\\'.join(first_file.split('/')[0:-1])
         os.chdir(directory)
-        filename1 = path.split('/')[-1]
-        root1, trains1, _, _, _, _ = parse_rsx(path, want_trains=True)
+        filename1 = first_file.split('/')[-1]
+        root1, trains1, _, _, _, _ = parse_rsx(first_file, want_trains=True)
         filename1 = filename1[:-4]
         ###############################################################################################
         
         
         ### File 2
         ###############################################################################################
-        path2 = select_file(caption="Select RSX file", directory="",filter_str="RSX Files (*.rsx);;All Files (*.*)")
-        root2, trains2, _, _, _, _ = parse_rsx(path2, want_trains=True)
-        filename2 = path2.split('/')[-1]
+        second_file = rsx_files[1]
+        root2, trains2, _, _, _, _ = parse_rsx(second_file, want_trains=True)
+        filename2 = second_file.split('/')[-1]
         filename2 = filename2[:-4]
         ###############################################################################################
         
@@ -406,9 +409,9 @@ def TTS_FL(path, mypath = None):
             workbook.close()
             print('Creating workbook')  
             if copyfile:
-                destination = os.path.join(mypath, os.path.basename(filename_xlsx))
-                if os.path.abspath(filename_xlsx) != os.path.abspath(destination):
-                    shutil.copy(filename_xlsx, destination)
+                
+                if os.path.abspath(filename_xlsx) != os.path.abspath(dest_dir):
+                    shutil.copy(filename_xlsx, dest_dir)
                 else:
                     print('Skipping copy because source and destination are the same file') 
             else:
@@ -430,8 +433,13 @@ def TTS_FL(path, mypath = None):
 
 if __name__ == "__main__":
     app = QApplication.instance() or QApplication(sys.argv)
-
-    path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
-    if path:
+    path = select_multi_rsx_files(
+            caption="Select RSX file",
+            directory="",
+        )
+    
+    if len(path) != 2:
+        print("Please select exactly two RSX files.")
+    else:
         TTS_FL(path)
         
