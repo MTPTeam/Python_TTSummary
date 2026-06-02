@@ -385,20 +385,9 @@ def TTS_H(path, mypath = None):
                 d_line       = line_station_lookup.get(dID)
                 matched_line = (o_line if o_line and o_line != 'Inner City' else d_line)
                 corridor = STATIONS_MASTER['lines'].get(matched_line, {}).get('corridor') if matched_line else None
-
-                
-
-
-
-
    
-                last_char = tn[-1]
-                if last_char.isnumeric():
-                    is_inbound = int(last_char) % 2 == 0
-                else:
-                    is_inbound = True
 
-
+                is_inbound = (t.direction == 'Up')
 
                 # explicit overrides
                 if oID == 'RDKS' and 'IPS' in sIDs_list:
@@ -410,10 +399,6 @@ def TTS_H(path, mypath = None):
                 else:
                     drct = '12' if is_inbound else '13'
                                 
-
-       
-
-                
                 
                 ### Some adjustments to the location+platform entry are made for special cases
                 ### Using the first two stations to determine direction, with a special process for: 
@@ -464,16 +449,11 @@ def TTS_H(path, mypath = None):
                             lsID = 'CPM_S'
                         elif sID == 'CPM' and n == len(entries) - 1 and dID == 'CPM':
                             lsID = 'CPM_S'
-                        
-         
-
-                            
+                    
                         elif tn == firstinrun and sID == 'CEN' and n == 0:
                             lsID = 'CAB_S'
-    
                         elif tn == lastinrun and sID == 'CEN' and n == len(entries) - 1:
                             lsID = 'CAB_S' 
-    
                         
                         else:
                             lsID = sID + track
@@ -504,90 +484,7 @@ def TTS_H(path, mypath = None):
                                 
                                 
                 reversedentries = reversed(entries)
-                
-                
                 empt = '3' if 'Empty' in origin['trainTypeId'] else '0'
-    
-                
-                    
-                # drcttest = 'Up' if drct == '12' else 'Down'
-                # if tn in ['EW03','EU06']:
-                #     print(f'{tn}: {drcttest} ({oID} to {dID})')
-      
-                    
-      
-    # Useful for checking errors in direction
-    # =============================================================================
-    #             if 'PKR' in [oID,dID] and WeekdayKey == '120':
-    #                 print('\n\n\n')
-    #                 print(tn)
-    #                 print(line)
-    #                 print()
-    #                 print(sIDs_list)
-    #                 print()
-    #                 print([x.get('stationID') for x in reversedentries])
-    #                 print()
-    #                 print(firstonline,secondonline)
-    #                 print(a,b)
-    #                 print('↑:',increasing)
-    #                 print('↓:',decreasing)
-    #                 print(drct)
-    #                 print('\n\n\n')
-    #             
-    #                 
-    #             if WeekdayKey == '120' and tn in ['2W31','AB49','AD12','EP29','EQ01','EW35']:
-    #             if WeekdayKey == '120' and tn in ['DM21','1M19','2614','2626','A512','A508']:
-    #                 print(tn,oID,dID,line, drct)
-    #             
-    #             if WeekdayKey == '4' and tn in ['2W31','AB49','AD12','EP29','EQ01','EW35']:
-    #             if WeekdayKey == '4' and tn in ['2508','2614','2626','1M19','A512','DM21']:
-    #                 print(tn,oID,dID,line, drct)
-    #                 
-    #             if WeekdayKey == '1' and tn in ['AD04']:
-    #                 print(tn,oID,dID,line, drct)
-    #                 
-    #             if oID == 'RDK' and dID == 'RDKS':
-    #                 print('!',tn,oID,dID,line, drct)
-    #             if oID == 'RDKS' and dID == 'RDK':
-    #                 print('!',tn,oID,dID,line, drct)
-    #                 
-    #                 
-    #                 if line == 'Normanby':
-    #                     print(tn)
-    #                     print('-------------')
-    #                     for x in sIDs_list:
-    #                         print(x)
-    #                     print()
-    #             
-    #             if tn in ['2Q17']:
-    #             # if oID == 'EXH' and dID == 'MES':
-    #             if tn in ['AE27','TE27']:
-    #                 print('\n\n\n')
-    #                 # print('HASSSTUS')
-    #                 print(tn)
-    #                 print(drct)
-    #                 print(line)
-    #                 print(oID,dID)
-    #                 print(firstonline,secondonline)
-    #                 print(sIDs_list)
-    #                 # print(a,b)
-    #                 # print(WeekdayKey)
-    #                 print('\n\n\n')
-    # 
-    #                 
-    #             
-    #             Quick check to see if the train number matches the direction
-    #             if tn[-1] in ['1','3','5','7','9'] and drct == '12':
-    #                 print(f'{tn} ({oID} to {dID}) is a Downward train number')
-    #                 print(f'{line} - {firstonline} then {secondonline}\n')
-    #                 
-    #             if tn[-1] in ['0','2','4','6','8'] and drct == '13':
-    #                 print(f'{tn} ({oID} to {dID}) is an Upward train number')
-    #                 print(f'{line} - {firstonline} then {secondonline}\n')
-    # =============================================================================
-                    
-                
-    
                 tripinfo = [tn,empt,drct,stations]
                 
                 if not run_dict.get((run,WeekdayKey)):

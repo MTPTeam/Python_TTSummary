@@ -139,7 +139,8 @@ class TrainInfo:
             UNKNOWN_UNITS.add((self.unit, self.train_type, self.train_type_raw))
 
         # add upward/downward direction here
-        
+        self.direction = self._get_direction()
+
         # pattern attribute includes day, sector, empty or not, return/to. can use it to get other info if you want 
         self.pattern = train.attrib['pattern']
 
@@ -202,6 +203,26 @@ class TrainInfo:
             t = t[len('Empty_'):]
         m = re.match(r'(\d+)-', t)
         return int(m.group(1)) if m else 0
+
+    
+    def _get_direction(self):
+        """
+        Determine Up/Down direction based on 4th character of train number:
+        - Odd → Down
+        - Even → Up
+        """
+        tn = self.number
+
+        if len(tn) < 4:
+            return None
+
+        char = tn[3]
+
+        if not char.isdigit():
+            return None
+
+        digit = int(char)
+        return 'Down' if digit % 2 == 1 else 'Up'
 
 
 def load_rsx(path):

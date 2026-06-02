@@ -215,31 +215,6 @@ def extract_lineid_num(lineid):
    return match.group(1) if match else lineid
 
 
-def get_direction(t):
-    """
-    Determine Up/Down direction based on 4th character of train number:
-    - Odd → Down
-    - Even → Up
-    """
-
-    tn = t.number
-
-    # Make sure train number is long enough
-    if len(tn) < 4:
-        return None  # or return 'Unknown'
-
-    char = tn[3]
-
-    # Make sure it's a digit
-    if not char.isdigit():
-        return None  # or 'Unknown'
-
-    digit = int(char)
-
-    if digit % 2 == 1:
-        return 'Down'
-    else:
-        return 'Up'
 
 
 def main(path=None):
@@ -283,7 +258,7 @@ def main(path=None):
 			darr = str(pd.Timedelta(t.ddep) - pd.Timedelta(seconds=stoptime))
 			otrack = t.origin['trackID'][-1]
 			dtrack = t.destin['trackID'][-1]
-			direction = get_direction(t)
+			direction = t.direction
 			if key not in run_detail:
 				run_detail[key] = []
 			run_detail[key].append({
