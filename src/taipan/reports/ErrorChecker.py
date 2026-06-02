@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 import traceback
+from turtle import title
 import pandas as pd
 from collections import defaultdict
 from PyQt6.QtWidgets import QApplication
@@ -86,46 +87,49 @@ def to_minutes_only(t_str):
 
 
 def make_subsection(title, items):
-    if not items:
-        return ''
+	if not items:
+		return ''
 
-    rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
+	rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
 
-    return f'''
-    <details>
-        <summary>{title} <span class="count">({len(items)})</span></summary>
-        <ul>{rows}</ul>
-    </details>
-    '''
+	return f'''
+	<details>
+		<summary>{title} <span class="count">({len(items)})</span></summary>
+		<ul>{rows}</ul>
+	</details>
+	'''
 
 
 def count_items(items):
-    if isinstance(items, dict):
-        return sum(len(v) for v in items.values())
-    return len(items)
+	if isinstance(items, dict):
+		return sum(len(v) for v in items.values())
+	return len(items)
 
 
 def make_section(title, items):
-    if not items:
-        return ''
+	if not items:
+		return ''
 
-    # If dictionary → subsections
-    if isinstance(items, dict):
-        content = ''.join(
-            make_subsection(subtitle, subitems)
-            for subtitle, subitems in items.items()
-            if subitems
-        )
-    else:
-        rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
-        content = f'<ul>{rows}</ul>'
+	# If dictionary → subsections
+	if isinstance(items, dict):
+		content = ''.join(
+			make_subsection(subtitle, subitems)
+			for subtitle, subitems in items.items()
+			if subitems
+		)
+	else:
+		rows = ''.join(f'<li><pre>{x}</pre></li>' for x in items)
+		content = f'<ul>{rows}</ul>'
+		
+	safe_id = title.replace(' ', '_').replace('/', '').replace('<', '').replace('>', '')
 
-    return f'''
-    <details open>
-        <summary>{title} <span class="count">({count_items(items)})</span></summary>
-        {content}
-    </details>
-    '''
+
+	return f'''
+	<details id="{safe_id}">
+		<summary>{title} <span class="count">({count_items(items)})</span></summary>
+		{content}
+	</details>
+	'''
 
 
 
@@ -161,17 +165,63 @@ def make_timing_section(title, items):
 			tables.append(f'''
 			<table>
 			<caption>{header}</caption>
-			<thead><tr><th style="width:65%">Train(s)</th><th style="width:35%">Differs</th></tr></thead>
+			<thead><tr><th style="width:65%">Train(s)</th><th style="width:35%">Runtime Differs at</th></tr></thead>
 			<tbody>{table_rows}</tbody>
 			</table>''')
 	return f'''
-	<details open>
+	<details id="timing_section">
 	<summary>{title} <span class="count">({len(items)})</span></summary>
 		{''.join(tables)}
 	</details>'''
 
+def build_summary(sections, inconsistent_timing):
+	rows = ['<div class="summary-title">Error Summary</div>']
+
+	for title, items in sections:
+		count = count_items(items)
+		if count > 0:
+			
+			safe_id = title.replace(' ', '_').replace('/', '').replace('<', '').replace('>', '')
+			rows.append(
+				f'<div>'
+				f'<a href="#{safe_id}"><b>{title}:</b> {count}</a>'
+				f'</div>'
+			)
+
+
+	if inconsistent_timing:
+		rows.append(
+		f'<div>'
+		f'<a href="#timing_section"><b>Runtime inconsistencies:</b> {len(inconsistent_timing)}</a>'
+		f'</div>'
+	)
+
+	return '\n'.join(rows)
+
+
+
+def format_grouped_map(group_map, header_label="route"):
+    output = []
+
+    for group in sorted(group_map):
+        line = f'<span class="{header_label}">[ {group} ]</span>\n'
+
+        for item in sorted(group_map[group]):
+            values = group_map[group][item]
+            val_str = ', '.join(sorted(values))
+
+            line += f'  {item} ({val_str})\n'
+
+        output.append(line.strip())
+
+    return output
+
+
 def write_html(filename_html, filename, sections, inconsistent_timing):
-	total_issues = sum(len(items) for _, items in sections) + len(inconsistent_timing)
+	total_issues = sum(count_items(items) for _, items in sections) + len(inconsistent_timing)
+	
+	summary_html = build_summary(sections, inconsistent_timing)
+
 	html = f'''<!DOCTYPE html>
 	<html lang="en">
 	<head>
@@ -184,9 +234,45 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
 	
 	td.trains {{ word-break: break-word; white-space: normal; }}
 	td.trains div {{ margin-bottom: 2px; }}
-	details {{ margin-bottom: 1em; border: 1px solid #444; border-radius: 4px; }}
+	details {{ margin-bottom: 1em; border: 1px solid #444; border-radius: 4px; box-shadow: none; transition: box-shadow 0.5s ease, border 0.3s ease; }}
+	
+	details.highlight {{
+		border: 2px solid #4fc1ff;
+		box-shadow: 0 0 10px #4fc1ff;
+	}}
+	.route {{
+		color: #4fc1ff;   /* nice blue */
+		font-weight: bold;
+	}}
 	summary {{ background: #2d2d2d; padding: 0.6em 1em; cursor: pointer; font-weight: bold; color: #ce9178; }}
 	summary:hover {{ background: #3a3a3a; }}
+	.summary {{
+		background: #252526;
+		border: 1px solid #444;
+		border-radius: 6px;
+		padding: 1em;
+		margin-bottom: 2em;
+		line-height: 1.6;
+	}}
+
+	a {{
+    text-decoration: none;
+    color: inherit;
+	}}
+
+
+
+	a:hover {{
+		text-decoration: underline;
+		color: #4fc1ff;
+	}}
+	.summary b {{ color: #9cdcfe;}}
+	.summary-title {{
+		font-size: 18px;
+		font-weight: bold;
+		margin-bottom: 0.5em;
+		color: #ffffff;
+	}}
 	.count {{ color: #888; font-weight: normal; }}
 	ul {{ margin: 0; padding: 1em 1em 1em 2em; }}
 	li {{ margin-bottom: 0.4em; }}
@@ -197,13 +283,45 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
 	th {{ background: #3a3a3a; color: #ce9178; padding: 0.4em 0.8em; text-align: left; font-size: 14px; }}
 	td {{ padding: 0.4em 0.8em; border-bottom: 1px solid #333; vertical-align: top; font-size: 14px; }}
 	tr:hover td {{ background: #2a2a2a; }}
+
+
+	
+	
+	
 	</style>
 	</head>
 	<body>
 	<h1>Taipan Error Checker</h1>
-	<div class="meta">{filename} &mdash; {total_issues} issue(s) found</div>
+	<div class="meta">
+		{filename} &mdash; {total_issues} issue(s) found
+	</div>
+
+	<div class="summary">
+		{summary_html}
+	</div>
+
 	{''.join(make_section(title, items) for title, items in sections)}
 	{make_timing_section('Same stops but inconsistent requested departure gaps', inconsistent_timing)}
+
+
+	
+	
+	<script>
+	document.querySelectorAll('a[href^="#"]').forEach(link => {{
+		link.addEventListener('click', function() {{
+			const target = document.querySelector(this.getAttribute('href'));
+			if (!target) return;
+
+			target.classList.add('highlight');
+
+			setTimeout(() => {{
+				target.classList.remove('highlight');
+			}}, 2000);
+		}});
+	}});
+	</script>
+
+	
 	</body>
 	</html>'''
 	with open(filename_html, 'w', encoding='utf-8') as f:
@@ -216,6 +334,41 @@ def extract_lineid_num(lineid):
 
 
 
+def write_txt_report(filename, sections, inconsistent_timing):
+	filename_txt = f'Errors-{filename}.txt'
+
+	with open(filename_txt, 'w') as o:
+		def printwl(text):
+			print(text)
+			o.write(text + '\n')
+
+		printwl('Taipan Error Checker')
+
+		for title, items in sections:
+			if not items:
+				continue
+
+			printwl(f'\n{title}')
+
+			if isinstance(items, dict):  # e.g. shortturnbacks
+				for sub, subitems in items.items():
+					if subitems:
+						printwl(f'\n{sub}')
+						for x in subitems:
+							printwl(x)
+			else:
+				for x in items:
+					printwl(x)
+
+		if inconsistent_timing:
+			printwl('\nTrains with same stops but inconsistent requested departure gaps')
+			for x in inconsistent_timing:
+				printwl(x)
+
+
+def write_html_report(filename, sections, inconsistent_timing):
+	write_html(f'Errors-{filename}.html', filename, sections, inconsistent_timing)
+	print(f'HTML report: Errors-{filename}.html')
 
 
 def TTS_ERR(path, mypath = None):
@@ -274,19 +427,23 @@ def TTS_ERR(path, mypath = None):
 		tn_doubles          = [(tn, day) for tn, day in (duplicates or [])]
 		multiunittrain      = []
 		multiunitrun        = []
-		mismatchedplatforms = []
+		
+		mismatched_map = defaultdict(lambda: defaultdict(list))
+
 		stablingissue       = []
 		#shortturnbacks      = []
 		missingconnects     = []
 		lineid_mismatches   = []
 		lineid_missing      = []
-		originpass          = []
-		destinpass          = []
+
+		originpass_map = defaultdict(lambda: defaultdict(list))
+		destinpass_map = defaultdict(lambda: defaultdict(list))
 		connections         = {}
 
+		
 		shortturnbacks = {
-			'Turnbacks < 4 minutes': [],
-			'Turnbacks 4-8 minutes': []
+			'Turnbacks < 4 minutes': defaultdict(lambda: defaultdict(list)),
+			'Turnbacks 4-8 minutes': defaultdict(lambda: defaultdict(list))
 		}
 
 
@@ -329,10 +486,15 @@ def TTS_ERR(path, mypath = None):
 					if e.attrib['stationID'] not in non_revenue_stations
 				]
 				if stoptypes:
+					
+					route = f'{t.start_id}->{t.end_id}'
+
 					if stoptypes[0] == 'pass':
-						originpass.append(f' - First pass: {t.number} on {day} {t.start_id}->{t.end_id} - ')
+						originpass_map[route][t.number].append(day)
+
 					if stoptypes[-1] == 'pass':
-						destinpass.append(f' - Last pass: {t.number} on {day} {t.start_id}->{t.end_id} - ')
+						destinpass_map[route][t.number].append(day)
+
 			# train number format
 			if not t.number.isalnum() or len(t.number) > 4:
 				dodgy_tns.append(t.number)
@@ -374,25 +536,23 @@ def TTS_ERR(path, mypath = None):
 				prev = detail[i - 1]
 				# mismatched platforms
 				if prev['ldID'] != entry['loID'] and run not in ('XA', 'XB', '100', '101'):
-					mismatchedplatforms.append(
-						f'Run {run} on {day} has mismatched platforms between {prev["tn"]} and {entry["tn"]} - {prev["ldID"]} then {entry["loID"]}'
-					)
+					run_key = f'Run {run}' 
+					issue = f'{prev["tn"]} -> {entry["tn"]} ({prev["ldID"]} -> {entry["loID"]})'
+					mismatched_map[run_key][issue].append(day)
 				# short turnbacks
 				turnback = pd.Timedelta(entry['odep']) - pd.Timedelta(prev['darr'])
 				
 				if entry['direction'] != prev['direction']:
 					tb_mins, tb_secs = map(int, str(turnback)[-5:].split(':'))
+					run_key = f'Run {run}'  
+					issue = f'{prev["tn"]} -> {entry["tn"]}'
 
-					msg = (
-						f'The turnback between {prev["tn"]} and {entry["tn"]} '
-						f'in run {run} on {day} is: {tb_mins}m {tb_secs}s'
-					)
 
 					if turnback < pd.Timedelta(minutes=4):
-						shortturnbacks['Turnbacks < 4 minutes'].append(msg)
+						shortturnbacks['Turnbacks < 4 minutes'][run_key][issue].append(day)
 
 					elif turnback < pd.Timedelta(minutes=8):
-						shortturnbacks['Turnbacks 4-8 minutes'].append(msg)
+						shortturnbacks['Turnbacks 4-8 minutes'][run_key][issue].append(day)
 
 
 		# missing connections
@@ -497,11 +657,10 @@ def TTS_ERR(path, mypath = None):
 				continue
 
 			majority_gaps, majority_members = max(gap_groups.items(), key=lambda x: len(x[1]))
-			header = f'Route: {station_seq[0]} -> {station_seq[-1]}'
+			header = f'Route: [{station_seq[0]} -> {station_seq[-1]}]'
 			
 			majority_str = ', '.join(f'{sid} {m}m' for sid, m in majority_gaps if m is not None)
 
-			# --- FIX: Convert the majority gaps into a dictionary for precise key lookups ---
 			majority_dict = {sid: m for sid, m in majority_gaps if m is not None}
 			diff_groups = defaultdict(list)
 
@@ -536,81 +695,33 @@ def TTS_ERR(path, mypath = None):
 			if outlier_lines:
 				inconsistent_timing.append(f'{header}\n' + '\n'.join(outlier_lines))
 
- 
-		
-
-		
-
 		# ── output ────────────────────────────────────────────────────────────
-		filename_txt = f'Errors-{filename}.txt'
-		o = open(filename_txt, 'w')
-		def printwl(text):
-			print(text)
-			o.write(text + '\n')
-		printwl('Taipan Error Checker')
-
-		if stablingissue:
-			printwl('\nRuns that start or end at non-stabling locations')
-			for x in stablingissue: printwl(x)
-		if originpass or destinpass:
-			printwl('\n\nFirst station pass or last station pass through a revenue location')
-			for x in originpass: printwl(x)
-			for x in destinpass: printwl(x)
-		if mismatchedplatforms:
-			printwl('\n\nRuns that change platforms either side of a connection')
-			for x in mismatchedplatforms: printwl(x)
-		if multiunitrun:
-			printwl('\n\nRuns that have more than one unit type')
-			for x in multiunitrun: printwl(x)
-		if missingconnects:
-			printwl('\n\nRuns that are missing connections')
-			for x in missingconnects: printwl(x)
-		if dodgy_tns:
-			printwl('\n\nTrains with non-standardised train numbers')
-			for x in dodgy_tns: printwl(x)
-		if wrong_tn:
-			printwl('\n\nTrains with train numbers that don\'t line up with their unit types')
-			for x in wrong_tn: printwl(x)
-		if multiunittrain:
-			printwl('\n\nTrains with more than 1 unittype')
-			for x in multiunittrain: printwl(x)
-		if tn_doubles:
-			printwl('\n\nTrains with duplicate train numbers')
-			for tn, day in tn_doubles:
-				day_str = WEEKDAY_KEYS_MASTER.get(day, {}).get('short', day)
-				printwl(f'Train with trainnumber {tn} already running on {day_str}')
-		if lineid_mismatches:
-			printwl('\n\nConnected trains with mismatched lineIDs')
-			for x in lineid_mismatches: printwl(x)
-		if lineid_missing:
-			printwl('\n\nConnections referencing a train not found on the same day')
-			for x in lineid_missing: printwl(x)
-		if inconsistent_timing:
-			printwl('\n\nTrains with same stops but inconsistent requested departure gaps')
-			for x in inconsistent_timing: printwl(x)
-		
-		if shortturnbacks:
-			for sub, items in shortturnbacks.items():
-				if items:
-					printwl(f'\n{sub}')
-					for x in items:
-						printwl(x)
-
-
-		o.close()
-		print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
-
-
 		
 		tn_doubles_fmt = [
 		f'Train {tn} already running on {WEEKDAY_KEYS_MASTER.get(day, {}).get("short", day)}'
 		for tn, day in tn_doubles
 		]
+
+		originpass_grouped = format_grouped_map(originpass_map)
+		destinpass_grouped = format_grouped_map(destinpass_map)
+		mismatchedplatforms_grouped = format_grouped_map(mismatched_map, "route")
+		# format <4 min (detailed)
+		short_tb_under4 = format_grouped_map(shortturnbacks['Turnbacks < 4 minutes'],"route")
+		short_tb_4_8 = format_grouped_map(shortturnbacks['Turnbacks 4-8 minutes'],"route")
+
 		sections = [
 		('Runs starting/ending at non-stabling locations',      stablingissue),
-		('First/last station pass through a revenue location',          originpass + destinpass),
-		('Runs that change platforms either side of connection', mismatchedplatforms),
-		('Short turnbacks',                                      shortturnbacks),
+		('First or last station passes through a revenue location', {
+				'First station is pass': originpass_grouped,
+				'Last station is pass': destinpass_grouped
+			}),
+		('Runs that change platforms either side of connection', mismatchedplatforms_grouped),
+		
+		('Short turnbacks', {
+			'Turnbacks < 4 minutes': short_tb_under4,
+			'Turnbacks 4-8 minutes': short_tb_4_8
+		}),
+
 		('Runs with more than one unit type',                    multiunitrun),
 		('Runs missing connections',                             missingconnects),
 		('Non-standardised train numbers',                       dodgy_tns),
@@ -624,8 +735,9 @@ def TTS_ERR(path, mypath = None):
 		]
 		
 
-		write_html(f'Errors-{filename}.html', filename, sections, inconsistent_timing)
-		print(f'HTML report: Errors-{filename}.html')
+		write_txt_report(filename,sections, inconsistent_timing)
+		write_html_report(filename,sections,inconsistent_timing)
+
 
 	except Exception as e:
 		logging.error(traceback.format_exc())
