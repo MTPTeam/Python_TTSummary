@@ -135,7 +135,7 @@ def TTS_H(path, mypath = None):
             myhastuspath += new_refnum
             
             if not os.path.exists(myhastuspath):
-                    os.makedirs(myhastuspath)
+                    os.makedirs(myhastuspath)   
                      
     
             print('New Timetable Reference Number Created')
@@ -188,8 +188,6 @@ def TTS_H(path, mypath = None):
                 newrun = f"{letters}-{digits}"
 
             return newrun if newrun else run
-        
-        
         
         ### d_list        tracks the days present in the rsx
         ### runs          creates a list of every train_number in each run for a certain day of operation
@@ -624,13 +622,21 @@ def TTS_H(path, mypath = None):
                     else:
                         wl([nl,'block',l,run,l,unit,l,run])
                     
-                    
                     for entry in entries:
                         tn        = entry[0]
                         empty     = entry[1]
                         direction = entry[2]
                         stations  = entry[3]
-                        wl([nl,'trip',l,tn,l,tn,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
+
+                        
+                        if empty == '3':
+                            dir_str = "CITY-EMPTY"
+                        elif empty == '0':
+                            dir_str = "CITY-REGULAR"
+                        else:
+                            dir_str = "CITY-REGULAR" # this is just so it doesn't error if train numbering is wrong 
+
+                        wl([nl,'trip',l,tn,l,tn,l,dir_str,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
                         
                         
                         for station in stations:
@@ -667,8 +673,6 @@ def TTS_H(path, mypath = None):
                             ### Write the station
                             wl([nl,'triptp',l,sID,l,hhmm,l,zero,l,stop,l,f'{run}_{tn}'])
                             
-                            
-    
                             
                             ### Input EJ28 Signal Turnback after the last station to avoid mismatched plaform errors
                             if station == stations[-1]:

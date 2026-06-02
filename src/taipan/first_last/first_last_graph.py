@@ -355,25 +355,22 @@ def build_chart_sheet(wb, ws_pivot, pc, timetable_names: list[str], colors: list
    apply_slicers(wb, ws_chart, pt, pt2, default_station_name, default_day)
    return ws_chart
 
-def main():
+
+
+
+### function here that takes input paths ...
+
+
+def TTS_FLG(rsx_files: list[str], mypath=None):
    pythoncom.CoInitialize()
-   
    try:
-       app = QApplication.instance() or QApplication(sys.argv)
-       rsx_files = select_multi_rsx_files()
-       if not rsx_files:
-           show_error_safe("No RSX files selected", "You must select at least one RSX file to continue.")
-           return
        output_path = make_output_path(rsx_files)
        colors = generate_colors(len(rsx_files))
        timetable_names = sorted([os.path.splitext(os.path.basename(p))[0] for p in rsx_files])
        aa, default_station_name, default_day = build_combined_df(rsx_files, colors)
-       print(f"Default filter: {default_station_name} / {default_day}")
-       print(f"Data ready: {len(aa)} rows")
        excel = win32.DispatchEx("Excel.Application")
        excel.Visible       = False
        excel.DisplayAlerts = False
-
        try:
            wb = excel.Workbooks.Add()
            build_data_sheet(wb, aa)
@@ -383,8 +380,6 @@ def main():
            excel.Calculate()
            wb.Worksheets("Charts").Activate()
            wb.SaveAs(output_path, FileFormat=xlOpenXMLWorkbook)
-           print(f"Saved to: {output_path}")
-           print("Open the 'Charts' sheet -> use the slicers to filter.")
        finally:
            wb.Close(SaveChanges=False)
            os.startfile(output_path)
@@ -393,5 +388,18 @@ def main():
    finally:
        pythoncom.CoUninitialize()
 
+
+
+
 if __name__ == "__main__":
-   main()
+    app = QApplication.instance() or QApplication(sys.argv)
+    path = select_multi_rsx_files(
+        caption="Select RSX file",
+        directory="",
+    )
+
+    if path:
+        TTS_FLG(path)
+   
+
+

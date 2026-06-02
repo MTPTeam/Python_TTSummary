@@ -38,7 +38,7 @@ TTS_TC          = _lazy("taipan.reports.TripCount",              "TTS_TC")
 TTS_RI          = _lazy("taipan.reports.RunInfo",                "TTS_RI")
 TTS_FL          = _lazy("taipan.first_last.FirstLast",           "TTS_FL")
 TTS_SFL         = _lazy("taipan.first_last.SimpleFirstLast",     "TTS_SFL")
-run_fl_graph    = _lazy("taipan.first_last.first_last_graph",    "main")
+TTS_FLG         = _lazy("taipan.first_last.first_last_graph",    "TTS_FLG")
 TTS_WTT         = _lazy("taipan.timetables.WorkingTimetable",    "TTS_WTT")
 TTS_TDSWTT      = _lazy("taipan.timetables.WorkingTimetable (TDS)",    "TTS_TDSWTT")
 TTS_TDSPTT      = _lazy("taipan.timetables.PublicTimetable (TDS)",    "TTS_TDSPTT")
@@ -520,12 +520,13 @@ class TaipanLauncher(QMainWindow):
         self.run_task(lambda: TTS_SFL(path),"● RUNNING — SIMPLE FIRST LAST...","● DONE — SIMPLE FIRST LAST")
 
     def _run_first_last_graph(self, button=None):
+        paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
+
+        if not paths:
+            return
+    
         
-        self.run_task(
-                run_fl_graph,
-                "● RUNNING — FIRSTLAST GRAPH...",
-                "● DONE — FIRSTLAST GRAPH"
-            )
+        self.run_task(lambda: TTS_FLG(paths), "● RUNNING — FIRSTLAST GRAPH...", "● DONE — FIRSTLAST GRAPH")
 
 
     def _run_slicer(self, button=None):
