@@ -38,7 +38,7 @@ train_numbers_dict = {
 # Runs that start or end at non-stabling locations (VYST is yard if start or end of run)
 # Runs that change platforms either side of a connection
 # Runs that have more than one unit type
-# Runs that are missing connections
+# Runs that are missing connections (enforces ordering of connections in RSX)
 # Trains with non-standardised train numbers
 # Trains with train numbers that don't line up with their unit types
 # Trains with more than 1 unittype
@@ -52,10 +52,6 @@ train_numbers_dict = {
 # anything sub 8 but not < 4
 # train x on y day (FROM-TO) 
 # ??? Less than 8min tb
-#
-#
-#
-#
 #------------------------------------------------
 
 
@@ -123,15 +119,12 @@ def make_section(title, items):
 		
 	safe_id = title.replace(' ', '_').replace('/', '').replace('<', '').replace('>', '')
 
-
 	return f'''
 	<details id="{safe_id}">
 		<summary>{title} <span class="count">({count_items(items)})</span></summary>
 		{content}
 	</details>
 	'''
-
-
 
 def make_timing_section(title, items):
 	if not items:
@@ -260,8 +253,6 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
     color: inherit;
 	}}
 
-
-
 	a:hover {{
 		text-decoration: underline;
 		color: #4fc1ff;
@@ -283,11 +274,6 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
 	th {{ background: #3a3a3a; color: #ce9178; padding: 0.4em 0.8em; text-align: left; font-size: 14px; }}
 	td {{ padding: 0.4em 0.8em; border-bottom: 1px solid #333; vertical-align: top; font-size: 14px; }}
 	tr:hover td {{ background: #2a2a2a; }}
-
-
-	
-	
-	
 	</style>
 	</head>
 	<body>
@@ -304,8 +290,6 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
 	{make_timing_section('Same stops but inconsistent requested departure gaps', inconsistent_timing)}
 
 
-	
-	
 	<script>
 	document.querySelectorAll('a[href^="#"]').forEach(link => {{
 		link.addEventListener('click', function() {{
@@ -331,7 +315,6 @@ def write_html(filename_html, filename, sections, inconsistent_timing):
 def extract_lineid_num(lineid):
    match = re.search(r'~\s*(\d+)', lineid)
    return match.group(1) if match else lineid
-
 
 
 def write_txt_report(filename, sections, inconsistent_timing):
@@ -397,6 +380,7 @@ def TTS_ERR(path, mypath = None):
 		# { (run, weekday): [ {tn, darr, otrack, dtrack, direction} ] }
 
 		run_detail = {}
+		run_dict_tns = {}
 		for t in trains:
 			key = (t.run, t.weekday)
 			stoptime = int(t.destin.get('stopTime', '0'))
@@ -446,19 +430,17 @@ def TTS_ERR(path, mypath = None):
 			'Turnbacks 4-8 minutes': defaultdict(lambda: defaultdict(list))
 		}
 
-
-	
+		connection_map = defaultdict(lambda: defaultdict(list))
 
 		for t in trains:
 			day = WEEKDAY_KEYS_MASTER.get(t.weekday, {}).get('short', t.weekday)
 			key = (t.run, t.weekday)
-			# connection tracking
-			if key not in connections:
-				connections[key] = [t.number]
+			# connection tracking		
 			for conn in t.raw.iter('connection'):
-				conn_tn = conn.attrib.get('trainNumber')
-				if conn_tn:
-					connections[key].append(t.number)
+					conn_tn = conn.attrib.get('trainNumber')
+					if conn_tn:
+						connection_map[key][t.number].append(conn_tn)
+
 			# connection lineID checks
 			for conn in t.raw.iter('connection'):
 				conn_tn = conn.attrib.get('trainNumber')
@@ -528,6 +510,7 @@ def TTS_ERR(path, mypath = None):
 
 		# platform + turnback checks using run_detail
 		for key, detail in run_detail.items():
+			run_dict_tns[key] = [entry['tn'] for entry in detail]
 			run, weekday = key
 			day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
 			for i, entry in enumerate(detail):
@@ -556,19 +539,37 @@ def TTS_ERR(path, mypath = None):
 
 
 		# missing connections
-		run_dict_tns = {}
-		for t in trains:
-			key = (t.run, t.weekday)
-			run_dict_tns.setdefault(key, []).append(t.number)
-		for key, tns in run_dict_tns.items():
-			if tns != connections.get(key):
-				run, weekday = key
-				day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
-				missingconnects.append(
-					f'Run {run} on {day}\n'
-					f'Trips in run:    {tns}\n'
-					f'Connected trips: {connections.get(key)}\n'
-				)
+		# strict connection validation
+
+		for key, expected in run_dict_tns.items():
+			run, weekday = key
+
+			if run != 'AA':
+				continue
+			day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
+
+			print(f'\n=== Run {run} ({day}) ===')
+			print(f'Expected order: {expected}')
+			conn_map = connection_map.get(key, {})
+			issues = []
+			print('Connection map:')
+			for tn, conns in conn_map.items():
+				print(f'  {tn} -> {conns}')
+
+			for i in range(len(expected) - 1):
+				current = expected[i]
+				next_expected = expected[i + 1]
+				actual_list = conn_map.get(next_expected, [])
+				if not actual_list:
+					issues.append(f'{next_expected} missing connection -> should connect back to {current}')
+				elif current not in actual_list:
+					issues.append(
+						f'{next_expected} connects to {", ".join(actual_list)} -> should connect back to {current}'
+					)
+
+			if issues:
+				msg = f'Run {run} ({day})\n  ' + '\n  '.join(issues)
+				missingconnects.append(msg)
 
 
 		# inconsistent timing for trains with the same stop sequence
@@ -633,8 +634,6 @@ def TTS_ERR(path, mypath = None):
 					prev_rd = None  
 					prev_sid = sid
 
-
-			
 			train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
 
 		station_seq_groups = defaultdict(list)
@@ -734,7 +733,6 @@ def TTS_ERR(path, mypath = None):
 		#('Same stops but inconsistent requested departure gaps', inconsistent_timing),
 		]
 		
-
 		write_txt_report(filename,sections, inconsistent_timing)
 		write_html_report(filename,sections,inconsistent_timing)
 
@@ -748,6 +746,3 @@ if __name__ == "__main__":
 	path = select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)')
 	if path:
 		TTS_ERR(path)
-
-
-
