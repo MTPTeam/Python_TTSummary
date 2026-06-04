@@ -1,3 +1,4 @@
+from taipan.constants import trains
 from taipan.core.xml_parser import TrainInfo, extract_trains, load_rsx_with_tree
 from taipan.gui.base import open_file_crossplatform, show_info, select_file, show_info_scroll, show_error_safe, show_info_safe, show_info_scroll_safe
 import sys 
@@ -5,9 +6,8 @@ import sys
 from taipan.core.utils import get_weekday_short
 import os
 from collections import defaultdict
-from taipan.constants.locations import STATIONS_MASTER, YARDS, MISC_LOCATIONS
+from taipan.constants.locations import STATIONS_MASTER, YARDS, MISC_LOCATIONS, inject_yard
 from taipan.constants.days import WEEKDAY_KEYS_MASTER, MON_THU_MASK
-
 from PyQt6.QtWidgets import QApplication
 
 
@@ -147,6 +147,8 @@ def sectorise(path):
     if check_CRR(trains):
         show_error_safe('ERROR', 'RS present but RTL missing (Please check for CRR)')
         #sys.exit("CRITICAL ERROR: RS present but RTL missing (no CRR)")
+        return
+
 
     # for debugging / summary stats of matched and unmatched 
     non_revenue = revenue = same_sector_pairs = diff_sector_pairs = same_sector_revenue = same_sector_empty = connections = upgraded = 0
