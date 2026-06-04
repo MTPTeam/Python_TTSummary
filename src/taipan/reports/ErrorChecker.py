@@ -4,7 +4,6 @@ import sys
 import time
 import logging
 import traceback
-from turtle import title
 import pandas as pd
 from collections import defaultdict
 from PyQt6.QtWidgets import QApplication
