@@ -1,5 +1,6 @@
 # TAIPAN codebase
 
+### New to TAIPAN? Start here -> [Quick Start Guide](HANDOVER.md)
 
 ## Changes to codebase
 
