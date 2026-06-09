@@ -12,6 +12,10 @@ This guide covers the most common maintenance tasks you’ll need to do on TAIPA
 1. [Common Errors and Fixes](#7-common-errors-and-fixes)
 -----
 ## 1. TAIPAN Structure — Where is Everything?
+
+![Diagram](taipan-diagram.drawio.svg)
+
+
 Here’s a quick map of the codebase so you know where to look:
 |Folder       |What’s in it                                              |
 |-------------|----------------------------------------------------------|
@@ -89,7 +93,7 @@ Put new code in the folder that matches its purpose (see the project structure t
 
 **After adding a new script:**
 - Add a button for it (see Section 3 above)
-- Add unit tests for it (see Section 6 below)
+- Add unit tests for it if required (see Section 6 below)
 - If it uses new libraries, update `requirements.txt` (see Section 5 below)
 -----
 
