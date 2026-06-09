@@ -65,15 +65,15 @@ Put new code in the folder that matches its purpose (see the project structure t
 - If it uses new libraries, update `requirements.txt` (see Section 5 below)
 
 
-### Using `parse_rsx` and `TrainInfo`
-This is the starting point for almost every script in TAIPAN. These functions work through the RSX file and return what is requested. 
+### 1.  How to use `parse_rsx` and `TrainInfo`
+This is the starting point for almost every script in TAIPAN. These functions go through the RSX file and return what is requested in a readable, compact format. 
 Here’s a minimal example that parses the RSX and returns lists of useful info:
 
 ```python
 from taipan.core.xml_parser import parse_rsx
 
 root, trains, d_list, u_list, run_dict, _ = parse_rsx(
-   path,
+   path, # must specify yourself 
    want_trains=True,
    want_days=True,
    want_units=True,
@@ -83,7 +83,7 @@ root, trains, d_list, u_list, run_dict, _ = parse_rsx(
 for train in trains:
     # for every train in the RSX it prints the their (weekday, train type, destination). 
     # You can get more attributes using `Traininfo` attribute cheat sheet further down
-   print(train.weekday, train.train_type, train.destin)
+   print(train.weekday, train.train_type, train.is_empty)
 ```
 
 **Return values:**
@@ -119,6 +119,7 @@ for train in trains:
 |`train.destin`             |Last entry attributes                                                      |
 |`train.odep` / `train.ddep`|Origin and destination departure times                                     |
 |`train.sector`             |Sector number as an integer                                                |
+|`self.start_id` / `self.end_id `| station ID of origin/dest                                            |
 |`train.run`                |Run ID                                                                     |
 |`train.lineID`             |Full line ID from RSX                                                      |
 |`train.number`             |Train number                                                               |
@@ -128,20 +129,104 @@ for train in trains:
 
 You can add more to this! See core/xml_parser.py `TrainInfo` class.
 
+
+### 2. Get it ready to integrate with new buttons!
+
+Let's say you need to create a new script that:
+1. Takes an input RSX, from the user
+1. Prints all the origin and destinations station IDs for each trainID
+1. Pops up a message box of (trainID, origin, and destination)
+
+From the previous section we can come up with something like this - but with a few important additions.
+
+```python
+from taipan.core.xml_parser import parse_rsx
+from taipan.gui.base import select_file, show_info_scroll_safe # import existing UI elements
+from PyQt6.QtWidgets import QApplication
+import sys
+
+def get_od_of_trains(path, mypath = None):
+
+    root, trains, d_list, u_list, run_dict, _ = parse_rsx(
+    path,
+    want_trains=True,
+    want_days=True,
+    want_units=True,
+    want_runs=True
+    )
+
+    train_list = []
+
+
+    for train in trains:
+        train_list.append(f"{train.number}, {train.start_id}, {train.end_id}")
+        print(train.number, train.start_id, train.end_id)
+
+    train_msg = "\n".join(train_list)
+    
+    
+    show_info_scroll_safe("Trains, origin and destination: ", train_msg) # must use *safe versions to ensure it works with the UI 
+
+if __name__ == "__main__":
+	app = QApplication.instance() or QApplication(sys.argv) # this ensures we can still run this function standalone - without using the full UI 
+	path = select_file(caption='Select RSX file',directory='',filter_str='RSX Files (*.rsx);;All Files (*.*)') 
+	if path:
+		get_od_of_trains(path)
+```
+
+
 -----
 
 ## 4. Adding a New Button to the Launcher
+In this example, we will create a new button that runs the code from #2 in the previous section.
 The launcher UI is in `gui/launch.py` and the button configuration lives in `gui/ui_constants/names.py`.
 
-**Step 1 — Write your function**
-
-In `gui/launch.py`, add a new method to the `TaipanLauncher` class. This function is what gets called when the button is clicked. Example:
+**Step 1 — Load your function (lazily) at the top of launch.py**
 
 ```python
-def my_new_tool(self):
-   # your code here
-   pass
+# find this section in launch.py
+TTS_ERR         = _lazy("taipan.reports.ErrorChecker",           "TTS_ERR")
+TTS_PTT         = _lazy("taipan.timetables.PublicTimetable",     "TTS_PTT")
+... 
+TTS_OD          = _lazy("taipan.test", "get_od_of_trains") # add new import
 ```
+
+**Step 2 — Add the function to the `TaipanLauncher` class in `launch.py`**
+In `gui/launch.py`, add a new method to the `TaipanLauncher` class. This function is what gets called when the button is clicked. 
+Going off our previous example:
+
+```python
+class TaipanLauncher(QMainWindow):
+    ...
+    ...
+
+    def _run_qa(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_ERR(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
+
+
+    def _run_OD(self, button = None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)") # you can also add force_new = True if you want it to force a new selection each time rather than using saved file
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_OD(path),"● RUNNING — OD...","● DONE — O/D LIST")
+```
+
+**Step 3 — Register the button**
+
+Open `gui/ui_constants/names.py` and find the `groups` dictionary. Add your button to the appropriate category using this format:
+
+```python
+("Get Origin/Dest", "_run_OD", "Gets origin and destination of each train in the RSX.")
+```
+The three values are: button label, function name (must match what you defined in the class, in our example it was `_run_OD`), tooltip text.
+
 
 > **Important:** If your script has no clear exit point (e.g. it opens a dashboard that stays open), run it as a subprocess instead. See the `_run_runtime` function in `launch.py` for an example of how to do this.
 
@@ -149,18 +234,10 @@ def my_new_tool(self):
 
 > **COM/win32 note:** If your function uses COM or win32 and it freezes or crashes, add `pythoncom.CoInitialize()` at the top of your function and `pythoncom.CoUninitialize()` in a `finally` block.
 
-**Step 2 — Register the button**
 
-Open `gui/ui_constants/names.py` and find the `groups` dictionary. Add your button to the appropriate category using this format:
+**Step 4 — Test it**
 
-```python
-("BUTTON TEXT", "my_new_tool", "Tooltip text shown on hover")
-```
-The three values are: button label, function name (must match what you defined in Step 1), tooltip text.
-
-**Step 3 — Test it**
-
-Launch TAIPAN (`launch_TAIPAN.bat`) and confirm your button appears and works.
+Launch TAIPAN (`launch_TAIPAN.bat`) and confirm your button appears and works. Styling of the buttons and UI more generally can be modified via `gui/ui_constants/stylesheet.py` (uses CSS).
 
 -----
 
@@ -175,9 +252,12 @@ Whenever you install a new library via pip, you **must** update `requirements.tx
   ```
   .\venv\Scripts\python.exe -m pip freeze > requirements.txt
   ```
-
-1. Open `requirements.txt` and **delete any lines** related to `pywin32` that don’t have a pinned version number (lines that look like `pywin32==` with nothing after the `==`, or lines without `==` at all)
-1. Commit the updated `requirements.txt`
+3. Open `requirements.txt` and **DELETE any lines** related to `pywin32` that don’t have a pinned version number (lines that look like `pywin32==` with nothing after the `==`, or lines without `==` at all). See below - this is how it might look...
+```
+-e c:\python_ttsummary
+pywin32 @ file:///C:/Users/r919150/Downloads/pywin32-311-cp312-cp312-win_amd64.whl#sha256=b8c095edad5c211ff31c05223658e71bf7116daa0ecf3ad85f3201ea3190d067
+```
+4. Commit the updated `requirements.txt`
 
 > Others on the team will pick up the new dependency automatically when they run `update_TAIPAN.bat`.
 -----
@@ -187,7 +267,7 @@ Always run the tests after making changes to make sure you haven’t broken anyt
 ```
 .\venv\Scripts\python.exe -m pytest
 ```
-You should see all tests passing. As of April 2025 there are 24 tests.
+You should see all tests passing. Currently there are 24 tests.
 
 **To add new tests:**
 1. Create a new file in the `tests/` folder
