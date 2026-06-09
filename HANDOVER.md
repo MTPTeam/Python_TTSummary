@@ -26,6 +26,7 @@ Here’s a quick map of the codebase so you know where to look:
 |`stabling/`  |Stabling count and balance outputs                        |
 |`timetables/`|Public and working timetable outputs                      |
 |`tests/`     |Unit tests                                                |
+
 **Rule of thumb:** if something’s broken or missing, start in `constants/` — a lot of issues trace back there.
 -----
 ## 2. Adding a New Station or Location
