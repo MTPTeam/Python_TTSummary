@@ -1,7 +1,5 @@
 #### All the cosmetic/formatting constants live here 
 
-
-
 ALERT = "#CC194C"
 GREY  = "#CCCCCC"
 REP   = "#FFB7B7"
@@ -63,10 +61,6 @@ STYLE_VARIANTS = {
 
 
 
-
-
-
-
 GENERIC_STYLES = {
     "title": {
         "bold": True,
@@ -117,23 +111,6 @@ GENERIC_STYLES = {
         "font_color": ALERT,
     },
 }
-
-
-_UNIT_COLOURS = [
-    '#2563EB',  # blue
-    '#F97316',  # orange
-    '#16A34A',  # green
-    '#DC2626',  # red
-    '#9333EA',  # purple
-    '#0891B2',  # cyan
-    '#DB2777',  # pink
-    '#CA8A04',  # amber
-]
-
-_TOTAL_COLOUR  = '#0F172A'   # near-black
-_CAPACITY_COLOUR = '#EF4444' # soft red
-_GRID_COLOUR   = '#F1F5F9'   # very light blue-grey — barely visible
-_AXIS_COLOUR   = '#64748B'   # slate
 
 
 
