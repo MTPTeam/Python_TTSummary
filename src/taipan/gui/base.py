@@ -46,6 +46,14 @@ def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = ""
     )
     return files
 
+def select_folder(caption: str = "Select a folder", directory: str = "") -> str:
+   ensure_app()
+   folder = QFileDialog.getExistingDirectory(
+       None,
+       caption,
+       directory,
+   )
+   return folder or ""
 
 
 def select_option(title: str, message: str, options: list[tuple[str, str]]) -> str | None:
