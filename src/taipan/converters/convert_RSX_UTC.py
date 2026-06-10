@@ -71,7 +71,7 @@ def seconds_to_utc_time(total_seconds: int) -> str:
    minutes = remain // 60
    seconds = remain % 60
    tenths  = round(seconds / 6) % 10
-   return f"0{hours:02d}{minutes:02d}{tenths}"
+   return f"0{hours:02d}{minutes:02d}{tenths:02d}"
 
 def arr_dep_times(departure_str: str, stop_time_seconds) -> tuple:
    """Return (arr_utc, dep_utc) - arrival is departure minus dwell."""
@@ -118,7 +118,9 @@ def train_to_utc_lines(t, prev_map, next_map):
 	for station, track, dep_str, dwell in zip(
 			t.station_ids, t.track_ids, t.departures, t.stop_times):
 		arr_utc, dep_utc = arr_dep_times(dep_str, dwell)
-		yield f"Arr={arr_utc},Dep={dep_utc},{stop_yn},Node={station}{track},{day}"
+		# Replaced track.strip() with a generator that extracts only digits
+		yield f"Arr={arr_utc},Dep={dep_utc},{stop_yn},Node={station}{''.join(filter(str.isdigit, track))},{day}"
+
 	yield f"End {len(t.station_ids)},,,,{day}"
 
 # parsing freight TXT files 
@@ -187,8 +189,8 @@ def _parse_freight_file(filepath: str) -> list:
 			if not tokens:
 				continue
 			time_block = tokens[0]           # e.g. '0342003420'
-			arr = "0" + time_block[:5]       # arr HHMMd with leading 0
-			dep = "0" + time_block[5:10]     # dep HHMMd with leading 0
+			arr = "0" + time_block[:5] + "0"
+			dep = "0" + time_block[5:10] + "0"
 			flag_match = re.search(r'[#D]', line[10:20])
 			flag    = flag_match.group() if flag_match else "#"
 			stop_yn = "Stop=Y" if flag == "#" else "Stop=N"
