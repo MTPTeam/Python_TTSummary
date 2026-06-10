@@ -200,7 +200,7 @@ If it doesn't return anything, just run call_on_main_thread().
     `.\venv\Scripts\python.exe -m pytest`
 
 
- - **Current state (29/04) - 24 PASSED, 0 FAILING**
+ - **Current state (10/06) - 66 PASSED, 0 FAILING**
 
 ## Installation Instructions 
 

@@ -267,7 +267,7 @@ Always run the tests after making changes to make sure you haven’t broken anyt
 ```
 .\venv\Scripts\python.exe -m pytest
 ```
-You should see all tests passing. Currently there are 24 tests.
+You should see all tests passing. Currently there are 66 tests.
 
 **To add new tests:**
 1. Create a new file in the `tests/` folder
