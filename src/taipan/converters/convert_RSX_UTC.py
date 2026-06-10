@@ -218,7 +218,7 @@ def convert_RSX_UTC(rsx_path, freight_folder=None, date_str=None, out_path=None)
 	if date_str is None:
 		date_str = date.today().strftime("%d/%m/%y")
 	if out_path is None:
-		out_path = os.path.splitext(rsx_path)[0] + "_conv.csv"
+		out_path = os.path.splitext(rsx_path)[0] + "_UTCconv.csv"
 	_, trains, _, _, _, duplicates = parse_rsx(
 		rsx_path,
 		want_trains=True,

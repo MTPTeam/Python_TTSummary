@@ -2,7 +2,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea, QSizePolicy, QGridLayout, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFont, QCursor, QColor, QIcon
-from taipan.gui.base import select_file, select_multi_rsx_files
+from taipan.gui.base import select_file, select_multi_rsx_files, select_folder
 from taipan.gui.ui_constants.stylesheet import STYLESHEET, img_path
 import os
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
@@ -51,6 +51,7 @@ TTS_HTT         = _lazy("taipan.converters.HASTUS_ttrefnum",     "TTS_HTT")
 run_ngr_dpp     = _lazy("taipan.plans.NGRDailyPlan",             "run_ngr_dpp")
 run_ngr_wpp     = _lazy("taipan.plans.NGRWeeklyPlan",            "run_ngr_wpp")
 TTS_VAS         = _lazy("taipan.reports.VASExtract",             "TTS_VAS")
+TTS_RSX_UTC     = _lazy("taipan.converters.convert_RSX_UTC",     "convert_RSX_UTC")
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -677,27 +678,9 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(lambda: TTS_VAS(path),"● RUNNING — VAS EXTRACTOR...","● DONE — VAS EXTRACTOR")
 
-    def _run_closure(self, button=None):
+    
 
-        #### needs refactor
-        self.run_task(
-            lambda: None,
-            "● RUNNING — CLOSURE IMPACTS...",
-            "● DONE — CLOSURE IMPACTS"
-        )
-
-
-    def _run_archiver(self, button=None):
-
-        #### needs refactor
-
-        # timetable archiver goes here
-        self.run_task(
-            lambda: None,
-            "● RUNNING — TIMETABLE ARCHIVER...",
-            "● DONE — TIMETABLE ARCHIVER"
-        )
-
+   
     def _run_tds_jp(self, button=None):
 
         ### tds converter goes here 
@@ -744,6 +727,24 @@ class TaipanLauncher(QMainWindow):
             return
 
         self.run_task(lambda: TTS_ERR(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
+
+    
+    def _run_rsx_utc(self, button=None):
+        rsx_path = self.get_file(filter_str="RSX Files (*.rsx)") 
+        freight_folder = select_folder(
+            caption="Select freight TXT folder (cancel to skip)",
+            directory=os.path.dirname(rsx_path) if rsx_path else "",
+        ) or None
+
+
+        if not rsx_path:
+            return
+
+        self.run_task(lambda: TTS_RSX_UTC(rsx_path = rsx_path, freight_folder=freight_folder),"● RUNNING — RSX → UTC CONVERTER...","● DONE — RSX → UTC CONVERTER")
+
+    
+  
+
 
 
 
