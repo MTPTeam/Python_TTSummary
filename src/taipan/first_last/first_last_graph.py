@@ -135,6 +135,7 @@ def build_combined_df(rsx_files: list[str], colors: list) -> tuple[pd.DataFrame,
    aa["First_t"] = aa["First"].apply(hhmm_to_excel_time) + 1
    aa["Last_t"]  = aa["Last"].apply(hhmm_to_excel_time)
    aa = aa.reset_index(drop=True)
+   aa = aa.sort_values("StationName").reset_index(drop=True)  # add this
    aa["Y"] = aa["Direction"].map({"Inbound": 2, "Outbound": 1})
    cols = ["Timetable","Day","Station","StationName","Direction","First","First_t","Last","Last_t","Y"]
    aa = aa[cols]
