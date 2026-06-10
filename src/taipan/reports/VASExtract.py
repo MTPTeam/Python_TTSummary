@@ -21,11 +21,7 @@ from taipan.gui.base import open_file_crossplatform, show_info_safe, select_file
 
 from PyQt6.QtWidgets import QApplication
 
-
-
-
 vas_daycode_dict = {'4':'M-F', '2':'SAT', '1':'SUN'}
-
 
 non_revenue_stations = [
     'RSWJ',
@@ -277,20 +273,6 @@ RSCode_dict = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def TTS_VAS(path, mypath = None):
 
     source_dir = os.path.abspath(os.path.dirname(path))
@@ -358,357 +340,6 @@ def TTS_VAS(path, mypath = None):
         
         
         start_time = time.time()
-        
-        
-    
-        
-        
-    
-        
-        
-    
-        
-        
-        
-        
-        vrt_2Beenleigh = {
-            'BNT':     (30, 3910),
-            'BNHS':    (29, 3990),
-            'BNH':     (28, 2879),
-            'HVW':     (27, 2745),
-            'EDL':     (26, 2624),
-            'BTI':     (25, 2518),
-            'LGL':     (24, 2353),
-            'KGT':     (23, 2208),
-            'WOI':     (22, 2027),
-            'TDP':     (21, 1951),
-            'KRY':     (20, 2070), 
-            'FTG':     (19, 1636),
-            'RUC':     (18, 1556),
-            'ATI':     (17, 1463),
-            'SYK':     (16, 1368),
-            'BQO':     (15, 1279),
-            'CEP':     (14, 1600),
-            'SLY':     (13, 1039),
-            'RKET':    (12, 1100),
-            'RKE':     (11, 949),
-            'MQK':     (10, 869),
-            'MBN':     (9,  963),
-            'TNY':     (8,  902),
-            'YLY':     (7,  779),
-            'YRG':     (6,  707),
-            'FFI':     (5,  603),
-            'DUP':     (4,  519),
-            'PKR':     (3,  441),
-            'SBA':     (2,  286),
-            'SBE':     (1,  205),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2GympieNth = {
-            # 'CRD': (),
-            # 'AUR': (),
-            'GYN':     (40, 10613),
-            'GMR':     (39, 9187),
-            'WOO':     (38, 8811),
-            'TRA':     (37, 8393),
-            'COZ':     (36, 8163),
-            'PMQ':     (35, 7673),
-            'COO':     (34, 7223),
-            'SSE':     (33, 6978),
-            'EUM':     (32, 6893),
-            'NHR':     (31, 4300),
-            'YAN':     (30, 6503),
-            'NBR':     (29, 7000), 
-            'WOB':     (28, 5693),
-            'WOBS':    (27, 5363),
-            'PAL':     (26, 5483),
-            'EUD':     (25, 5153),
-            'MOH':     (24, 4763),
-            'LSH':     (23, 4433),
-            'BWH':     (22, 4163),
-            'GSS':     (21, 3893),
-            'BEB':     (20, 3413),
-            'EMH':     (19, 3143),
-            'EMHS':    (18, 3768),
-            'CEN':     (17, 2961),
-            'CAW':     (16, 3443),
-            # 'CAE':     (15, 3400), 
-            'CAB':     (14, 3218), 
-            'MYE':     (13, 2636),
-            'BPY':     (12, 2414),
-            'NRB':     (11, 2653),
-            'DKB':     (10, 1880),
-            'PET':     (9,  1853),
-            'PETS':    (8,  1711),
-            'LWO':     (7,  1757),
-            'VGI':     (6,  1300),
-            'NTG':     (5,  1082),
-            'EGJ':     (4,  713),
-            'BHI':     (3,  500),
-            'BRC':     (2,  0),
-            'BNC':     (1,  0),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Cleveland = {
-            'CVN':     (22, 2875),
-            'ORO':     (21, 2743),
-            'WPT':     (20, 2592),
-            'BDE':     (19, 2436),
-            'TNS':     (18, 2285),
-            'LOT':     (17, 2156),
-            'MNY':     (16, 1814),
-            'WNC':     (15, 1863),
-            'WNM':     (14, 1781),
-            'WYH':     (13, 1691),
-            'LJN':     (12, 1574),
-            'LDM':     (11, 1528),
-            'HMM':     (10, 1414),
-            'MJE':     (9,  1203),
-            'CNQ':     (8,  1053),
-            'MGS':     (7,  921),
-            'NPR':     (6,  769),
-            'CRO':     (5,  680),
-            'BRD':     (4,  574),
-            'PKR':     (3,  700),
-            'SBA':     (2,  316),
-            'SBE':     (1,  226),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Doomben = {
-            'DBN':     (10, 1165),
-            'ACO':     (9,  1016),
-            'HDR':     (8,  928),
-            'CYF':     (7,  867),
-            'EGJ':     (6,  759),
-            'WWI':     (5,  676),
-            'AIN':     (4,  676),
-            'BHI':     (3,  398),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2FernyGrove = {
-            'FYG':     (15, 1445),
-            'KEP':     (14, 1260),
-            'GOQ':     (13, 1190),
-            'OXP':     (12, 1118),
-            'MHQ':     (11, 1038),
-            'GAO':     (10, 941),
-            'EGG':     (9,  873),
-            'ADY':     (8,  800),
-            'NWM':     (7,  701),
-            'WLQ':     (6,  617),
-            'WID':     (5,  537),
-            'EDJ':     (4,  470),
-            'BHI':     (3,  537),
-            'BRC':     (2,  257),
-            'BNC':     (1,  107),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2VarsityLs = {
-            'VYST':    (14,  4086),
-            'VYS':     (13,  3996),
-            'ROB':     (12,  3822),
-            'ROBS':    (11,  4542),
-            'NRG':     (10,  3524),
-            'HLN':     (9,   3242),
-            'CXM':     (8,   2962),
-            'ORM':     (7,   2728),
-            'BNH':     (6,   2336),
-            'LGL':     (5,   1903),
-            'ATI':     (4,   1194),
-            'PKR':     (3,   431),
-            'SBA':     (2,   278),
-            'SBE':     (1,   198),
-            'RS':      (0,   0),
-            'BNC':     (-1, -127),
-            'BRC':     (-2, -244),
-            'BHI':     (-3, -341),
-            'AIN':     (-4, -532),
-            'WWI':     (-5, -614),
-            'EGJ':     (-6, -696),
-            'AJN':     (-7, -747),
-            'BIT':     (-8, -1092),
-            'BDT':     (-9, -1248)
-            }
-        
-        vrt_2Rosewood = {
-            'RSW':     (37, 4025),
-            'YLE':     (36, 3422),
-            'TAO':     (35, 3367),
-            'WOQ':     (34, 3138),
-            'FWE':     (33, 2933),
-            'WFW':     (32, 2962),
-            'KRA':     (31, 3380),
-            'WUL':     (30, 2762),
-            'WFE':     (29, 3642),
-            'FEE':     (28, 3012),
-            'THS':     (27, 2682),
-            'IPSS':    (26, 3125),
-            'IPS':     (25, 2940), 
-            'EIP':     (24, 2436),
-            'BOV':     (23, 2343),
-            'BDX':     (22, 2244), 
-            'EBV':     (21, 2117),
-            'DIR':     (20, 2024),
-            'RVV':     (19, 1918),
-            'RDK':     (18, 1960),
-            # 'RDKS':    (17, 1760),
-            'GDQ':     (16, 1588),
-            'GAI':     (15, 1464),
-            'WAC':     (14, 1366),
-            'DAR':     (13, 1475),
-            'OXL':     (12, 993),
-            'TNY':     (11, 600),
-            'MBN':     (10, 500),
-            'CQD':     (9,  900),
-            'SHW':     (8,  780),    
-            'GVQ':     (7,  696),
-            'CMZ':     (6,  619),
-            'IDP':     (5,  526),
-            'TIQ':     (4,  417),
-            'TWG':     (3,  309),
-            'AHF':     (2,  231),
-            'MTZ':     (1,  138),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2KippaRing = {
-            'KPR':     (22, 2850),
-            'KPRS':    (21, 3030),
-            'RWL':     (20, 2640),
-            'MGE':     (19, 2550),
-            'MGH':     (18, 2400),
-            'MRD':     (17, 2310),
-            'KGR':     (16, 2220),
-            'PET':     (15, 2070),
-            'LWO':     (14, 2400),
-            'BPR':     (13, 1830),
-            'SPN':     (12, 1740),
-            'BDS':     (11, 1590),
-            'CDE':     (10, 1380),
-            'ZLL':     (9,  1290),
-            'GEB':     (8,  1200),
-            'SSN':     (7,  1110),
-            'VGI':     (6,  1020),
-            'NTG':     (5,  870),
-            'EGJ':     (4,  660),
-            'BHI':     (3,  510),
-            'BRC':     (2,  240),
-            'BNC':     (1,  120),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Shorncliffe = {
-            'SHC':     (19, 2290),
-            'SGE':     (18, 2025),
-            'DEG':     (17, 1586),
-            'NBD':     (16, 1499),
-            'BZL':     (15, 1422),
-            'NUD':     (14, 1261),
-            'BQY':     (13, 1182),
-            'BQYS':    (12, 1740),
-            'BHA':     (11, 1106),
-            'NTG':     (10, 1350), 
-            'NND':     (9,  903),
-            'TBU':     (8,  834),
-            'AJN':     (7,  800),
-            'EGJ':     (6,  714), 
-            'WWI':     (5,  631),
-            'AIN':     (4,  551),
-            'BHI':     (3,  520),
-            'BRC':     (2,  299),
-            'BNC':     (1,  149),
-            'RS':      (0,  0)
-            }
-        
-        
-        vrt_2Springfield = {
-            'SFC':     (14, 1920),
-            'SFD':     (13, 1770),
-            'RHD':     (12, 1440),
-            'DAR':     (11, 1230),
-            'OXL':     (10, 1080),
-            'CQD':     (9,  930),
-            'SHW':     (8,  840),
-            'GVQ':     (7,  750),
-            'CMZ':     (6,  660),
-            'IDP':     (5,  570),
-            'TIQ':     (4,  480),
-            'TWG':     (3,  330),
-            'AHF':     (2,  240),
-            'MTZ':     (1,  150),
-            'RS':      (0,  0)
-            }
-        
-        vrt_2InnerCity = {
-            'YN':      (6,   1024 ),
-            'YNA':     (5,   649 ),
-            'MNE':     (4,   544 ),
-            'BHI':     (3,   324 ),
-            'BRC':     (2,   264 ),
-            'BNC':     (1,   140 ),
-            
-            'RS':      (0,   0 ),
-            'RSWJ':    (-1,  -60),
-            'SBE':     (-1, -226 ),
-            'SBA':     (-2, -316 ),
-            'PKR':     (-3, -447 ),
-            }
-        
-        vrt_2Milton = {
-            'ETS':      (6,800),
-            'CAM':      (5,680),
-            'EXH':      (4,560),
-            'NBY':      (3,410),
-            'RSF':      (2,170),
-            'RSWJ':     (1,140),
-            'MTZ':      (0,0)
-            }
-        
-        network_vrt_dict = {
-            'Beenleigh':                  vrt_2Beenleigh,
-            'Caboolture - Gympie North':  vrt_2GympieNth,
-            'Cleveland':                  vrt_2Cleveland,
-            'Doomben':                    vrt_2Doomben,
-            'Ferny Grove':                vrt_2FernyGrove,
-            'Varsity Lakes - Airport':    vrt_2VarsityLs,               
-            'Ipswich - Rosewood':         vrt_2Rosewood,
-            'Redcliffe':                  vrt_2KippaRing,
-            'Shorncliffe':                vrt_2Shorncliffe,
-            'Springfield':                vrt_2Springfield,
-            'Inner City':                 vrt_2InnerCity,  
-            'Normanby':                   vrt_2Milton
-            }
-        
-        uniquestations_dict = {
-            'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
-            'Caboolture - Gympie North':  ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN','EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
-            'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
-            'Doomben':                    ('CYF','HDR','ACO','DBN'),
-            'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
-            'Varsity Lakes - Airport':    ('ORM','CXM','HLN','NRG','ROB','ROBS','VYS','VYST','BIT','BDT'),
-            'Ipswich':                    ('FWE','WFW','FEE','WFE','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS'),
-            'Rosewood':                   ('THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
-            'Ipswich - Rosewood':         ('MBN','TNY','WAC','GAI','GDQ','RDK','RDKS','RVV','DIR','EBV','BDX','BOV','EIP','IPS','IPSS','THS','FEE','WFE','WUL','KRA','WFW','FWE','WOQ','TAO','YLE','RSW'),
-            'Redcliffe':                  ('KGR','MRD','MGH','MGE','RWL','KPR','KPRS'),
-            'Shorncliffe':                ('BHA','BQY','BQYS','NUD','BZL','NBD','DEG','SGE','SHC'),
-            'Springfield':                ('RHD','SFD','SFC'),
-            'Inner City':                 ('BHI','BRC','BNC','PKR'), #RS
-            'Normanby':                   ('ETS','CAM','EXH','NBY','RSF','RSWJ','MTZ')
-            }
         
         pattern_len = 0
         origin_len = 0
@@ -798,85 +429,11 @@ def TTS_VAS(path, mypath = None):
                     rscode_list.append(rscodekey)
                 
                 
-    # # =============================================================================
-    # #             
-    # # =============================================================================
-    #         if tn in ['JM09','1M09']:
-    #             # if newentries[0].attrib['stationName'] != oID or newentries[-1].attrib['stationName'] != dID:
-    #             print(tn)
-    #             # print(entries[0].attrib['stationName'],'→',entries[-1].attrib['stationName'])
-    #             # print(newentries[0].attrib['stationName'],'→',newentries[-1].attrib['stationName'])
-    #             print(oID,'→',dID,pattern)
-    #             print()
-    # # =============================================================================
-    # #             
-    # # =============================================================================
-        
-                
             
                 pattern_len = len(pattern) if len(pattern) > pattern_len else pattern_len
                 origin_len  = len(oID) if len(oID) > origin_len else origin_len
                 destin_len  = len(dID) if len(dID) > destin_len else destin_len
-            # sIDs = {x.attrib['stationID'] for x in train[1].findall('entry')}    
-            # count = 0
-            # for line,vrt in network_vrt_dict.items():
-        
-            #     line_stops = uniquestations_dict.get(line)
-                
-        
-            #     condition = sIDs.intersection(line_stops)
-                
-            #     if line == 'Beenleigh':
-            #         condition = condition and sIDs.isdisjoint(uniquestations_dict.get('Varsity Lakes - Airport'))
-                
-            #     elif line == 'Shorncliffe':
-            #         condition = condition or ('NTG' in [oID,dID] and any([vrt.get(x) for x in sIDs if x != 'NTG']))
-                
-            #     elif line == 'Redcliffe':
-            #         shared_line_rdp_stations = ['LWO', 'BPR', 'SPN', 'BDS', 'CDE', 'ZLL', 'GEB', 'SSN', 'VGI']
-            #         condition = condition or dID in shared_line_rdp_stations or oID in shared_line_rdp_stations
-        
-        
-            #     if condition:
-                    
-            #         for n,entry in enumerate(train[1].iter('entry')):
-                        
-            #             if entry.attrib['stationID'] in vrt:
-            #                 firstonline = entry.attrib['stationID']                  
-            #                 first_sIDinVRT = n
-            #                 break
-                    
-            #         for n,entry in enumerate(train[1].iter('entry')):
-            #             if n <= first_sIDinVRT:
-            #                 secondonline = firstonline
-            #             else:
-            #                 if entry.attrib['stationID'] in vrt:
-            #                     secondonline = entry.attrib['stationID']
-            #                     break
-                        
-            #         a = int(vrt.get(firstonline)[0])    
-            #         b = int(vrt.get(secondonline)[0])
-            #         increasing = b > a
-            #         decreasing = b <= a
-                    
-                    
-                    
-            #         break
-            
-            #     else:
-            #         count += 1
-        
-            # no_line = count == len(network_vrt_dict)
-            
-            
-            # if no_line:
-            #     unassigned.append([tn,oID,dID])
-                            
-            # elif line in ['Beenleigh','Cleveland','Varsity Lakes - Airport','Ipswich - Rosewood','Springfield']:
-            #     direction = 'Down' if decreasing else 'Up'
-            # elif line in ['Caboolture - Gympie North','Doomben','Ferny Grove','Inner City','Redcliffe','Shorncliffe','Normanby']:
-            #     direction = 'Up' if decreasing else 'Down'
-                
+           
                 
             
             
@@ -891,10 +448,6 @@ def TTS_VAS(path, mypath = None):
                         rsx_info[keyinfo].append(valinfo)
                         test[keyinfo].append(tn)
         
-                
-                
-                
-                
                 
                 
                 tn3_pair = (tn3,WeekdayKey,service)
@@ -1034,20 +587,7 @@ def TTS_VAS(path, mypath = None):
                         os.startfile(rf'{filename_xlsx}')
                         print('\nOpening workbook')  
                         
-            # if CreateWorkbook:
-            #     workbook.close()
-            #     print('\n------------------')
-            #     print('------------------\n')
-            #     print('Creating workbook')  
-            #     if OpenWorkbook and __name__ == "__main__":
-            #         os.startfile(rf'{filename_xlsx}')
-            #         print('\nOpening workbook') 
-            #     else:
-            #         if copyfile:
-            #             shutil.copy(filename_xlsx, mypath) 
-            
-        
-        
+
         if ProcessDoneMessagebox and __name__ == "__main__":
             print(f'\n(runtime: {time.time()-start_time:.2f}seconds)')
             show_info_safe('VAS Extract','Process Done')
@@ -1058,9 +598,7 @@ def TTS_VAS(path, mypath = None):
             time.sleep(15)
             
 if __name__ == "__main__":
-
     app = QApplication.instance() or QApplication(sys.argv)
-
     path = select_file(caption="Select RSX file", directory="", filter_str="RSX Files (*.rsx);;All Files (*.*)")
     if path:
         TTS_VAS(path)
