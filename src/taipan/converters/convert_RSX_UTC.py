@@ -123,15 +123,6 @@ def train_to_utc_lines(t, prev_map, next_map):
 
 	yield f"End {len(t.station_ids)},,,,{day}"
 
-# parsing freight TXT files 
-def _freight_type_label(train_number: str, raw_type: str) -> str:
-	"""Map freight TXT train number first char to UTC TYPE label."""
-	first = train_number[:1]
-	if first in REV_FIRSTCHAR:
-		return "CITY-REGULAR"
-	elif first in EMP_FIRSTCHAR:
-		return "CITY-EMPTY"
-	return raw_type.strip() if raw_type.strip() else "CITY-REGULAR"
 
 def _parse_freight_file(filepath: str) -> list:
 	"""
@@ -164,7 +155,8 @@ def _parse_freight_file(filepath: str) -> list:
 			day     = VR_DAYCODE.get(daycode, daycode)
 			raw_type_match = re.findall(r'\D+', line[15:23])
 			raw_type = raw_type_match[0] if raw_type_match else ""
-			ttype = _freight_type_label(train, raw_type)
+			raw_type_match = re.findall(r'\D+', line[15:23])
+			ttype = raw_type_match[0].strip() if raw_type_match else ""
 			prev_str, next_str = "", ""
 			if len(indexes) == 8:
 				prev_str = f"Prev={line[27:31].strip()}_{day}"
