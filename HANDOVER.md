@@ -12,7 +12,8 @@ This guide covers the most common maintenance tasks you’ll need to do on TAIPA
 1. [Adding a New Button to the Launcher](#4-adding-a-new-button-to-the-launcher)
 1. [Adding a New Python Library](#5-adding-a-new-python-library)
 1. [Running the Test Suite](#6-running-the-test-suite)
-1. [Common Errors and Fixes](#7-common-errors-and-fixes)
+1. [Modifying existing functionality](#7-modifying-existing-functionality)
+1. [Common Errors and Fixes](#8-common-errors-and-fixes)
 -----
 
 
@@ -282,8 +283,73 @@ You should see all tests passing. Currently there are 66 tests.
 1. Create a new file in the `tests/` folder
 1. pytest will automatically discover and run it - no extra configuration needed
 1. Write tests for any new functionality you add
+
 -----
-## 7. Common Errors and Fixes
+## 7. Modifying existing functionality 
+This section will help you make simple modifications to existing scripts.
+
+#### Adding a new check to QA 
+
+
+1. Open up `ErrorChecker.py` and write your check anywhere above the `TTS_ERR` function. 
+
+    In this example we want to find all runs that start or end at non stabling locations. 
+
+    ```python
+
+    def check_stabling(run_dict, stable_locations, weekday_keys):
+        # check if any runs start or end at non stable locations 
+        issues = []
+        for key, rec in run_dict.items():
+            run, weekday = key
+            day = weekday_keys.get(weekday, {}).get('short', weekday)
+            if rec[3] not in stable_locations:
+                issues.append(f'Run {run} on {day} starts at {rec[3]}')
+            if rec[4] not in stable_locations:
+                issues.append(f'Run {run} on {day} ends at {rec[4]}')
+        return issues
+
+    ```
+
+2. Go to the `TTS_ERR` function and call your function in the run checks section. Keep in mind - these input arguments come from the `TrainInfo` class. 
+
+    ```python
+
+    stablingissue = check_stabling(run_dict, stable_locations, WEEKDAY_KEYS_MASTER)
+
+    ```
+
+3. Find the `sections = [...]` list within `TTS_ERR`. Add it as a new section and it will appear in the output file if that check is detected from the input RSX. 
+
+    ```python
+
+    sections = [
+		('Runs starting/ending at non-stabling locations',      stablingissue),
+        ... ]
+
+    ```
+
+    Note: Section list also supports subsections. In this example we could also make our `check_stabling` function return two lists - `starting_runs` and `ending_runs` to display it separately in a subsection. 
+
+    Then we would just update our sections dict like this - this will create two subsections under the parent section. 
+
+    ```python
+
+    sections = [
+		('Runs starting/ending at non-stabling locations',  {
+				'Runs starting at non stabling': starting_runs,
+				'Runs ending at non stabling': ending_runs
+		}),
+
+        ... ]
+
+    ```
+
+
+
+
+-----
+## 8. Common Errors and Fixes
 |Error                                                                       |What it means                                 |Fix                                                                                                            |
 |----------------------------------------------------------------------------|----------------------------------------------|---------------------------------------------------------------------------------------------------------------|
 |Station/yard missing from output                                            |Station not in `STATIONS_MASTER`              |Add it to `constants/locations.py`                                                                             |
