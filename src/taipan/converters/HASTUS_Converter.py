@@ -27,8 +27,6 @@ from PyQt6.QtWidgets import QApplication
 CreateFile = ProcessDoneMessagebox = hastuscopyfile = False
 ProcessDoneMessagebox = True
 CreateFile = True 
-
-
 hastuscopyfile = True if os.path.basename(__file__) == 'HASTUS_Converter - Copy.py' else False
 # --------------------------------------------------------------------------------------------------- #
 
@@ -48,10 +46,8 @@ entries_to_exclude = ['RSWJ','YNA','RSF',
 
 
 
-line_station_lookup = {
-   code: s['line']
-   for code, s in STATIONS_MASTER['stations'].items()
-}
+line_station_lookup = {code: s['line'] for code, s in STATIONS_MASTER['stations'].items()}
+
 CITY_TERMINUS = {
    ('south', False): 'BHI',
    ('south', True):  'EXH',
@@ -109,6 +105,37 @@ yard_codes = {
 terminus_codes = {v['terminus'] for v in STATIONS_MASTER['lines'].values() if v.get('terminus')}
 
 
+def format_run(run):
+    if '-' in run:
+        return run
+
+    newrun = ''
+    # ETCS case for E12A, E12B runs to become E12-A, E12-B runs - and for regular E12 runs
+    if run.startswith("E") and run[1].isnumeric():
+        digits = ''.join(x for x in run[1:] if x.isnumeric())
+        letters = ''.join(x for x in run[1:] if x.isalpha())
+        newrun = f"E{digits}-{letters}" if run.endswith(('A','B')) else f"E{digits}"
+    
+    # ETCS case for 34EA, 34EB runs to become 34E-A, 34E-B runs - and for regular 34E runs
+    elif len(run) >= 3 and run[0].isnumeric() and run[2] == "E":
+        digits = ''.join(x for x in run if x.isnumeric())
+        letters = ''.join(x for x in run[3:] if x.isalpha())
+        newrun = f"{digits}E-{letters}" if run.endswith(('A','B')) else f"{digits}E"
+    
+    # Case for 12A, 12B runs to become 12-A, 12-B runs
+    elif run[0].isnumeric() and run.endswith(('A','B')):
+        digits = ''.join(x for x in run if x.isnumeric())
+        letters = ''.join(x for x in run if x.isalpha())
+        newrun = f"{digits}-{letters}"
+    
+    # Case for AB1, AB2 runs to become AB-1, AB-2 runs
+    elif run[0].isalpha() and run.endswith(('1','2')):
+        letters = ''.join(x for x in run if x.isalpha())
+        digits = ''.join(x for x in run if x.isnumeric())
+        newrun = f"{letters}-{digits}"
+
+    return newrun if newrun else run
+
 def TTS_H(path, mypath = None):
     
     source_dir = os.path.abspath(os.path.dirname(path))
@@ -158,36 +185,7 @@ def TTS_H(path, mypath = None):
             sys.exit()
 
         
-        def format_run(run):
-            if '-' in run:
-                return run
-
-            newrun = ''
-            # ETCS case for E12A, E12B runs to become E12-A, E12-B runs - and for regular E12 runs
-            if run.startswith("E") and run[1].isnumeric():
-                digits = ''.join(x for x in run[1:] if x.isnumeric())
-                letters = ''.join(x for x in run[1:] if x.isalpha())
-                newrun = f"E{digits}-{letters}" if run.endswith(('A','B')) else f"E{digits}"
-            
-            # ETCS case for 34EA, 34EB runs to become 34E-A, 34E-B runs - and for regular 34E runs
-            elif len(run) >= 3 and run[0].isnumeric() and run[2] == "E":
-                digits = ''.join(x for x in run if x.isnumeric())
-                letters = ''.join(x for x in run[3:] if x.isalpha())
-                newrun = f"{digits}E-{letters}" if run.endswith(('A','B')) else f"{digits}E"
-            
-            # Case for 12A, 12B runs to become 12-A, 12-B runs
-            elif run[0].isnumeric() and run.endswith(('A','B')):
-                digits = ''.join(x for x in run if x.isnumeric())
-                letters = ''.join(x for x in run if x.isalpha())
-                newrun = f"{digits}-{letters}"
-            
-            # Case for AB1, AB2 runs to become AB-1, AB-2 runs
-            elif run[0].isalpha() and run.endswith(('1','2')):
-                letters = ''.join(x for x in run if x.isalpha())
-                digits = ''.join(x for x in run if x.isnumeric())
-                newrun = f"{letters}-{digits}"
-
-            return newrun if newrun else run
+        
         
         ### d_list        tracks the days present in the rsx
         ### runs          creates a list of every train_number in each run for a certain day of operation
@@ -249,7 +247,6 @@ def TTS_H(path, mypath = None):
                         SGE_orig_list.append((runs[k][i],k[1]))
          
     
-        SORT_ORDER_WEEK = ['1','2','4','120']
         d_list = sort_days(d_list)
 
 
@@ -307,16 +304,6 @@ def TTS_H(path, mypath = None):
             if canonical and terminus and canonical[0][1] == terminus:
                 line_station_order[line] = list(reversed(canonical))
 
-
-        
-        
-        
-        ### uniquestations_dict, network_vrt_dict and virtual run time (vrt) dictionaries for each line are used to determine direction (Up or Down)
-        ### Originally created for the Working Timetables, selects line if train passes through a location that is unique to a line
-        ### If the associated vrt integer for that line is increasing → outbound else inbound, can determine direction from that
-        ### Extra logic needed for Inner city trains that have no obvious line
-        ### The most error-prone function of the exporter, direction is regularly an issue
-        ### Might need new method for direction selection (line irrelevant in this report)
         
         
         def create_textfile(weekdaykey):
@@ -341,13 +328,6 @@ def TTS_H(path, mypath = None):
     
                 return (arrival,departure)
 
-
-            
-
-            
-            
-            
-            
         
             ### day_trains filters out departmentals and slices the rsx by day, creates a generator function to loop through
             ### unassigned collates all trips where the logic fails and the line the train is running on cannot be determined
@@ -503,7 +483,6 @@ def TTS_H(path, mypath = None):
             l =  '|'
             nl = '\n'
             if CreateFile:
-                # os.chdir('C:/Users/r913332/OneDrive - Queensland Rail/04 Project Python/06 Project RSX → HASTUS') 
                 o = open(filename_txt, 'w')
                 wl = o.writelines
                 for linenum,(key,value) in enumerate(run_dict.items()):
@@ -581,8 +560,6 @@ def TTS_H(path, mypath = None):
                                     wl([nl,'triptp',l,'SE10',l,stationtosignal,l,zero,l,stop,l,f'{run}_{tn}'])
                                     #time + 1 minutes
                    
-                            
-                    
                 o.close()
                 print(f'All trains on {weekdaykey_dict.get(weekdaykey)} have been processed')
                 # print('—————————————————————————————————————————————————————')
