@@ -1,22 +1,29 @@
 # Updating TAIPAN - A Practical Guide
 This guide covers the most common maintenance tasks you’ll need to do on TAIPAN. It assumes you know basic Python but are **not** familiar with the TAIPAN codebase yet.
-> **Before you start:** Make sure TAIPAN is set up on your machine. If not, follow the Installation Instructions in the main developer docs first.
+> **Before you start:** Make sure TAIPAN and all dependencies are set up on your machine. If not, follow the Installation Instructions in the main developer docs first.
+
+
+
 -----
 ## Table of Contents
 1. [Project Structure - Where is Everything?](#1-project-structure--where-is-everything)
 1. [Adding a New Station or Location](#2-adding-a-new-station-or-location)
-1. [Adding a New Script or Feature](#4-adding-a-new-script-or-feature)
-1. [Adding a New Button to the Launcher](#3-adding-a-new-button-to-the-launcher)
+1. [Adding a New Script or Feature](#3-adding-a-new-script-or-feature)
+1. [Adding a New Button to the Launcher](#4-adding-a-new-button-to-the-launcher)
 1. [Adding a New Python Library](#5-adding-a-new-python-library)
 1. [Running the Test Suite](#6-running-the-test-suite)
 1. [Common Errors and Fixes](#7-common-errors-and-fixes)
 -----
+
+
 ## 1. TAIPAN Structure — Where is Everything?
+
+The diagram below shows a simplified version of the new TAIPAN structure. Please note that modifying anything in blue will affect all of the output scripts.
 
 ![Diagram](taipan-diagram.drawio.svg)
 
 
-Here’s a quick map of the codebase so you know where to look:
+
 |Folder       |What’s in it                                              |
 |-------------|----------------------------------------------------------|
 |`constants/` |Station names, yard locations, colours - shared everywhere|
@@ -31,7 +38,7 @@ Here’s a quick map of the codebase so you know where to look:
 |`timetables/`|Public and working timetable outputs                      |
 |`tests/`     |Unit tests                                                |
 
-**Rule of thumb:** if something’s broken or missing, start in `constants/` — a lot of issues trace back there.
+**Rule of thumb:** if something’s missing from an output, start in `constants/` — a lot of issues trace back there (a missing station/yard/etc).
 
 -----
 ## 2. Adding a New Station or Location
@@ -183,6 +190,7 @@ The launcher UI is in `gui/launch.py` and the button configuration lives in `gui
 
 **Step 1 — Load your function (lazily) at the top of launch.py**
 
+
 ```python
 # find this section in launch.py
 TTS_ERR         = _lazy("taipan.reports.ErrorChecker",           "TTS_ERR")
@@ -237,7 +245,7 @@ The three values are: button label, function name (must match what you defined i
 
 **Step 4 — Test it**
 
-Launch TAIPAN (`launch_TAIPAN.bat`) and confirm your button appears and works. Styling of the buttons and UI more generally can be modified via `gui/ui_constants/stylesheet.py` (uses CSS).
+Launch TAIPAN (`launch_TAIPAN.bat` or just run the launch code within your IDE) and confirm your button appears and works. Styling of the buttons and UI more generally can be modified via `gui/ui_constants/stylesheet.py` (uses CSS).
 
 -----
 
