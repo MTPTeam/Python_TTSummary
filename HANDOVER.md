@@ -35,7 +35,7 @@ Here’s a quick map of the codebase so you know where to look:
 
 -----
 ## 2. Adding a New Station or Location
-This is the most common maintenance task. All station data lives in one place.
+This is the most common maintenance task. All location data lives in one place.
 
 **File to edit:** `constants/locations.py`
 
@@ -220,7 +220,7 @@ class TaipanLauncher(QMainWindow):
 
 **Step 3 — Register the button**
 
-Open `gui/ui_constants/names.py` and find the `groups` dictionary. Add your button to the appropriate category using this format:
+Open `gui/ui_constants/names.py` and find the `groups` dictionary within `SCRIPTS`. Add your button to the appropriate category using this format:
 
 ```python
 ("Get Origin/Dest", "_run_OD", "Gets origin and destination of each train in the RSX.")
@@ -243,7 +243,7 @@ Launch TAIPAN (`launch_TAIPAN.bat`) and confirm your button appears and works. S
 
 
 ## 5. Adding a New Python Library
-Whenever you install a new library via pip, you **must** update `requirements.txt` so it installs correctly for everyone else.
+Whenever you install a new library via pip, you **must** update `requirements.txt` so TAIPAN can be updated correctly for everyone else.
 
 **Steps:**
 1. Install your library normally: `.\venv\Scripts\python.exe pip -m install <library-name>`
@@ -254,12 +254,13 @@ Whenever you install a new library via pip, you **must** update `requirements.tx
   ```
 3. Open `requirements.txt` and **DELETE any lines** related to `pywin32` that don’t have a pinned version number (lines that look like `pywin32==` with nothing after the `==`, or lines without `==` at all). See below - this is how it might look...
 ```
+# DELETE THESE LINES!
 -e c:\python_ttsummary
 pywin32 @ file:///C:/Users/r919150/Downloads/pywin32-311-cp312-cp312-win_amd64.whl#sha256=b8c095edad5c211ff31c05223658e71bf7116daa0ecf3ad85f3201ea3190d067
 ```
 4. Commit the updated `requirements.txt`
 
-> Others on the team will pick up the new dependency automatically when they run `update_TAIPAN.bat`.
+> Others on the team will pick up the new dependency automatically when they run `update_TAIPAN.bat` after pulling the new requirements file.
 -----
 ## 6. Running the Test Suite
 Always run the tests after making changes to make sure you haven’t broken anything.

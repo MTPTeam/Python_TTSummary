@@ -30,21 +30,6 @@ OpenWorkbook   = True
 # --------------------------------------------------------------------------------------------------- #
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### Used to classify into AM Peak, PM Peak, Off Peak, etc
 ampeak_srt = '06:00:00'
 ampeak_end = '09:00:00'
@@ -219,15 +204,6 @@ def TTS_TC(path, mypath = None):
                 ThreeSector = True
                 break        
         # print(str(3 if ThreeSector else 2), 'Sector timetable\n')
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
         
