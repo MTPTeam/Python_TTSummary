@@ -254,7 +254,7 @@ Launch TAIPAN (`launch_TAIPAN.bat` or just run the launch code within your IDE) 
 Whenever you install a new library via pip, you **must** update `requirements.txt` so TAIPAN can be updated correctly for everyone else.
 
 **Steps:**
-1. Install your library normally: `.\venv\Scripts\python.exe pip -m install <library-name>`
+1. Install your library normally: `.\venv\Scripts\python.exe -m pip install <library-name>`
 1. Run the following to regenerate `requirements.txt`:
 
   ```
