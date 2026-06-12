@@ -43,7 +43,7 @@ train_numbers_dict = {
 # Trains with more than 1 unittype
 # Trains with duplicate train numbers
 # Check whether connecting trains share the same lineID on the same day (mismatched line IDs)
-# Check if connecting train is missing for the same day (missing connecting train)
+# Check if connecting train is missing for the same day (missing connecting train). also checks that they are connected in the correct order 
 # check if the trains that stop at the same stations have the same difference between requested departure of current and requested departure of next station (aka run time). Ignores if dwell > 180 and ignores empties. 
 # turnback condition - 
 # short turnbacks if direction changes - check dir
@@ -78,7 +78,6 @@ def to_minutes_only(t_str):
 	h, m, s = map(int, t_str.split(':'))
 	# Ignore 's' entirely to force minute-level comparisons
 	return (h * 60) + m
-
 
 
 def make_subsection(title, items):
@@ -353,6 +352,234 @@ def write_html_report(filename, sections, inconsistent_timing):
 	print(f'HTML report: Errors-{filename}.html')
 
 
+def check_stabling(run_dict, stable_locations, weekday_keys):
+	# check if any runs start or end at non stable locations 
+	issues = []
+	for key, rec in run_dict.items():
+		run, weekday = key
+		day = weekday_keys.get(weekday, {}).get('short', weekday)
+		if rec[3] not in stable_locations:
+			issues.append(f'Run {run} on {day} starts at {rec[3]}')
+		if rec[4] not in stable_locations:
+			issues.append(f'Run {run} on {day} ends at {rec[4]}')
+	return issues
+
+def check_platforms_and_turnbacks(run_detail, weekday_keys):
+	# check if any runs change platforms either side of a connection, and if they have short turnbacks with direction changes
+	mismatched_map = defaultdict(lambda: defaultdict(list))
+	shortturnbacks = {
+		'Turnbacks < 4 minutes': defaultdict(lambda: defaultdict(list)),
+		'Turnbacks 4-8 minutes': defaultdict(lambda: defaultdict(list))
+	}
+	for key, detail in run_detail.items():
+		run, weekday = key
+		day = weekday_keys.get(weekday, {}).get('short', weekday)
+
+		for i, entry in enumerate(detail):
+			if i == 0:
+				continue
+			prev = detail[i - 1]
+			if prev['ldID'] != entry['loID'] and run not in ('XA', 'XB', '100', '101'):
+				run_key = f'Run {run}'
+				issue = f'{prev["tn"]} -> {entry["tn"]} ({prev["ldID"]} -> {entry["loID"]})'
+				mismatched_map[run_key][issue].append(day)
+			turnback = pd.Timedelta(entry['odep']) - pd.Timedelta(prev['darr'])
+			if entry['direction'] != prev['direction']:
+				run_key = f'Run {run}'
+				issue = f'{prev["tn"]} -> {entry["tn"]}'
+				if turnback < pd.Timedelta(minutes=4):
+					shortturnbacks['Turnbacks < 4 minutes'][run_key][issue].append(day)
+				elif turnback < pd.Timedelta(minutes=8):
+					shortturnbacks['Turnbacks 4-8 minutes'][run_key][issue].append(day)
+	return mismatched_map, shortturnbacks
+
+def check_train_numbers(trains, train_numbers_dict, weekday_keys):
+	# check for non standard train numbers 
+	dodgy_tns = []
+	wrong_tn = []
+
+	for t in trains:
+		day = weekday_keys.get(t.weekday, {}).get('short', t.weekday)
+		if not t.number.isalnum() or len(t.number) > 4:
+			dodgy_tns.append(t.number)
+		tn_unittype = train_numbers_dict.get(t.number[0])
+		if tn_unittype != t.train_type_raw:
+			wrong_tn.append(
+				f'Train Number {t.number} on {day} indicates unit type is {tn_unittype} but is {t.train_type_raw} instead'
+			)
+	return dodgy_tns, wrong_tn
+
+def check_unit_types(trains, weekday_keys):
+	# check unit types - multi unit trains and runs with more than 1 unit type
+	multiunittrain = []
+	run_units = {}
+
+	for t in trains:
+		day = weekday_keys.get(t.weekday, {}).get('short', t.weekday)
+		traintypeset = {e.attrib['trainTypeId'] for e in t.entries}
+		if len(traintypeset) > 1:
+			multiunittrain.append(
+				f'{t.number} on {day} has more than 1 train type: {", ".join(traintypeset)}'
+			)
+		key = (t.run, t.weekday)
+		run_units.setdefault(key, set()).add(t.unit)
+	multiunitrun = []
+	for key, units in run_units.items():
+		if len(units) > 1:
+			day = weekday_keys.get(key[1], {}).get('short', key[1])
+			multiunitrun.append(f'Run {key[0]} on {day} has two unit types: {", ".join(units)}')
+	return multiunittrain, multiunitrun
+
+def check_pass_stops(trains, non_revenue_stations):
+	# check for runs that start or end with a pass stop at a revenue location
+	originpass_map = defaultdict(lambda: defaultdict(list))
+	destinpass_map = defaultdict(lambda: defaultdict(list))
+
+	for t in trains:
+		if t.is_empty_train:
+			continue
+		day = WEEKDAY_KEYS_MASTER.get(t.weekday, {}).get('short', t.weekday)
+		stoptypes = [
+			e.attrib['type'] for e in t.entries
+			if e.attrib['stationID'] not in non_revenue_stations
+		]
+		if stoptypes:
+			route = f'{t.start_id}->{t.end_id}'
+			if stoptypes[0] == 'pass':
+				originpass_map[route][t.number].append(day)
+			if stoptypes[-1] == 'pass':
+				destinpass_map[route][t.number].append(day)
+	return originpass_map, destinpass_map
+
+def check_connections(run_dict_tns, connection_map, lineid_lookup, trains, weekday_keys):
+	# check for missing connections, lineID mismatches and lineID missing for connections
+	missingconnects = []
+	lineid_mismatches = []
+	lineid_missing = []
+
+	for t in trains:
+		day = weekday_keys.get(t.weekday, {}).get('short', t.weekday)
+
+		for conn in t.raw.iter('connection'):
+			conn_tn = conn.attrib.get('trainNumber')
+			if not conn_tn:
+				continue
+			conn_lineid = lineid_lookup.get((conn_tn, t.weekday))
+			if conn_lineid is None:
+				lineid_missing.append(
+					f'Train {t.number} on {day} connects to {conn_tn} which is not found on the same day'
+				)
+			elif conn_lineid != t.lineID:
+				lineid_mismatches.append(
+					f'Train {t.number} on {day} (lineID {t.lineID}) connects to {conn_tn} (lineID {conn_lineid})'
+				)
+
+	for key, expected in run_dict_tns.items():
+		run, weekday = key
+		if run != 'AA':
+			continue
+		day = weekday_keys.get(weekday, {}).get('short', weekday)
+		conn_map = connection_map.get(key, {})
+		issues = []
+
+		for i in range(len(expected) - 1):
+			current = expected[i]
+			next_expected = expected[i + 1]
+			actual_list = conn_map.get(next_expected, [])
+			if not actual_list:
+				issues.append(f'{next_expected} missing connection -> should connect back to {current}')
+			elif current not in actual_list:
+				issues.append(
+					f'{next_expected} connects to {", ".join(actual_list)} -> should connect back to {current}'
+				)
+		if issues:
+			missingconnects.append(f'Run {run} ({day})\n  ' + '\n  '.join(issues))
+	return missingconnects, lineid_mismatches, lineid_missing
+
+def check_timing(trains, train_numbers_dict):
+	# check if trains that stop at the same stations have the same difference between requested departure of current and requested departure of next station (aka run time). Ignores if dwell > 180 and ignores empties. Groups by station sequence to find inconsistencies in runtimes for trains that stop at the same stations in the same order.
+	train_fingerprints = {}
+
+	for t in trains:
+		if t.is_empty_train:
+			continue
+		tn_type = train_numbers_dict.get(t.number[0], '')
+		if tn_type.startswith('Empty_'):
+			continue
+		gaps = []
+		prev_rd = None
+
+		for e in t.entries:
+			rd = e.attrib.get('requestedDeparture')
+			sid = e.attrib.get('stationID')
+			stoptime_attr = e.attrib.get('stopTime')
+			if stoptime_attr is None:
+				gaps.append((sid, None))
+				prev_rd = None
+				continue
+			stoptime = int(stoptime_attr)
+			if prev_rd is None:
+				gaps.append((sid, None))
+				prev_rd = rd
+			elif rd is None:
+				gaps.append((sid, None))
+				prev_rd = None
+			elif stoptime <= 180:
+				try:
+					total_mins = to_minutes_only(rd) - to_minutes_only(prev_rd)
+					gaps.append((sid, total_mins))
+				except (ValueError, AttributeError):
+					gaps.append((sid, None))
+				prev_rd = rd
+			else:
+				gaps.append((sid, None))
+				prev_rd = None
+		train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
+	station_seq_groups = defaultdict(list)
+
+	for key, (station_seq, gaps, tn, weekday, lineid) in train_fingerprints.items():
+		station_seq_groups[station_seq].append((tn, weekday, lineid, gaps))
+	inconsistent_timing = []
+
+	for station_seq, members in station_seq_groups.items():
+		if len(members) < 2:
+			continue
+		gap_groups = defaultdict(list)
+		for tn, weekday, lineid, gaps in members:
+			gap_groups[gaps].append((tn, weekday, lineid))
+		if len(gap_groups) < 2:
+			continue
+		majority_gaps, _ = max(gap_groups.items(), key=lambda x: len(x[1]))
+		majority_dict = {sid: m for sid, m in majority_gaps if m is not None}
+		header = f'Route: [{station_seq[0]} -> {station_seq[-1]}]'
+		diff_groups = defaultdict(list)
+
+		for gaps, members_list in gap_groups.items():
+			if gaps == majority_gaps:
+				continue
+			diffs_list = []
+			for out_sid, out_mins in gaps:
+				if out_mins is None:
+					continue
+				maj_mins = majority_dict.get(out_sid)
+				if maj_mins is not None and out_mins != maj_mins:
+					diffs_list.append((out_sid, out_mins, maj_mins))
+			if diffs_list:
+				diff_groups[tuple(diffs_list)].extend(members_list)
+		outlier_lines = []
+
+		for diffs, members_list in diff_groups.items():
+			diff_str = ', '.join(f'{sid} {actual}m (expected {expected}m)' for sid, actual, expected in diffs)
+			train_info = ', '.join(
+				f'{tn} ({WEEKDAY_KEYS_MASTER.get(wk, {}).get("short", wk)} #{extract_lineid_num(lid)})'
+				for tn, wk, lid in members_list
+			)
+			outlier_lines.append(f'  Differing runtimes: {diff_str}\n    -> {train_info}')
+
+		if outlier_lines:
+			inconsistent_timing.append(f'{header}\n' + '\n'.join(outlier_lines))
+	return inconsistent_timing
+
 def TTS_ERR(path, mypath = None):
 	try:
 		directory = '\\'.join(path.split('/')[0:-1])
@@ -373,332 +600,54 @@ def TTS_ERR(path, mypath = None):
 		if vyst_runs:
 			stable_locations.add('VYST')
 
-		# build lineid lookup for connection checks
-		lineid_lookup = {(t.number, t.weekday): t.lineID for t in trains}
-		# build per-run detail dict for checks that need per train info
-		# { (run, weekday): [ {tn, darr, otrack, dtrack, direction} ] }
 
+		# ── build derived state ───────────────────────────────────────────────
+		lineid_lookup = {(t.number, t.weekday): t.lineID for t in trains}
 		run_detail = {}
 		run_dict_tns = {}
 		for t in trains:
 			key = (t.run, t.weekday)
 			stoptime = int(t.destin.get('stopTime', '0'))
 			darr = str(pd.Timedelta(t.ddep) - pd.Timedelta(seconds=stoptime))
-			otrack = t.origin['trackID'][-1]
-			dtrack = t.destin['trackID'][-1]
-			direction = t.direction
-			if key not in run_detail:
-				run_detail[key] = []
-			run_detail[key].append({
+			run_detail.setdefault(key, []).append({
 				'tn':        t.number,
 				'darr':      darr,
-				'otrack':    otrack,
-				'dtrack':    dtrack,
-				'loID':      t.start_id + otrack,
-				'ldID':      t.end_id + dtrack,
-				'direction': direction,
+				'otrack':    t.origin['trackID'][-1],
+				'dtrack':    t.destin['trackID'][-1],
+				'loID':      t.start_id + t.origin['trackID'][-1],
+				'ldID':      t.end_id + t.destin['trackID'][-1],
+				'direction': t.direction,
 				'odep':      t.odep,
 			})
-
-		# sort each run's trains by departure time
 		for detail in run_detail.values():
 			detail.sort(key=lambda x: x['odep'])
-
-		# check lists
-		dodgy_tns           = []
-		wrong_tn            = []
-		tn_doubles          = [(tn, day) for tn, day in (duplicates or [])]
-		multiunittrain      = []
-		multiunitrun        = []
-		
-		mismatched_map = defaultdict(lambda: defaultdict(list))
-
-		stablingissue       = []
-		#shortturnbacks      = []
-		missingconnects     = []
-		lineid_mismatches   = []
-		lineid_missing      = []
-
-		originpass_map = defaultdict(lambda: defaultdict(list))
-		destinpass_map = defaultdict(lambda: defaultdict(list))
-		connections         = {}
-
-		
-		shortturnbacks = {
-			'Turnbacks < 4 minutes': defaultdict(lambda: defaultdict(list)),
-			'Turnbacks 4-8 minutes': defaultdict(lambda: defaultdict(list))
-		}
-
+		for key, detail in run_detail.items():
+			run_dict_tns[key] = [e['tn'] for e in detail]
 		connection_map = defaultdict(lambda: defaultdict(list))
-
 		for t in trains:
-			day = WEEKDAY_KEYS_MASTER.get(t.weekday, {}).get('short', t.weekday)
 			key = (t.run, t.weekday)
-			# connection tracking		
-			for conn in t.raw.iter('connection'):
-					conn_tn = conn.attrib.get('trainNumber')
-					if conn_tn:
-						connection_map[key][t.number].append(conn_tn)
-
-			# connection lineID checks
 			for conn in t.raw.iter('connection'):
 				conn_tn = conn.attrib.get('trainNumber')
-				if not conn_tn:
-					continue
-				conn_lineid = lineid_lookup.get((conn_tn, t.weekday))
-				if conn_lineid is None:
-					lineid_missing.append(
-						f'Train {t.number} on {day} connects to {conn_tn} which is not found on the same day'
-					)
-				elif conn_lineid != t.lineID:
-					lineid_mismatches.append(
-						f'Train {t.number} on {day} (lineID {t.lineID}) connects to {conn_tn} (lineID {conn_lineid})'
-					)
-			# multi unit train
-			traintypeset = {e.attrib['trainTypeId'] for e in t.entries}
-			if len(traintypeset) > 1:
-				multiunittrain.append(
-					f'{t.number} on {day} has more than 1 train type: {", ".join(traintypeset)}'
-				)
-			# first/last pass check
-			if not t.is_empty_train:
-				stoptypes = [
-					e.attrib['type'] for e in t.entries
-					if e.attrib['stationID'] not in non_revenue_stations
-				]
-				if stoptypes:
-					
-					route = f'{t.start_id}->{t.end_id}'
-
-					if stoptypes[0] == 'pass':
-						originpass_map[route][t.number].append(day)
-
-					if stoptypes[-1] == 'pass':
-						destinpass_map[route][t.number].append(day)
-
-			# train number format
-			if not t.number.isalnum() or len(t.number) > 4:
-				dodgy_tns.append(t.number)
-			# train number vs unit type
-			tn_unittype = train_numbers_dict.get(t.number[0])
-			if tn_unittype != t.train_type_raw:
-				wrong_tn.append(
-					f'Train Number {t.number} on {day} indicates unit type is {tn_unittype} but is {t.train_type_raw} instead'
-				)
-
-		# multi unit run
-		run_units = {}
-		for t in trains:
-			key = (t.run, t.weekday)
-			run_units.setdefault(key, set()).add(t.unit)
-		for key, units in run_units.items():
-			if len(units) > 1:
-				day = WEEKDAY_KEYS_MASTER.get(key[1], {}).get('short', key[1])
-				multiunitrun.append(f'Run {key[0]} on {day} has two unit types: {", ".join(units)}')
-
-		# stabling check using run_dict
-		for key, rec in run_dict.items():
-			run, weekday = key
-			day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
-			start_sID = rec[3]
-			end_sID   = rec[4]
-			if start_sID not in stable_locations:
-				stablingissue.append(f'Run {run} on {day} starts at {start_sID}')
-			if end_sID not in stable_locations:
-				stablingissue.append(f'Run {run} on {day} ends at {end_sID}')
-
-		# platform + turnback checks using run_detail
-		for key, detail in run_detail.items():
-			run_dict_tns[key] = [entry['tn'] for entry in detail]
-			run, weekday = key
-			day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
-			for i, entry in enumerate(detail):
-				if i == 0:
-					continue
-				prev = detail[i - 1]
-				# mismatched platforms
-				if prev['ldID'] != entry['loID'] and run not in ('XA', 'XB', '100', '101'):
-					run_key = f'Run {run}' 
-					issue = f'{prev["tn"]} -> {entry["tn"]} ({prev["ldID"]} -> {entry["loID"]})'
-					mismatched_map[run_key][issue].append(day)
-				# short turnbacks
-				turnback = pd.Timedelta(entry['odep']) - pd.Timedelta(prev['darr'])
-				
-				if entry['direction'] != prev['direction']:
-					tb_mins, tb_secs = map(int, str(turnback)[-5:].split(':'))
-					run_key = f'Run {run}'  
-					issue = f'{prev["tn"]} -> {entry["tn"]}'
-
-
-					if turnback < pd.Timedelta(minutes=4):
-						shortturnbacks['Turnbacks < 4 minutes'][run_key][issue].append(day)
-
-					elif turnback < pd.Timedelta(minutes=8):
-						shortturnbacks['Turnbacks 4-8 minutes'][run_key][issue].append(day)
-
-
-		# missing connections
-		# strict connection validation
-
-		for key, expected in run_dict_tns.items():
-			run, weekday = key
-
-			if run != 'AA':
-				continue
-			day = WEEKDAY_KEYS_MASTER.get(weekday, {}).get('short', weekday)
-
-			print(f'\n=== Run {run} ({day}) ===')
-			print(f'Expected order: {expected}')
-			conn_map = connection_map.get(key, {})
-			issues = []
-			print('Connection map:')
-			for tn, conns in conn_map.items():
-				print(f'  {tn} -> {conns}')
-
-			for i in range(len(expected) - 1):
-				current = expected[i]
-				next_expected = expected[i + 1]
-				actual_list = conn_map.get(next_expected, [])
-				if not actual_list:
-					issues.append(f'{next_expected} missing connection -> should connect back to {current}')
-				elif current not in actual_list:
-					issues.append(
-						f'{next_expected} connects to {", ".join(actual_list)} -> should connect back to {current}'
-					)
-
-			if issues:
-				msg = f'Run {run} ({day})\n  ' + '\n  '.join(issues)
-				missingconnects.append(msg)
-
-
-		# inconsistent timing for trains with the same stop sequence
-		# builds a gap fingerprint (minute-level diffs between consecutive requestedDepartures)
-		# and flags any train whose fingerprint differs from others with the same stops
-		
-		train_fingerprints = {}
-		for t in trains:
-			# skip empties 
-			if t.is_empty_train:
-				continue
-			
-			tn_type = train_numbers_dict.get(t.number[0], '')
-			if tn_type.startswith('Empty_'):
-				continue
-			
-			gaps = []
-			prev_rd = None
-			prev_sid = None
-
-			for e in t.entries:
-				rd = e.attrib.get('requestedDeparture')
-				sid = e.attrib.get('stationID')
-
-				stoptime_attr = e.attrib.get('stopTime')
-
-				if stoptime_attr is None:
-					# Train doesn't stop - skip check, label with current destination sid
-					gaps.append((sid, None))
-					prev_rd = None
-					continue
-
-				stoptime = int(stoptime_attr) 
-				
-
-				# It's the first station (no prev)
-				if prev_rd is None:
-					gaps.append((sid, None))
-					prev_rd = rd 
-					prev_sid = sid
-
-				# Attributes are missing
-				elif rd is None:
-					gaps.append((sid, None))
-					prev_rd = None
-					prev_sid = sid
-
-				# Skip if dwell is 3min or less
-				elif stoptime <= 180:
-					try:
-						total_mins = to_minutes_only(rd) - to_minutes_only(prev_rd)
-						gaps.append((sid, total_mins))
-					except (ValueError, AttributeError):
-						gaps.append((sid, None))
-
-					prev_rd = rd
-					prev_sid = sid
-
-				# Dwell is over 180s
-				else:
-					gaps.append((sid, None))
-					prev_rd = None  
-					prev_sid = sid
-
-			train_fingerprints[(t.number, t.weekday)] = (tuple(t.station_ids), tuple(gaps), t.number, t.weekday, t.lineID)
-
-		station_seq_groups = defaultdict(list)
-
-		for key, (station_seq, gaps, tn, weekday, lineid) in train_fingerprints.items():
-			station_seq_groups[station_seq].append((tn, weekday, lineid, gaps))
-
-		inconsistent_timing = []
-
-		for station_seq, members in station_seq_groups.items():
-			if len(members) < 2:
-				continue
-
-			gap_groups = defaultdict(list)
-
-			for tn, weekday, lineid, gaps in members:
-				gap_groups[gaps].append((tn, weekday, lineid))
-
-			if len(gap_groups) < 2:
-				continue
-
-			majority_gaps, majority_members = max(gap_groups.items(), key=lambda x: len(x[1]))
-			header = f'Route: [{station_seq[0]} -> {station_seq[-1]}]'
-			
-			majority_str = ', '.join(f'{sid} {m}m' for sid, m in majority_gaps if m is not None)
-
-			majority_dict = {sid: m for sid, m in majority_gaps if m is not None}
-			diff_groups = defaultdict(list)
-
-			for gaps, members_list in gap_groups.items():
-				if gaps == majority_gaps:
-					continue
-
-				# Compare station gaps explicitly by matching their station IDs, not their positions
-				diffs_list = []
-				for out_sid, out_mins in gaps:
-					if out_mins is None:
-						continue
-					
-					# Look up what the runtime SHOULD be for this specific station ID
-					maj_mins = majority_dict.get(out_sid)
-					if maj_mins is not None and out_mins != maj_mins:
-						diffs_list.append((out_sid, out_mins, maj_mins))
-
-				if diffs_list:
-					diff_groups[tuple(diffs_list)].extend(members_list)
-					
-			outlier_lines = []
-
-			for diffs, members_list in diff_groups.items():
-				diff_str = ', '.join(f'{sid} {actual}m (expected {expected}m)' for sid, actual, expected in diffs)
-				train_info = ', '.join(
-					f'{tn} ({WEEKDAY_KEYS_MASTER.get(wk, {}).get("short", wk)} #{extract_lineid_num(lid)})'
-					for tn, wk, lid in members_list
-				)
-				outlier_lines.append(f'  Differing runtimes: {diff_str}\n    -> {train_info}')
-
-			if outlier_lines:
-				inconsistent_timing.append(f'{header}\n' + '\n'.join(outlier_lines))
+				if conn_tn:
+					connection_map[key][t.number].append(conn_tn)
+		# ── run checks ───────────────────────────────────────────────────────
+		stablingissue                    = check_stabling(run_dict, stable_locations, WEEKDAY_KEYS_MASTER)
+		mismatched_map, shortturnbacks   = check_platforms_and_turnbacks(run_detail, WEEKDAY_KEYS_MASTER)
+		dodgy_tns, wrong_tn              = check_train_numbers(trains, train_numbers_dict, WEEKDAY_KEYS_MASTER)
+		multiunittrain, multiunitrun     = check_unit_types(trains, WEEKDAY_KEYS_MASTER)
+		originpass_map, destinpass_map   = check_pass_stops(trains, non_revenue_stations)
+		missingconnects, lineid_mismatches, lineid_missing = check_connections(
+			run_dict_tns, connection_map, lineid_lookup, trains, WEEKDAY_KEYS_MASTER
+		)
+		inconsistent_timing              = check_timing(trains, train_numbers_dict)
+		tn_doubles_fmt = [
+			f'Train {tn} already running on {WEEKDAY_KEYS_MASTER.get(day, {}).get("short", day)}'
+			for tn, day in (duplicates or [])
+		]
 
 		# ── output ────────────────────────────────────────────────────────────
 		
-		tn_doubles_fmt = [
-		f'Train {tn} already running on {WEEKDAY_KEYS_MASTER.get(day, {}).get("short", day)}'
-		for tn, day in tn_doubles
-		]
+		
 
 		originpass_grouped = format_grouped_map(originpass_map)
 		destinpass_grouped = format_grouped_map(destinpass_map)
