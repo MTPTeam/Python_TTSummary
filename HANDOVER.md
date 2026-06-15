@@ -356,7 +356,7 @@ This section will help you make simple modifications to existing scripts.
 |`QObject: Cannot create children for a parent that is in a different thread`|Qt widget called directly from worker thread  |Don’t call UI elements from inside your tool function                                                          |
 |COM/win32 function freezing or crashing                                     |COM object not initialised on the right thread|Add `pythoncom.CoInitialize()` at the top of the function and `pythoncom.CoUninitialize()` in a `finally` block|
 |New library not found on someone else’s machine                             |`requirements.txt` not updated                |Run `pip freeze > requirements.txt`, remove unversioned pywin32 lines, commit                                  |                                                          |
-
+| Taipan hangs / not launching / extremely slow to launch / venv creation on install stuck | I have no idea | Restart laptop and test by running a fast script (e.g QA). If its still hanging restart again. When I encountered this I restarted 3x. 
 -----
 
 

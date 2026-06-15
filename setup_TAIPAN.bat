@@ -109,7 +109,7 @@ if errorlevel 1 (
 echo.
 :: ── Step 4: Install pywin32 .whl ──────────────
 echo [4/5] Installing pywin32...
-set "WHL_PATH=%~dp0pywin32-312-cp312-cp312-win_amd64.whl"
+set "WHL_PATH=%~dp0pywin32-311-cp312-cp312-win_amd64.whl"
 if exist "%WHL_PATH%" (
    "%~dp0venv\Scripts\python.exe" -m pip install "%WHL_PATH%"
    if errorlevel 1 (
@@ -140,13 +140,13 @@ if errorlevel 1 (
    echo FAILED: "import taipan" raised an error.
    call :fatal
 )
-"%~dp0venv\Scripts\python.exe" -c "import taipan; import pkg_resources; pkg_resources.require(open('requirements.txt').read().splitlines())" 2>&1
+"%~dp0venv\Scripts\python.exe" -m pip check 2>&1
 if errorlevel 1 (
-   echo.
-   echo WARNING: TAIPAN imported but one or more required packages may be missing or mismatched.
-   echo   Run: venv\Scripts\pip check
-   echo   to see details.
-   echo.
+  echo.
+  echo WARNING: TAIPAN imported but one or more required packages may be missing or mismatched.
+  echo   Run: venv\Scripts\pip check
+  echo   to see details.
+  echo.
 )
 echo.
 echo  Setup complete! TAIPAN installed successfully.
