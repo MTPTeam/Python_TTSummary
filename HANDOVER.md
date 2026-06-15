@@ -345,6 +345,49 @@ This section will help you make simple modifications to existing scripts.
 
     ```
 
+#### Changing terminating stations in TripCount
+
+If you need to alter the destination station in a line; e.g for Shorncliffe count trips ending at SGE instead of SHC - modify the following data structures. 
+
+```python
+    # remove SHC 
+    uniquestations_dict = {
+            ...
+            'Shorncliffe':                ('BHA','BQY','BQYS','NUD','BZL','NBD','DEG','SGE'),
+            ...
+            }
+
+    
+    vrt_2Shorncliffe = {
+            #'SHC':     (19, 2290),
+            'SGE':     (18, 2025),
+            'DEG':     (17, 1586),
+            'NBD':     (16, 1499),
+            'BZL':     (15, 1422),
+            'NUD':     (14, 1261),
+            'BQY':     (13, 1182),
+            'BQYS':    (12, 1740),
+            'BHA':     (11, 1106),
+            'NTG':     (10, 1350), 
+            'NND':     (9,  903),
+            'TBU':     (8,  834),
+            'AJN':     (7,  800),
+            'EGJ':     (6,  714), 
+            'WWI':     (5,  631),
+            'AIN':     (4,  551),
+            'BHI':     (3,  520),
+            'BRC':     (2,  299),
+            'BNC':     (1,  149),
+            'RS':      (0,  0)
+            }
+
+        findtrips('Shorncliffe',        ['NTG', 'SGE']) # change SHC to SGE - only for terminating station case 
+```
+
+
+
+
+
 
 
 
@@ -358,6 +401,13 @@ This section will help you make simple modifications to existing scripts.
 |New library not found on someone else’s machine                             |`requirements.txt` not updated                |Run `pip freeze > requirements.txt`, remove unversioned pywin32 lines, commit                                  |                                                          |
 | Taipan hangs / not launching / extremely slow to launch / venv creation on install stuck | I have no idea | Restart laptop and test by running a fast script (e.g QA). If its still hanging restart again. When I encountered this I restarted 3x. 
 -----
+
+## 9. Things to be done / maintained
+
+- Train renamer (`train_renamer.py`) has to be updated for new destination station ranges (BOG/EXH, etc).
+- `run_renamer_new.py RANGES` dict should be updated once new ranges are known.
+- `MISC_LOCATIONS` in `locations.py` most likely needs additions - I just added locations as I gradually found them throughout the scripts but might not be comprehensive.
+
 
 
 *For deeper technical detail on any of the above, refer to the main developer docs on the main Git page.*
