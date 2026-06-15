@@ -385,6 +385,29 @@ If you need to alter the destination station in a line; e.g for Shorncliffe coun
 ```
 
 
+#### Adding new things! 
+
+1. New Train type or weirdly formatted train type in RSX you'd like to be recognised + standardised in output files?
+- New train type - modify `SORT_ORDER_UNIT` in `trains.py`. 
+- Weirdly formatted train type - modify `TRAIN_TYPE_MASK`in `trains.py`. Just add a new entry in the order (whats in rsx, what it should be)
+
+```python
+TRAIN_TYPE_MASK = {
+    'empty_6-rep': 'Empty_6-QMU',
+    '6-rep': '6-QMU',
+    '6-qmu_(aw0)_surface': 'Empty_6-QMU',
+    '6-qmu_(aw3)_surface': '6-QMU',
+    '6-ngr_(aw0)_surface': 'Empty_6-NGR',
+    '6-ngr_(aw3)_surface': '6-NGR',
+    'qmu_s': '6-QMU',
+    'empty_qmu_s': 'Empty_6-QMU',
+    '6-ngr_s': '6-NGR',
+    'empty_6-ngr_s': 'Empty_6-NGR',
+    'ngr_s': '6-NGR',
+    'cool_train': 'Empty_9-QMU' # (what is in RSX field, what it should be standardised to)
+}
+```
+
 
 
 
