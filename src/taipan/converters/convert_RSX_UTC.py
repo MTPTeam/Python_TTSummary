@@ -28,7 +28,7 @@ from taipan.core.xml_parser import parse_rsx
 from taipan.gui.base import select_file, select_folder, show_info_scroll_safe
 from PyQt6.QtWidgets import QApplication
 
-IGNORE_STATIONS = []
+IGNORE_STATIONS = [] ### UPDATE THIS if you want to exclude stations from output 
 
 
 UNIT_TYPE_LABELS = {
@@ -105,7 +105,7 @@ def format_node(station_id: str, track_id: str) -> str:
 		digit = digit.zfill(2)
 	return f"{station_id}{digit}"
 
-
+# ── RSX forming links ─────────────────────────────────────────────────────────
 def build_forming_links(trains):
 	run_groups = defaultdict(list)
 	for t in trains:

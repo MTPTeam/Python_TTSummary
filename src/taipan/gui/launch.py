@@ -6,7 +6,7 @@ from taipan.gui.base import select_file, select_multi_rsx_files, select_folder
 from taipan.gui.ui_constants.stylesheet import STYLESHEET, img_path
 import os
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
-from taipan.gui.base import register_main_window
+from taipan.gui.base import register_main_window, select_checkboxes 
 from taipan.gui.ui_constants.background import BlurredBackground
 
 
@@ -474,7 +474,6 @@ class TaipanLauncher(QMainWindow):
 
     def _run_km(self, button=None):
 
-        print(self.last_file)
         
         path = self.get_file(
             force_new=True,
@@ -482,14 +481,14 @@ class TaipanLauncher(QMainWindow):
         )
 
         if path:
-            print("Selected file:", path)
             self.run_task(
                 lambda: run_km(path),  
                 "● RUNNING — KM CALC...",
                 "● DONE — KM CALC"
                 )
+        else:
+            return
 
-        print(self.last_file)
 
     def _run_first_last(self, button=None):
         
@@ -573,9 +572,21 @@ class TaipanLauncher(QMainWindow):
 
         if not path:
             return
+        
+        choices = select_checkboxes(
+        title="Train Number Characters",
+        message="Select which characters to update:",
+        options=[
+            ("1st - Train type (EMU, NGR, etc.)", "1"),
+            ("2nd - Destination / corridor",       "2"),
+            ("3rd - Stopping pattern / peak",      "3"),
+            ("4th - Direction (Up/Down)",          "4"),
+        ],
+        default_values=["1", "2", "3", "4"],)
+
 
         self.run_task(
-            lambda: rename_trains(path),
+            lambda: rename_trains(path, set(choices)),
             "● RUNNING — TRAIN RENAMER...",
             "● DONE — TRAIN RENAMER"
         )
@@ -624,6 +635,7 @@ class TaipanLauncher(QMainWindow):
 
         if not path:
             return
+
 
         self.run_task(lambda: TTS_H(path),"● RUNNING — HASTUS...","● DONE — HASTUS")
 
@@ -735,6 +747,9 @@ class TaipanLauncher(QMainWindow):
             caption="Select freight TXT folder (cancel to skip)",
             directory=os.path.dirname(rsx_path) if rsx_path else "",
         ) or None
+
+
+        ### test 
 
 
         if not rsx_path:

@@ -309,12 +309,12 @@ def fourth_character_write(x_node) -> str:
 # Number template builder & XML updater
 # -----------------------------------------------------------------------------
 
-def build_number_template(x_node) -> str:
-    n1 = first_character_write(x_node)
-    n2 = second_character_write(x_node)
-    n3 = third_character_write(x_node)
-    n4 = fourth_character_write(x_node)
-    return n1 + n2 + n3 + n4
+def build_number_template(x_node, choices: set) -> str:
+   n1 = first_character_write(x_node)  if "1" in choices else "_"
+   n2 = second_character_write(x_node) if "2" in choices else "_"
+   n3 = third_character_write(x_node)  if "3" in choices else "_"
+   n4 = fourth_character_write(x_node) if "4" in choices else "_"
+   return n1 + n2 + n3 + n4
 
 
 def step_xml_template(trains, number_templates: list) -> None:
@@ -356,7 +356,7 @@ def report_duplicates(trains, duplicate_numbers: list) -> None:
 # Main
 # -----------------------------------------------------------------------------
 
-def main(path: str) -> None:
+def main(path: str, choices: set) -> None:
     input_path = Path(path)
     base, ext = os.path.splitext(path)
     output_path = Path(f"{base}_updated_train_numbers{ext}")
@@ -384,7 +384,7 @@ def main(path: str) -> None:
     start = time.perf_counter()
     number_templates = []
     for i, node in enumerate(trains):
-        template = build_number_template(node)
+        template = build_number_template(node, choices)
         number_templates.append(template)
         print(f"  [{i:>4}] base number: {template}", end="\r")
     print()
@@ -406,4 +406,4 @@ if __name__ == "__main__":
         filter_str="RSX Files (*.rsx);;All Files (*.*)",
     )
     if path:
-        main(path)
+        main(path, choices = {"1", "2", "3", "4"})

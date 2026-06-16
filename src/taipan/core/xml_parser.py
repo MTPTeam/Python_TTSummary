@@ -176,6 +176,10 @@ class TrainInfo:
         self.daycode     = ID_TO_SHORT[self.weekday]
 
         self.vyst_is_yard = False  # to be set later based on run info DELETE when VYST is actual yard 
+
+        self.requested_arrivals = [e.attrib.get('requestedArrival', None) for e in self.entries]
+        self.entry_types        = [e.attrib.get('type', 'stop') for e in self.entries]
+        self.weekday_key        = int(self.weekday)  # keep as int for bitmask expansion
             
 
     @staticmethod

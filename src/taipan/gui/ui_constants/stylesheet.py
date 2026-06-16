@@ -10,7 +10,7 @@ STATUS_BG  = "#8a5c1a"
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
 img_path = os.path.join(BASE_DIR, "images", "taipan_img.jpg").replace("\\", "/")
-print(img_path)
+
 
 STYLESHEET = f"""
     QPushButton {{
