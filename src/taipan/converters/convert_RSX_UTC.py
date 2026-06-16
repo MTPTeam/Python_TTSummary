@@ -52,6 +52,12 @@ VR_DAYCODE = { # all of them should be mapped from daycodesVR files, but these a
 REV_FIRSTCHAR = {'1', 'T', 'D', 'J', 'X', 'U'}
 EMP_FIRSTCHAR = {'2', 'A', 'E', 'C', 'W', 'B'}
 
+
+WEEKDAY_BITS = {64: "Mon", 32: "Tue", 16: "Wed", 8: "Thu",
+			   4: "Fri",  2: "Sat",  1: "Sun"}
+DAY_ORDER    = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3,
+			   "Fri": 4, "Sat": 5, "Sun": 6}
+
 # ── RSX helpers ───────────────────────────────────────────────────────────────
 def utc_type_label(train_info):
 	"""Return the UTC TYPE string for a TrainInfo object."""
@@ -66,66 +72,99 @@ def rsx_time_to_seconds(rsx_time: str) -> int:
    s = int(parts[2]) if len(parts) > 2 else 0
    return h * 3600 + m * 60 + s
 
-def seconds_to_utc_time(total_seconds: int) -> str:
-   """Convert seconds from midnight to 6-char 0HHMMd format."""
-   hours   = total_seconds // 3600
-   remain  = total_seconds % 3600
-   minutes = remain // 60
-   seconds = remain % 60
-   tenths  = round(seconds / 6) % 10
-   return f"0{hours:02d}{minutes:02d}{tenths:02d}"
 
-def arr_dep_times(departure_str: str, stop_time_seconds) -> tuple:
-   """Return (arr_utc, dep_utc) - arrival is departure minus dwell."""
-   dep_secs = rsx_time_to_seconds(departure_str)
-   dwell    = 0 if (stop_time_seconds is None or
-					(isinstance(stop_time_seconds, float) and math.isnan(stop_time_seconds))
-				   ) else int(stop_time_seconds)
-   return seconds_to_utc_time(dep_secs - dwell), seconds_to_utc_time(dep_secs)
 
-# ── RSX forming links ─────────────────────────────────────────────────────────
+def expand_weekday_key(key: int) -> list[str]:
+   """120 -> ['Mon','Tue','Wed','Thu'], 64 -> ['Mon'] etc."""
+   return [day for bit, day in WEEKDAY_BITS.items() if key & bit]
+
+def encode_time(time_str: str) -> str:
+	parts = time_str.strip().split(":")
+	h, m, s = int(parts[0]), int(parts[1]), int(parts[2]) if len(parts) > 2 else 0
+	if s == 30:
+		h, m = divmod(h * 60 + m + 1, 60)
+		s = 0
+	tenths = math.floor((s + 2) / 6) 
+	if tenths >= 10:
+		h, m = divmod(h * 60 + m + 1, 60)
+		tenths = 0
+	return f"0{h:02d}{m:02d}{tenths}0"
+
+
+def encode_arrival(time_str: str) -> str:
+   """Encode arrival time - always truncate to minute, no seconds."""
+   parts = time_str.strip().split(":")
+   h, m = int(parts[0]), int(parts[1])
+   return f"0{h:02d}{m:02d}00"
+
+
+def format_node(station_id: str, track_id: str) -> str:
+	"""BNC+D-6 -> BNC6, RS+D-9 -> RS09 (2-char stations zero-pad track)."""
+	digit = ''.join(filter(str.isdigit, track_id))
+	if len(station_id) == 2:
+		digit = digit.zfill(2)
+	return f"{station_id}{digit}"
+
+
 def build_forming_links(trains):
-	"""
-	Within each run+weekday group, sort by departure and link sequentially.
-	Returns (prev_map, next_map) keyed by (train_number, daycode).
-	"""
 	run_groups = defaultdict(list)
 	for t in trains:
-		run_groups[(t.run, t.weekday)].append(t)
-	for key in run_groups:
-		run_groups[key].sort(key=lambda t: rsx_time_to_seconds(t.odep))
+		for day in expand_weekday_key(t.weekday_key):
+			run_groups[(t.run, day)].append((t, day))
 	prev_map, next_map = {}, {}
 	for group in run_groups.values():
-		for i, t in enumerate(group):
-			k = (t.number, t.daycode)
+		group.sort(key=lambda td: rsx_time_to_seconds(td[0].odep))
+		for i, (t, day) in enumerate(group):
+			k = (t.number, day)
 			if i > 0:
-				p = group[i - 1]
-				prev_map[k] = f"{p.number}_{p.daycode}"
+				p, pd = group[i - 1]
+				prev_map[k] = f"{p.number}_{pd}"
 			if i < len(group) - 1:
-				n = group[i + 1]
-				next_map[k] = f"{n.number}_{n.daycode}"
+				n, nd = group[i + 1]
+				next_map[k] = f"{n.number}_{nd}"
 	return prev_map, next_map
 
 # RSX -> UTC lines
-def train_to_utc_lines(t, prev_map, next_map):
-	"""Generate UTC CSV lines for a single RSX TrainInfo."""
-	key      = (t.number, t.daycode)
-	day      = t.daycode
-	train_id = f"{t.number}_{day}"
-	ttype    = utc_type_label(t)
-	stop_yn  = "Stop=N" if t.is_empty_train else "Stop=Y"
-	prev_str = f"Prev={prev_map[key]}" if key in prev_map else ""
-	next_str = f"Next={next_map[key]}" if key in next_map else ""
-	yield f"Train={train_id},TYPE={ttype},{prev_str},{next_str},{day}"
-	for station, track, dep_str, dwell in zip(
-			t.station_ids, t.track_ids, t.departures, t.stop_times):
-		if station in IGNORE_STATIONS:
-			continue
-		arr_utc, dep_utc = arr_dep_times(dep_str, dwell)
-		# Replaced track.strip() with a generator that extracts only digits
-		yield f"Arr={arr_utc},Dep={dep_utc},{stop_yn},Node={station}{''.join(filter(str.isdigit, track))},{day}"
+def train_to_utc_lines(t, prev_map, next_map) -> list[tuple]:
+	"""
+	Returns list of (day_order, odep_secs, line) tuples.
+	Mon-Thu trains emit 4 copies, one per day.
+	"""
+	days     = expand_weekday_key(t.weekday_key)
+	odep_sec = rsx_time_to_seconds(t.odep)
+	results  = []
+	for day in days:
+		key      = (t.number, day)
+		train_id = f"{t.number}_{day}"
+		ttype    = utc_type_label(t)
+		stop_yn  = "Stop=N" if t.is_empty_train else "Stop=Y"
+		prev_str = f"Prev={prev_map[key]}" if key in prev_map else ""
+		next_str = f"Next={next_map[key]}" if key in next_map else ""
+		day_ord  = DAY_ORDER.get(day, 99)
+		stop_lines = []
+		for station, track, dep_str, arr_str, etype in zip(
+				t.station_ids, t.track_ids, t.departures,
+				t.requested_arrivals, t.entry_types):
+			if station in IGNORE_STATIONS:
+				continue
+			node    = format_node(station, track)
+			dep_utc = encode_time(dep_str)
+			#arr_utc = encode_time(arr_str) if arr_str else dep_utc
+			if etype == "pass" or not arr_str:
+				arr_utc = encode_arrival(dep_str)
+			else:
+				arr_utc = encode_time(arr_str)
 
-	yield f"End {len(t.station_ids)},,,,{day}"
+
+			stop_lines.append(
+				f"Arr={arr_utc},Dep={dep_utc},{stop_yn},Node={node},{day}")
+		results.append((day_ord, odep_sec,
+			f"Train={train_id},TYPE={ttype},{prev_str},{next_str},{day}"))
+		for sl in stop_lines:
+			results.append((day_ord, odep_sec, sl))
+		results.append((day_ord, odep_sec,
+			f"End {len(stop_lines)},,,,{day}"))
+	return results
 
 
 def _parse_freight_file(filepath: str) -> list:
@@ -229,28 +268,48 @@ def convert_RSX_UTC(rsx_path, freight_folder=None, date_str=None, out_path=None)
 	if duplicates:
 		show_info_scroll_safe("Duplicate trains found", "\n".join(str(d) for d in duplicates))
 	prev_map, next_map = build_forming_links(trains)
-	trains_sorted = sorted(
-		trains,
-		key=lambda t: (DAY_ORDER.get(t.daycode, 99), rsx_time_to_seconds(t.odep))
-	)
-	passenger_lines = []
-	for t in trains_sorted:
-		passenger_lines.extend(train_to_utc_lines(t, prev_map, next_map))
-	freight_lines, freight_count = load_freight_from_txt(freight_folder) if freight_folder else ([], 0)
-
+	
+	# passenger
+	all_lines = []
+	for t in trains:
+		if t.number == "1005":
+			lines = train_to_utc_lines(t, prev_map, next_map)
+			for _, _, line in lines:
+				if "YLE" in line:
+					print(line)
+		all_lines.extend(train_to_utc_lines(t, prev_map, next_map))
+	# freight - parse then tag with day_order for sorting
+	raw_freight = load_freight_from_txt(freight_folder)[0] if freight_folder else []
+	freight_tagged = []
+	current_day_ord, current_odep = 99, 0
+	for line in raw_freight:
+		if line.startswith("Train="):
+			day = line.split(",")[-1].strip()
+			current_day_ord = DAY_ORDER.get(day, 99)
+			# use dep of first stop as sort key - grab it next iteration
+			current_odep = 0
+		elif line.startswith("Arr="):
+			if current_odep == 0:
+				dep_str = line.split("Dep=")[1].split(",")[0]
+				# convert 0HHMMd0 back to seconds for sorting
+				current_odep = int(dep_str[1:3]) * 3600 + int(dep_str[3:5]) * 60
+		freight_tagged.append((current_day_ord, current_odep, line))
+	all_lines.extend(freight_tagged)
+	all_lines.sort(key=lambda x: (x[0], x[1]))
+	passenger_lines = [line for _, _, line in all_lines]  # reuse var for write loop
 	with open(out_path, "w", encoding="utf-8", newline="\n") as fh:
 		fh.write(f"Date={date_str},,,,\n")
 		for line in passenger_lines:
 			fh.write(line + "\n")
-		for line in freight_lines:
-			fh.write(line + "\n")
+
+	freight_count = sum(1 for l in passenger_lines if l.startswith("Train=") and "CITY" not in l)
+	passenger_count = sum(1 for l in passenger_lines if l.startswith("Train=") and "CITY" in l)
 	show_info_scroll_safe("UTC Export Complete", (
-		f"Output: {out_path}\n\n"
-		f"Passenger trains : {len(trains_sorted)}\n"
-		f"Freight trains   : {freight_count}\n"
-		f"Total CSV rows   : {1 + len(passenger_lines) + len(freight_lines):,}"
+	f"Output: {out_path}\n\n"
+	f"Passenger trains : {passenger_count}\n"
+	f"Freight trains   : {freight_count}\n"
+	f"Total CSV rows   : {1 + len(passenger_lines):,}"
 	))
-	return out_path
 
 if __name__ == "__main__":
 	app = QApplication.instance() or QApplication(sys.argv)
