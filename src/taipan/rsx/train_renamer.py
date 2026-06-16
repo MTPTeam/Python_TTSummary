@@ -103,28 +103,29 @@ def duplicate_num_function(trains) -> list:
 # Character 1 – train type
 # -----------------------------------------------------------------------------
 TRAIN_TYPE_MAP = {
-    "Empty_6-EMU":    "2",
-    "Empty_6-SMU":    "2",
-    "Empty_9-EMU":    "2",
-    "6-EMU":          "1",
-    "6-SMU":          "1",
-    "Empty_3-EMU":    "C",
-    "Empty_3-SMU":    "C",
-    "3-EMU":          "J",
-    "3-SMU":          "J",
-    "6-HYBRID":       "T",
-    "6-IMU100":       "T",
-    "Empty_6-HYBRID": "A",
-    "Empty_6-IMU100": "A",
-    "Empty_3-IMU100": "B",
-    "3-IMU100":       "U",
-    "Empty_5-ICE":    "W",
-    "5-ICE":          "X",
-    "Empty_6-NGR":    "E",
-    "6-NGR":          "D",
-    "Empty_6-DEPT":   "H",
+   "Empty_6-EMU":    "2",
+   "Empty_6-SMU":    "2",
+   "Empty_9-EMU":    "2",
+   "6-EMU":          "1",
+   "6-SMU":          "1",
+   "Empty_3-EMU":    "C",
+   "Empty_3-SMU":    "C",
+   "3-EMU":          "J",
+   "3-SMU":          "J",
+   "6-HYBRID":       "T",
+   "6-IMU100":       "T",
+   "Empty_6-HYBRID": "A",
+   "Empty_6-IMU100": "A",
+   "Empty_3-IMU100": "B",
+   "3-IMU100":       "U",
+   "Empty_5-ICE":    "W",
+   "5-ICE":          "X",
+   "Empty_6-NGR":    "E",
+   "6-NGR":          "D",
+   "Empty_6-DEPT":   "H",
+   "Empty_6-REP":    "G",  # NEW QTMP/REP
+   "6-REP":          "F",  # New Empty QTMP/REP
 }
-
 
 def first_character_write(x_node) -> str:
     te = x_node.find("timetableentries")
@@ -139,54 +140,35 @@ def first_character_write(x_node) -> str:
 # -----------------------------------------------------------------------------
 # Character 2 – destination / corridor
 # -----------------------------------------------------------------------------
-ARR1 = ["EMY", "DKB", "NRB", "BPY", "MYE", "CAB", "CABT", "CABS", "CAW", "CAE", "EMH", "EMHS"]
+ARR1 = ["DKB", "NRB", "BPY", "MYE", "CAB", "CABT", "CABS", "CAW", "CAE", "MYD", "CRD", "BRS", "EMHS"]
 ARR4 = ["YAN", "NHR", "EUM", "SSE", "COO", "PMQ", "COZ", "TRA", "WOO", "GMR", "GYN", "GYP"]
 ARR5 = ["RVV", "DIR", "EBV", "BDX", "BOV", "EIP", "IPS", "IPSW", "IPSS"]
 ARR6 = ["THS", "KRA", "WOQ", "TAO", "YLE", "EBE", "RSW"]
-ARR7 = ["TDP", "WOI", "KGT", "LGL", "BTI", "EDL", "HVW", "BNH", "BNT", "BNHS"]
+ARR7 = ["TDP", "WOI", "KGT", "LGL", "BTI", "EDL", "HVW", "BNH", "BNT", "BNHS", "ORMS"]
 ARR8 = ["LOT", "TNS", "BDE", "WPT", "ORO", "CVN"]
-ARR9R = ["ETS", "CAM", "EXH", "NBY", "RS", "ESY", "YN", "MNS"]
-ARR0M = ["ETB", "MNE", "BHI", "ETF", "MYN", "YN", "MNS"]
-ARRA = ["BHA", "BQY", "NUD", "BZL", "NBD", "DEG", "SGE", "SHC", "SHCT", "BQYS"]
+ARR9R = ["ETS", "CAM", "EXH", "NBY", "RS", "BNC", "ESY", "MES"]
+ARR0M = ["ETB", "MNE", "BHI", "ETF", "MNS", "YN"]
+ARRA = ["BHA", "BQY", "NUD", "BZL", "NBD", "DEG", "SGE", "SHC", "SHCT", "BQYS", "BQS"]
 ARRB = ["CYF", "HDR", "ACO", "DBN"]
 ARRD = ["MTZ", "AHF", "TWG", "TIQ", "IDP", "CMZ", "GVQ", "SHW", "CQD", "OXL", "DAR", "WAC", "GAI", "GDQ", "RDK", "RDKS"]
 ARRE = ["WID", "WLQ", "NWM", "ADY", "EGG", "GAO", "MHQ", "OXP", "GOQ", "KEP", "FYG"]
 ARRG = ["ORM", "CXM", "HLN", "NRG", "ROB", "ROBS", "VYS", "VYST"]
 ARRH = ["BRD", "CRO", "NPR", "MGS", "CNQ", "MJE", "HMM", "LJN", "LDM", "WYH", "WNM", "WNC", "MNY", "MNYS"]
 ARRK = ["RHD", "EGE", "SFD", "SFC"]
-ARRL = ["BEB", "GSS", "BWH", "LSH", "MOH", "EUD", "PAL", "WOB", "WOBS", "NBR", "NBRS"]
+ARRL = ["EMH", "BEB", "GSS", "BWH", "LSH", "MOH", "EUD", "PAL", "WOB", "WOBS", "NBR", "NBRS", "WOY"]
 ARRP = ["BIT", "BDT"]
 ARRS = ["SBE", "SBA", "PKR"]
+ARRT = ["RTL", "ALB", "WLG", "BOG"]  # Cross River Rail section was missing entirely from original - this came from compareTTUI 
 ARRU = ["WUL", "WULS", "WFE", "WFW", "FWE", "FEE"]
 ARRV = ["DUP", "FFI", "YRG", "YLY", "MQK", "CPM", "RKE", "RKET", "SLY", "XPT", "CEP", "ACR", "BQO", "SYK", "ATI", "RUC", "FTG", "KRY"]
 ARRW = ["AIN", "WWI", "EGJ", "AJN", "TBU", "NND", "NTG"]
 ARRY = ["VGI", "SSN", "GEB", "ZLL", "CDE", "BDS", "SPN", "BPR", "LWO", "PET", "PETS", "KGR", "MRD", "MGH", "MGE", "RWL", "KPR", "KPRS"]
 DEST_ARRAYS = [
-    ARR1,
-    ARR4,
-    ARR5,
-    ARR6,
-    ARR7,
-    ARR8,
-    ARR9R,
-    ARR0M,
-    ARRA,
-    ARRB,
-    ARRD,
-    ARRE,
-    ARRG,
-    ARRH,
-    ARRK,
-    ARRL,
-    ARRP,
-    ARRS,
-    ARRU,
-    ARRV,
-    ARRW,
-    ARRY,
+   ARR1, ARR4, ARR5, ARR6, ARR7, ARR8,
+   ARR9R, ARR0M,
+   ARRA, ARRB, ARRD, ARRE, ARRG, ARRH, ARRK, ARRL, ARRP, ARRS, ARRT, ARRU, ARRV, ARRW, ARRY,
 ]
-DEST_CHARS = "145678+-ABDEGHKLPSUVWY"
-
+DEST_CHARS = "145678+-ABDEGHKLPSTUVWY"
 
 def check_destination_case(x_node, check_arr: list, char_arr: str) -> str:
     entries = x_node.findall("timetableentries/entry")
@@ -291,8 +273,8 @@ def third_character_write(x_node) -> str:
         return "X"
     if (stop_pattern_chk(x_node, M1) or stop_pattern_chk(x_node, M2)) and peak == "PM":
         return "M"
-    if (stop_pattern_chk(x_node, T1) or stop_pattern_chk(x_node, T2)) and peak == "AM":
-        return "T"
+    #if (stop_pattern_chk(x_node, T1) or stop_pattern_chk(x_node, T2)) and peak == "AM":  # commented out in compareTT 
+        #return "T"
     return "0"
 
 
