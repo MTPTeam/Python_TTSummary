@@ -28,6 +28,8 @@ from taipan.core.xml_parser import parse_rsx
 from taipan.gui.base import select_file, select_folder, show_info_scroll_safe
 from PyQt6.QtWidgets import QApplication
 
+IGNORE_STATIONS = []
+
 
 UNIT_TYPE_LABELS = {
    "IMU":    "CITY-REGULAR",
@@ -117,6 +119,8 @@ def train_to_utc_lines(t, prev_map, next_map):
 	yield f"Train={train_id},TYPE={ttype},{prev_str},{next_str},{day}"
 	for station, track, dep_str, dwell in zip(
 			t.station_ids, t.track_ids, t.departures, t.stop_times):
+		if station in IGNORE_STATIONS:
+			continue
 		arr_utc, dep_utc = arr_dep_times(dep_str, dwell)
 		# Replaced track.strip() with a generator that extracts only digits
 		yield f"Arr={arr_utc},Dep={dep_utc},{stop_yn},Node={station}{''.join(filter(str.isdigit, track))},{day}"
@@ -187,6 +191,8 @@ def _parse_freight_file(filepath: str) -> list:
 			flag    = flag_match.group() if flag_match else "#"
 			stop_yn = "Stop=Y" if flag == "#" else "Stop=N"
 			node = tokens[-1].strip()
+			if node[:-1] in IGNORE_STATIONS:
+				continue
 			stop_lines.append(f"Arr={arr},Dep={dep},{stop_yn},Node={node},{day}")
 	return utc_lines
 
