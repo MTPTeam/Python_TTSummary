@@ -387,9 +387,9 @@ If you need to alter the destination station in a line; e.g for Shorncliffe coun
 
 #### Adding new things! 
 
-1. New Train type or weirdly formatted train type in RSX you'd like to be recognised + standardised in output files?
+1. New Train type or weirdly formatted train type in RSX you'd like to be recognised + standardised in any of the script's output files?
 - New train type - modify `SORT_ORDER_UNIT` in `trains.py`. 
-- Weirdly formatted train type - modify `TRAIN_TYPE_MASK`in `trains.py`. Just add a new entry in the order (whats in rsx, what it should be)
+- Weirdly formatted train type - modify `TRAIN_TYPE_MASK`in `trains.py`. Just add a new entry in the order (whats in rsx, what it should be recognised as)
 
 ```python
 TRAIN_TYPE_MASK = {
@@ -407,6 +407,12 @@ TRAIN_TYPE_MASK = {
     'cool_train': 'Empty_9-QMU' # (what is in RSX field, what it should be standardised to)
 }
 ```
+
+#### RSX to UTC - ignoring stations in output 
+
+1. Ignoring stations - add to `IGNORE_STATIONS` list in `convert_RSX_UTC.py`. Will apply to both passenger and freight trains. 
+
+
 
 
 
