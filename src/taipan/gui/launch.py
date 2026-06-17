@@ -10,6 +10,7 @@ from taipan.gui.base import register_main_window, select_checkboxes
 from taipan.gui.ui_constants.background import BlurredBackground
 
 
+snake_emoji = "\U0001F40D"
 
 import importlib
 def _lazy(module, attr):
@@ -260,14 +261,14 @@ class TaipanLauncher(QMainWindow):
         self.last_file = None
         self.file_lbl.setText("Drag and drop RSX here...")          # remove filename (right side)
         self.clear_btn.setVisible(False)   # hide the ✕ button
-        self._set_status("● FILE CLEARED")
+        self._set_status(f"{snake_emoji} FILE CLEARED")
 
 
     def run_task(self, func, start_msg, done_msg): 
         self._set_status(start_msg)
         self._worker = _Worker(func)
         self._worker.done.connect(lambda: self._set_status(done_msg))
-        self._worker.error.connect(lambda e: self._set_status(f"● ERROR — {e}"))
+        self._worker.error.connect(lambda e: self._set_status(f"{snake_emoji} ERROR — {e}"))
         self._worker.start()
         
 
@@ -351,7 +352,7 @@ class TaipanLauncher(QMainWindow):
         status.setFixedHeight(34)
         s_layout = QHBoxLayout(status)
         s_layout.setContentsMargins(20, 0, 20, 0)
-        self.status_lbl = QLabel("● READY")
+        self.status_lbl = QLabel(f"{snake_emoji} READY")
         self.status_lbl.setObjectName("status_text")
 
         self.file_lbl = QLabel("Drag and drop RSX here...")                    #  file name (right)
@@ -381,7 +382,7 @@ class TaipanLauncher(QMainWindow):
             handler(button)
         else:
             name = func_name.replace("_run_", "").replace("_", " ").upper()
-            self._set_status(f"● NOT YET IMPLEMENTED — {name}")
+            self._set_status(f"{snake_emoji} NOT YET IMPLEMENTED — {name}")
 
 
     def _set_status(self, text):
@@ -399,8 +400,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: TTS_PTT(path),
-            "● RUNNING — PUBLIC TIMETABLE...",
-            "● DONE — PUBLIC TIMETABLE"
+            f"{snake_emoji} RUNNING — PUBLIC TIMETABLE...",
+            f"{snake_emoji} DONE — PUBLIC TIMETABLE"
         )
 
 
@@ -415,8 +416,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: TTS_WTT(path),
-            "● RUNNING — WORKING TIMETABLE...",
-            "● DONE — WORKING TIMETABLE"
+            f"{snake_emoji} RUNNING — WORKING TIMETABLE...",
+            f"{snake_emoji} DONE — WORKING TIMETABLE"
         )
 
     def _run_runinfo(self, button=None):
@@ -425,7 +426,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_RI(path),"● RUNNING — RUN INFO...","● DONE — RUN INFO")
+        self.run_task(lambda: TTS_RI(path),f"{snake_emoji} RUNNING — RUN INFO...",f"{snake_emoji} DONE — RUN INFO")
 
     def _run_movements(self, button=None):
         path = self.get_file(
@@ -437,8 +438,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: TTS_TM(path),
-            "● RUNNING — TRAIN MOVEMENTS...",
-            "● DONE — TRAIN MOVEMENTS"
+            f"{snake_emoji} RUNNING — TRAIN MOVEMENTS...",
+            f"{snake_emoji} DONE — TRAIN MOVEMENTS"
         )
     def _run_tripcount(self, button=None):
         path = self.get_file(filter_str="RSX Files (*.rsx)")
@@ -446,7 +447,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_TC(path),"● RUNNING — TRIP COUNT...","● DONE — TRIP COUNT")
+        self.run_task(lambda: TTS_TC(path),f"{snake_emoji} RUNNING — TRIP COUNT...",f"{snake_emoji} DONE — TRIP COUNT")
 
 
 
@@ -483,8 +484,8 @@ class TaipanLauncher(QMainWindow):
         if path:
             self.run_task(
                 lambda: run_km(path),  
-                "● RUNNING — KM CALC...",
-                "● DONE — KM CALC"
+                f"{snake_emoji} RUNNING — KM CALC...",
+                f"{snake_emoji} DONE — KM CALC"
                 )
         else:
             return
@@ -495,9 +496,9 @@ class TaipanLauncher(QMainWindow):
         paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
 
         if len(paths) != 2:
-            self._set_status("● ERROR — Please select exactly two RSX files.")
+            self._set_status(f"{snake_emoji} ERROR — Please select exactly two RSX files.")
         else:
-            self.run_task(lambda: TTS_FL(paths),  "● RUNNING — FIRST LAST...","● DONE — FIRST LAST")
+            self.run_task(lambda: TTS_FL(paths),  f"{snake_emoji} RUNNING — FIRST LAST...",f"{snake_emoji} DONE — FIRST LAST")
 
     
 
@@ -507,7 +508,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_SFL(path),"● RUNNING — SIMPLE FIRST LAST...","● DONE — SIMPLE FIRST LAST")
+        self.run_task(lambda: TTS_SFL(path),f"{snake_emoji} RUNNING — SIMPLE FIRST LAST...",f"{snake_emoji} DONE — SIMPLE FIRST LAST")
 
     def _run_first_last_graph(self, button=None):
         paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
@@ -516,7 +517,7 @@ class TaipanLauncher(QMainWindow):
             return
     
         
-        self.run_task(lambda: TTS_FLG(paths), "● RUNNING — FIRSTLAST GRAPH...", "● DONE — FIRSTLAST GRAPH")
+        self.run_task(lambda: TTS_FLG(paths), f"{snake_emoji} RUNNING — FIRSTLAST GRAPH...", f"{snake_emoji} DONE — FIRSTLAST GRAPH")
 
 
     def _run_slicer(self, button=None):
@@ -525,7 +526,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: slice_rsxfile(path),"● RUNNING — SLICER...","● DONE — SLICER")
+        self.run_task(lambda: slice_rsxfile(path),f"{snake_emoji} RUNNING — SLICER...",f"{snake_emoji} DONE — SLICER")
 
     def _run_stabling_balance(self, button=None):
         
@@ -534,7 +535,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_SB(path),"● RUNNING — STABLING BALANCE...","● DONE — STABLING BALANCE")
+        self.run_task(lambda: TTS_SB(path),f"{snake_emoji} RUNNING — STABLING BALANCE...",f"{snake_emoji} DONE — STABLING BALANCE")
 
 
     def _run_stabling_count(self, button=None):
@@ -543,7 +544,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_SC(path),"● RUNNING — STABLING COUNT...","● DONE — STABLING COUNT")
+        self.run_task(lambda: TTS_SC(path),f"{snake_emoji} RUNNING — STABLING COUNT...",f"{snake_emoji} DONE — STABLING COUNT")
 
     def _run_stabling_graph(self, button=None):
         path = self.get_file(filter_str="RSX Files (*.rsx)")
@@ -551,7 +552,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_GRAPH(path),"● RUNNING — STABLING GRAPH...","● DONE — STABLING GRAPH")
+        self.run_task(lambda: TTS_GRAPH(path),f"{snake_emoji} RUNNING — STABLING GRAPH...",f"{snake_emoji} DONE — STABLING GRAPH")
 
     def _run_assign_lineids(self, button=None):
         
@@ -562,8 +563,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: assign_line_ids(path),
-            "● RUNNING — ASSIGN LINEIDS...",
-            "● DONE — ASSIGN LINEIDS"
+            f"{snake_emoji} RUNNING — ASSIGN LINEIDS...",
+            f"{snake_emoji} DONE — ASSIGN LINEIDS"
         )
 
 
@@ -587,8 +588,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: rename_trains(path, set(choices)),
-            "● RUNNING — TRAIN RENAMER...",
-            "● DONE — TRAIN RENAMER"
+            f"{snake_emoji} RUNNING — TRAIN RENAMER...",
+            f"{snake_emoji} DONE — TRAIN RENAMER"
         )
     def _run_sectorise(self, button=None):
         path = self.get_file(filter_str="RSX Files (*.rsx);;All Files (*.*)")
@@ -598,8 +599,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: sectorise(path),
-            "● RUNNING — SECTORISE RSX...",
-            "● DONE — SECTORISE RSX"
+            f"{snake_emoji} RUNNING — SECTORISE RSX...",
+            f"{snake_emoji} DONE — SECTORISE RSX"
         )
 
     def _run_itops_tt(self, button=None):
@@ -611,8 +612,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: run_itops_tt(path),
-            "● RUNNING — ITOPS FILE PREP...",
-            "● DONE — ITOPS FILE PREP"
+            f"{snake_emoji} RUNNING — ITOPS FILE PREP...",
+            f"{snake_emoji} DONE — ITOPS FILE PREP"
         )
 
 
@@ -625,8 +626,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: run_geo_convert(paths),
-            "● RUNNING — ITOPS GEO CONVERSION...",
-            "● DONE — ITOPS GEO CONVERSION"
+            f"{snake_emoji} RUNNING — ITOPS GEO CONVERSION...",
+            f"{snake_emoji} DONE — ITOPS GEO CONVERSION"
         )
 
 
@@ -637,7 +638,7 @@ class TaipanLauncher(QMainWindow):
             return
 
 
-        self.run_task(lambda: TTS_H(path),"● RUNNING — HASTUS...","● DONE — HASTUS")
+        self.run_task(lambda: TTS_H(path),f"{snake_emoji} RUNNING — HASTUS...",f"{snake_emoji} DONE — HASTUS")
 
 
     def _run_hastus_ttrefnum(self, button=None):
@@ -646,7 +647,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_HTT(path),"● RUNNING — HASTUS (TTREFNUM)...","● DONE — HASTUS (TTREFNUM)")
+        self.run_task(lambda: TTS_HTT(path),f"{snake_emoji} RUNNING — HASTUS (TTREFNUM)...",f"{snake_emoji} DONE — HASTUS (TTREFNUM)")
 
     def _run_ngr_weekly(self, button=None):
         path = self.get_file(
@@ -659,8 +660,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: run_ngr_wpp(path),
-            "● RUNNING — NGR WPP...",
-            "● DONE — NGR WPP"
+            f"{snake_emoji} RUNNING — NGR WPP...",
+            f"{snake_emoji} DONE — NGR WPP"
         )
 
     def _run_ngr_daily(self, button=None):
@@ -677,8 +678,8 @@ class TaipanLauncher(QMainWindow):
 
         self.run_task(
             lambda: run_ngr_dpp(path),
-            "● RUNNING — NGR DPP...",
-            "● DONE — NGR DPP"
+            f"{snake_emoji} RUNNING — NGR DPP...",
+            f"{snake_emoji} DONE — NGR DPP"
         )
 
 
@@ -688,7 +689,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_VAS(path),"● RUNNING — VAS EXTRACTOR...","● DONE — VAS EXTRACTOR")
+        self.run_task(lambda: TTS_VAS(path),f"{snake_emoji} RUNNING — VAS EXTRACTOR...",f"{snake_emoji} DONE — VAS EXTRACTOR")
 
     
 
@@ -701,7 +702,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_TDS(path),"● RUNNING — TDS CONVERTER...","● DONE — TDS CONVERTER")
+        self.run_task(lambda: TTS_TDS(path),f"{snake_emoji} RUNNING — TDS CONVERTER...",f"{snake_emoji} DONE — TDS CONVERTER")
 
     def _run_tds_wtt(self, button=None):
         # FILTER TO TXT FILES
@@ -713,8 +714,8 @@ class TaipanLauncher(QMainWindow):
         ## working timetable (tds) goes here
         self.run_task(
             lambda: TTS_TDSWTT(path),
-            "● RUNNING — TDS → WORKINGTT...",
-            "● DONE — TDS → WORKINGTT"
+            f"{snake_emoji} RUNNING — TDS → WORKINGTT...",
+            f"{snake_emoji} DONE — TDS → WORKINGTT"
         )
 
     def _run_tds_ptt(self, button=None):
@@ -728,8 +729,8 @@ class TaipanLauncher(QMainWindow):
         ## public timetable (tds) goes here
         self.run_task(
             lambda: TTS_TDSPTT(path),
-            "● RUNNING — TDS → PUBLICTT...",
-            "● DONE — TDS → PUBLICTT"
+            f"{snake_emoji} RUNNING — TDS → PUBLICTT...",
+            f"{snake_emoji} DONE — TDS → PUBLICTT"
         )
 
     def _run_qa(self, button=None):
@@ -738,7 +739,7 @@ class TaipanLauncher(QMainWindow):
         if not path:
             return
 
-        self.run_task(lambda: TTS_ERR(path),"● RUNNING — QA / ERROR CHECKER...","● DONE — QA / ERROR CHECKER")
+        self.run_task(lambda: TTS_ERR(path),f"{snake_emoji} RUNNING — QA / ERROR CHECKER...",f"{snake_emoji} DONE — QA / ERROR CHECKER")
 
     
     def _run_rsx_utc(self, button=None):
@@ -755,7 +756,7 @@ class TaipanLauncher(QMainWindow):
         if not rsx_path:
             return
 
-        self.run_task(lambda: TTS_RSX_UTC(rsx_path = rsx_path, freight_folder=freight_folder),"● RUNNING — RSX → UTC CONVERTER...","● DONE — RSX → UTC CONVERTER")
+        self.run_task(lambda: TTS_RSX_UTC(rsx_path = rsx_path, freight_folder=freight_folder),f"{snake_emoji} RUNNING — RSX → UTC CONVERTER...",f"{snake_emoji} DONE — RSX → UTC CONVERTER")
 
     
   
