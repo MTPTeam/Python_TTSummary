@@ -114,6 +114,7 @@ for train in trains:
 |`want_duplicates=True`|Checks for duplicate train numbers                                    |
 
 
+
 **`TrainInfo` attribute cheat sheet:**
 |Attribute                  |What it gives you                                                          |
 |---------------------------|---------------------------------------------------------------------------|
@@ -127,7 +128,7 @@ for train in trains:
 |`train.destin`             |Last entry attributes                                                      |
 |`train.odep` / `train.ddep`|Origin and destination departure times                                     |
 |`train.sector`             |Sector number as an integer                                                |
-|`self.start_id` / `self.end_id `| station ID of origin/dest                                            |
+|`train.start_id` / `train.end_id `| station ID of origin/dest                                            |
 |`train.run`                |Run ID                                                                     |
 |`train.lineID`             |Full line ID from RSX                                                      |
 |`train.number`             |Train number                                                               |
@@ -135,7 +136,9 @@ for train in trains:
 |`train.connection`         |Connection element if present, else `None`                                 |
 |`train.vyst_is_yard`       |`True` if VYST is treated as a yard for this run (temporary - see  main dev docs)|
 
-You can add more to this! See core/xml_parser.py `TrainInfo` class.
+Note: 
+- The prefix will be what you named it: e.g if you did for t in trains - the attributes above will be be t.weekday, t.unit and so on...
+- You can add more to this! See core/xml_parser.py `TrainInfo` class.
 
 
 ### 2. Get it ready to integrate with new buttons!
@@ -412,6 +415,15 @@ TRAIN_TYPE_MASK = {
 #### RSX to UTC - ignoring stations in output 
 
 1. Ignoring stations - add to `IGNORE_STATIONS` list in `convert_RSX_UTC.py`. Will apply to both passenger and freight trains. 
+
+
+#### Updating tooltips 
+
+Open `gui/ui_constants/names.py` and find the `groups` dictionary within `SCRIPTS`. The tooltips are read from the last index - so updating "Gets origin and destination of each train in the RSX" will change the tooltip for that particular button.
+
+```python
+("Get Origin/Dest", "_run_OD", "Gets origin and destination of each train in the RSX.") 
+```
 
 -----
 ## 8. Common Errors and Fixes
