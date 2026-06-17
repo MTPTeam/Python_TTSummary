@@ -8,4 +8,3 @@ set PYTHONPATH=%~dp0src
 :: Run python from the local venv relative to the .bat location
 "%~dp0venv\Scripts\python.exe" "%~dp0src\taipan\gui\launch.py"
 
-pause
