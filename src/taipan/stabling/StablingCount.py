@@ -227,7 +227,6 @@ def TTS_SC(path, mypath = None):
             if bad in acceptable_stables:   # works for list or set
                 acceptable_stables.remove(bad)
 
-        print(store)
         # Fill the empty lists with runs given it starts or finishes at one of the options
         for yard_name, meta in YARDS.items():
             build_weeklists_into_store(store, yard_name=yard_name, options = meta['yards'], day_order=SORT_ORDER_WEEK, d_list=d_list, run_dict=run_dict, count = True, vyst_runs=vyst_runs)
@@ -406,8 +405,6 @@ def TTS_SC(path, mypath = None):
                     for ui, (unit_val, unit_max) in enumerate(zip(os_breakdown, weekday_max_by_unit)):
                        unit_fmt = boldborderred if weekend_exceeds(unit_val, unit_max, is_weekend, has_weekdays) else centered
                        Summary.write(row_ptr, 6 + n + ui, unit_val, unit_fmt)
-                    if k == 'Mayne West':
-                       print(f"Mayne West {DoW}: is_weekend={is_weekend}, os_breakdown={os_breakdown}, weekday_max_by_unit={weekday_max_by_unit}, weekday_max_total={weekday_max_total}, os_total={os_total}")
                     
 
 
