@@ -274,9 +274,6 @@ def convert_RSX_UTC(rsx_path, freight_folder=None, date_str=None, out_path=None)
 	for t in trains:
 		if t.number == "1005":
 			lines = train_to_utc_lines(t, prev_map, next_map)
-			for _, _, line in lines:
-				if "YLE" in line:
-					print(line)
 		all_lines.extend(train_to_utc_lines(t, prev_map, next_map))
 	# freight - parse then tag with day_order for sorting
 	raw_freight = load_freight_from_txt(freight_folder)[0] if freight_folder else []
