@@ -309,12 +309,8 @@ def parse_rsx(path, *, want_trains=False, want_duplicates=False, want_days=False
    root, _ = load_rsx(path)
    trains = extract_trains(root) if (want_trains or want_duplicates or want_days or want_units or want_runs) else None
    if trains:
-       print(f"Before filter: {len(trains)} trains")
-       print(f"Original day codes in dataset: {sorted(set(str(getattr(t, 'daycode', 'MISSING')) for t in trains))}")
        ALLOWED_STRINGS = {'Mon-Thu', 'Fri', 'Sat', 'Sun'}  ## what days we want in output file 
        trains = [t for t in trains if str(getattr(t, 'daycode', '')) in ALLOWED_STRINGS]
-       print(f"After filter: {len(trains)} trains")
-       print(f"Remaining day codes: {sorted(set(str(getattr(t, 'daycode', 'MISSING')) for t in trains))}")
    duplicates = detect_duplicates(trains) if want_duplicates else None
    d_list, u_list = extract_day_and_unit_lists(trains) if (want_days or want_units) else (None, None)
    run_dict = build_run_dict(trains) if want_runs else None
