@@ -383,7 +383,8 @@ If you need to alter the destination station in a line; e.g for Shorncliffe coun
 
         findtrips('Shorncliffe',        ['NTG', 'SGE']) # change SHC to SGE - only for terminating station case 
 ```
-
+FYI - the virtual runtime dictionaries are only useful for categorising trains *that do not touch the CBD* into peak, offpeak, etc.  
+For finding direction/line, prefer using t.direction from the `TrainInfo` class or obtaining related information from the master stations dict...
 
 #### Adding new things! 
 
@@ -412,14 +413,6 @@ TRAIN_TYPE_MASK = {
 
 1. Ignoring stations - add to `IGNORE_STATIONS` list in `convert_RSX_UTC.py`. Will apply to both passenger and freight trains. 
 
-
-
-
-
-
-
-
-
 -----
 ## 8. Common Errors and Fixes
 |Error                                                                       |What it means                                 |Fix                                                                                                            |
@@ -433,8 +426,8 @@ TRAIN_TYPE_MASK = {
 
 ## 9. Things to be done / maintained
 
-- Train renamer (`train_renamer.py`) has to be updated for new destination station ranges (BOG/EXH, etc).
-- `run_renamer_new.py RANGES` dict should be updated once new ranges are known.
+- Train renamer (`train_renamer.py`) has to be updated for new destination station ranges 
+- `run_renamer_new.py RANGES` dict should be updated once new unit ranges are known.
 - `MISC_LOCATIONS` in `locations.py` most likely needs additions - I just added locations as I gradually found them throughout the scripts but might not be comprehensive.
 
 
