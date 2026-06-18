@@ -43,7 +43,9 @@ Before proceeding, make sure the laptop where TAIPAN is being installed is under
 - For this method - you need to do two additional steps before you can proceed with Step 4.
 > - Create a Github account (use QR email to sign up) 
 > -  Download Github Desktop (from here https://desktop.github.com/download/)
-- Clone the repository anywhere in a local drive (e.g any path starting with C:/). DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
+- Clone the repository anywhere in a local drive (e.g any path starting with C:/). But there are rules:
+> 1. DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
+> 1. DO NOT install TAIPAN into the Downloads folder...
 
 #### Non cloning way (manual)
 
@@ -62,6 +64,10 @@ This step sets up the virtual environment and installs all dependencies.
 
 
 ### 4.1 If the setup script (step 4) crashes or fails - you will need to run the commands manually as specified below
+
+
+**BUT BEFORE YOU DO** - try this fix -> ensure there are no spaces or brackets/special characters in the folder name that the code lives in. If you download twice it will automatically add a space + (1), (2) next to the filename which the set up script does not recognise. Then run the setup script again. 
+
 
  **Important**: For all commands, replace the `<username>` part with your own username (e.g r123456)
 
@@ -521,6 +527,8 @@ Open `gui/ui_constants/names.py` and find the `groups` dictionary within `SCRIPT
 |COM/win32 function freezing or crashing                                     |COM object not initialised on the right thread|Add `pythoncom.CoInitialize()` at the top of the function and `pythoncom.CoUninitialize()` in a `finally` block|
 |New library not found on someone else’s machine                             |`requirements.txt` not updated                |Run `pip freeze > requirements.txt`, remove unversioned pywin32 lines, commit                                  |                                                          |
 | Taipan hangs / not launching / extremely slow to launch / venv creation on install stuck | I have no idea | Restart laptop and test by running a fast script (e.g QA). If its still hanging restart again. When I encountered this I restarted 3x. 
+| Setup script not working | Script likely doesnt recognise your file path | Rename the folder -  remove all spaces and special characters. Run set up again and ensure the entire path has no special characters or spaces. 
+| CORTEX starts up when launching TAIPAN and blocks everything | You downloaded TAIPAN into the Downloads folder | You can use launch_taipan_dev or move it elsewhere. VBS scripts are not allowed to run out of the Downloads folder. 
 
 
 
