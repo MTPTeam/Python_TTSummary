@@ -6,6 +6,7 @@ This guide covers the most common maintenance tasks you’ll need to do on TAIPA
 
 -----
 ## Table of Contents
+1. [Onboarding new users](#0-onboarding-new-users)
 1. [Project Structure - Where is Everything?](#1-project-structure--where-is-everything)
 1. [Adding a New Station or Location](#2-adding-a-new-station-or-location)
 1. [Adding a New Script or Feature](#3-adding-a-new-script-or-feature)
@@ -14,14 +15,100 @@ This guide covers the most common maintenance tasks you’ll need to do on TAIPA
 1. [Running the Test Suite](#6-running-the-test-suite)
 1. [Modifying existing functionality](#7-modifying-existing-functionality)
 1. [Common Errors and Fixes](#8-common-errors-and-fixes)
+1. [To be done or maintained](#9-to-be-done-or-maintained)
 -----
 
+
+## 0. Onboarding new users 
+
+Before proceeding, make sure the laptop where TAIPAN is being installed is under "Dev Workstations Enforced" security group for Airlock. This can be requested from IT. 
+
+### 1. Download Python 
+
+- Go to [this link](https://www.python.org/downloads/release/python-3129/), scroll down, find the 64 bit windows installer. Click the version (displayed) below to install
+
+
+    <img src="images/python_install.png" width="65%">
+
+
+- When the installer is finished, run it from your downloads folder. Leave everything as default and click skip/next.
+
+
+
+### 2. Clone the repository OR Download the repository 
+
+
+#### Cloning 
+- Cloning is recommended so users can keep updated with files instantaneously rather than having to manually update the code files every time an update is pushed.
+- For this method - you need to do two additional steps before you can proceed with Step 4.
+> - Create a Github account (use QR email to sign up) 
+> -  Download Github Desktop (from here https://desktop.github.com/download/)
+- Clone the repository anywhere in a local drive (e.g any path starting with C:/). DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
+
+#### Non cloning way (manual)
+
+- To download: Code -> download zip
+- Unzip the repository in a local drive (e.g any path starting with C:/). DO NOT install TAIPAN into any network drives, this will slow down the code runtime significantly. 
+
+
+### 3. Downloading / Setup of IDE (skip if not developing)
+- Install Visual Studio Code if needed 
+
+### 4. Setup 
+
+This step sets up the virtual environment and installs all dependencies. 
+- Double click setup_TAIPAN (.bat file)
+- Script works on both home and corp computers. The path to Python can also be specified manually.
+
+
+### 4.1 If the setup script (step 4) crashes or fails - you will need to run the commands manually as specified below
+
+ **Important**: For all commands, replace the `<username>` part with your own username (e.g r123456)
+
+
+- Right click inside `Python_TTSummary` (the repository you just cloned/downloaded that contains images, src, tests, etc) and create a virtual environment:
+
+    `C:\Users\<username>\AppData\Local\Programs\Python\Python312\python.exe -m venv venv`
+
+- Activate the virtual environment
+
+    `.\venv\Scripts\activate`
+
+    After running the previous two steps, you see something that looks like the below image, note the green (venv) to the left of the folder structure. 
+
+
+    ![venv](/images/activating_venv.png "venv")
+
+    If you don't see the green (venv)  **🚨 DO NOT CONTINUE WITH THE REST OF THE STEPS! 🚨**. Doing so may break your Python environment. 
+
+
+- Install TAIPAN's Python packages to virtual environment:
+
+    `.\venv\Scripts\python.exe -m pip install -r requirements.txt`
+
+    Should see something that looks like this when it's finished; if you get that red error just ignore it and continue.
+
+    ![package installer](/images/installing_packages.png "packages")
+
+
+- Install pywin32 manually 
+
+    `.\venv\Scripts\python.exe -m pip install pywin32-311-cp312-cp312-win_amd64.whl`
+
+- Now tell Python this code is a 'package':
+
+    `.\venv\Scripts\python.exe -m pip install -e .`
+
+
+### 5. Run 🚀
+This launches TAIPAN
+- Double click launch_TAIPAN (.vbs file). It's normal for it to a take a minute to launch for the first time. 
 
 ## 1. TAIPAN Structure — Where is Everything?
 
 The diagram below shows a simplified version of the new TAIPAN structure. Please note that modifying anything in blue will affect all of the output scripts.
 
-![Diagram](taipan-diagram.drawio.svg)
+<img src="taipan-diagram.drawio.svg" width="150%">
 
 
 
@@ -434,14 +521,18 @@ Open `gui/ui_constants/names.py` and find the `groups` dictionary within `SCRIPT
 |COM/win32 function freezing or crashing                                     |COM object not initialised on the right thread|Add `pythoncom.CoInitialize()` at the top of the function and `pythoncom.CoUninitialize()` in a `finally` block|
 |New library not found on someone else’s machine                             |`requirements.txt` not updated                |Run `pip freeze > requirements.txt`, remove unversioned pywin32 lines, commit                                  |                                                          |
 | Taipan hangs / not launching / extremely slow to launch / venv creation on install stuck | I have no idea | Restart laptop and test by running a fast script (e.g QA). If its still hanging restart again. When I encountered this I restarted 3x. 
+
+
+
+
 -----
 
-## 9. Things to be done / maintained
+## 9. To be done or maintained
 
 - Train renamer (`train_renamer.py`) has to be updated for new destination station ranges 
 - `run_renamer_new.py RANGES` dict should be updated once new unit ranges are known.
 - `MISC_LOCATIONS` in `locations.py` most likely needs additions - I just added locations as I gradually found them throughout the scripts but might not be comprehensive.
-
+- If TAIPAN gives a permmission denied error - it means a file with the same name is open in Excel. All scripts that output Excel files should probably guard against this by closing any Excel files with the same name as the output before writing - I believe only StablingCountStepGraph has this guard. 
 
 
 *For deeper technical detail on any of the above, refer to the main developer docs on the main Git page.*
