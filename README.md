@@ -144,6 +144,15 @@ This is the most common maintenance task. All location data lives in one place.
 1. Open `constants/locations.py`
 1. Find the `STATIONS_MASTER` dictionary
 1. Add your new station following the same format as existing entries
+
+
+```python
+# format is 3 digit code : {full name, line, sector (leave None if unknown), non_revenue, byline terminus = can it terminate here?}
+
+# EXAMPLE entry for CVN 
+'CVN':  {'name': 'Cleveland', 'line': 'Cleveland', 'sector': 3, 'non_revenue': False, 'byline_terminus': True},
+```
+
 1. Save the file — the change will automatically flow through to all scripts that use station data
 
 > **Note:** If a station or yard is missing from any output (e.g. stabling count, public timetable), this is almost always the fix. **For yards specifically**, also check the `YARDS` constant in the same file. If it’s a new yard, add it there too with its capacity and train type (use `None` if unknown). If its not a station or yard, add it to `MISC_STATIONS` instead. 
@@ -153,7 +162,7 @@ This is the most common maintenance task. All location data lives in one place.
 ## 3. Adding a New Script or Feature
 **Where to put it:**
 
-Put new code in the folder that matches its purpose (see the project structure table above). For example, a new stabling report goes in `stabling/`, a new timetable output goes in `timetables/`.
+Put new code in the folder that matches its purpose (see the project structure table above). For example, a new stabling report goes in `stabling/`, a new timetable output goes in `timetables/`. You can also create new folders if you expand 
 
 **Tips:**
 - If your script needs to parse an RSX file, use the existing `xml_parser.py` in `core/` - don’t write your own parser. The `TrainInfo` object it returns has all the common train attributes already normalised. Further in this section will be an example of how to use this functionality.
@@ -239,7 +248,7 @@ Note:
 Let's say you need to create a new script that:
 1. Takes an input RSX, from the user
 1. Prints all the origin and destinations station IDs for each trainID
-1. Pops up a message box of (trainID, origin, and destination)
+1. Pops up a message box of (trainID, origin, and destination) AND saves a text file of the results in the same place as where the user inserted it. 
 
 From the previous section we can come up with something like this - but with a few important additions.
 
@@ -248,6 +257,7 @@ from taipan.core.xml_parser import parse_rsx
 from taipan.gui.base import select_file, show_info_scroll_safe # import existing UI elements
 from PyQt6.QtWidgets import QApplication
 import sys
+from pathlib import Path
 
 def get_od_of_trains(path, mypath = None):
 
@@ -261,12 +271,29 @@ def get_od_of_trains(path, mypath = None):
 
     train_list = []
 
-
     for train in trains:
         train_list.append(f"{train.number}, {train.start_id}, {train.end_id}")
         print(train.number, train.start_id, train.end_id)
 
     train_msg = "\n".join(train_list)
+
+    try:
+        # Convert string path to a path object
+        input_path = Path(path)
+        
+        # Create a new filename (e.g, "input_file_results.txt") in the same folder
+        output_filename = f"{input_path.stem}_results.txt"
+
+        # save to same directory where input file came from
+        output_path = input_path.with_name(output_filename)
+        
+        # Write the text contents to the file
+        output_path.write_text(train_msg, encoding='utf-8')
+        print(f"Results successfully saved to: {output_path}")
+
+    except Exception as e:
+        # exceptions will show in the status text in the user interface 
+        print(f"Failed to save text file: {e}")
     
     
     show_info_scroll_safe("Trains, origin and destination: ", train_msg) # must use *safe versions to ensure it works with the UI 
@@ -289,7 +316,7 @@ The launcher UI is in `gui/launch.py` and the button configuration lives in `gui
 
 
 ```python
-# find this section in launch.py
+# find this section in launch.py - the first argument in _lazy is where you want to import from, and second is function name to import
 TTS_ERR         = _lazy("taipan.reports.ErrorChecker",           "TTS_ERR")
 TTS_PTT         = _lazy("taipan.timetables.PublicTimetable",     "TTS_PTT")
 ... 
@@ -315,7 +342,7 @@ class TaipanLauncher(QMainWindow):
 
 
     def _run_OD(self, button = None):
-        path = self.get_file(filter_str="RSX Files (*.rsx)") # you can also add force_new = True if you want it to force a new selection each time rather than using saved file
+        path = self.get_file(filter_str="RSX Files (*.rsx)") # you can also add force_new = True if you want it to force a new selection each time rather than using the global saved file
 
         if not path:
             return
@@ -527,20 +554,19 @@ Open `gui/ui_constants/names.py` and find the `groups` dictionary within `SCRIPT
 |COM/win32 function freezing or crashing                                     |COM object not initialised on the right thread|Add `pythoncom.CoInitialize()` at the top of the function and `pythoncom.CoUninitialize()` in a `finally` block|
 |New library not found on someone else’s machine                             |`requirements.txt` not updated                |Run `pip freeze > requirements.txt`, remove unversioned pywin32 lines, commit                                  |                                                          |
 | Taipan hangs / not launching / extremely slow to launch / venv creation on install stuck | I have no idea | Restart laptop and test by running a fast script (e.g QA). If its still hanging restart again. When I encountered this I restarted 3x. 
-| Setup script not working | Script likely doesnt recognise your file path | Rename the folder -  remove all spaces and special characters. Run set up again and ensure the entire path has no special characters or spaces. 
-| CORTEX starts up when launching TAIPAN and blocks everything | You downloaded TAIPAN into the Downloads folder | You can use launch_taipan_dev or move it elsewhere. VBS scripts are not allowed to run out of the Downloads folder. 
-
-
-
-
+| Setup script not working (crashes halfway and console exits) | Script likely doesnt recognise your file path | Rename the folder -  remove all spaces and special characters. Run set up again and ensure the entire path has no special characters or spaces. 
+| CORTEX starts up when launching TAIPAN and blocks everything | You downloaded TAIPAN into the Downloads folder or any folder which has the word "download" in it.  | You can use launch_taipan_dev or move it elsewhere. Check the entire file path where TAIPAN is installed does not have the word "downloads" in it - VBS scripts are not allowed to run out of folders in these cases. 
+| Python installation blocked by Airlock | You arent in the correct Airlock security group | Contact IT and ask to be put in the "Dev Workstations Enforced" security group
 -----
 
 ## 9. To be done or maintained
 
+There are a few things I expect will need to be changed / updated: 
+
 - Train renamer (`train_renamer.py`) has to be updated for new destination station ranges 
-- `run_renamer_new.py RANGES` dict should be updated once new unit ranges are known.
+- `run_renamer_new.py RANGES` dictionary should be updated once new unit ranges are known.
 - `MISC_LOCATIONS` in `locations.py` most likely needs additions - I just added locations as I gradually found them throughout the scripts but might not be comprehensive.
-- If TAIPAN gives a permmission denied error - it means a file with the same name is open in Excel. All scripts that output Excel files should probably guard against this by closing any Excel files with the same name as the output before writing - I believe only StablingCountStepGraph has this guard. 
+- If TAIPAN gives a permmission denied error - it means a file with the same name is open in Excel. All scripts that output Excel files should probably guard against this by closing any Excel files with the same name as the output before writing.
 
 
-*For deeper technical detail on any of the above, refer to the main developer docs on the main Git page.*
+*For deeper technical detail on any of the above, refer to the DETAILED_CODE_DOCS.md file on the main Git page.*

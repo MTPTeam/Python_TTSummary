@@ -10,10 +10,6 @@
 # all non-revenue:       [c for c,s in network['stations'].items() if s['non_revenue']]
 # all stations on line:  [c for c,s in network['stations'].items() if s['line'] == 'Beenleigh']
 # byline termini:        [c for c,s in network['stations'].items() if s['byline_terminus']]
-# VRT for a station:     network['stations']['BNH']['vrt']  
-# VRT for a line:        get_vrt_for_line('Beenleigh')
-
-# =============================================================================
 
 STATIONS_MASTER = {
 # -------------------------------------------------------------------------
@@ -58,8 +54,7 @@ STATIONS_MASTER = {
 #   shared_sector    if this station is shared across sectors shared_sectors will represent all possible sectors, and sectors will be None
 #   non_revenue      True = not a passenger stop 
 #   byline_terminus  True = displayed as a line terminus
-#   vrt              (order, dist) in the line's VRT chain
-#                    negative = beyond Roma St toward airport/south (im assuming second part of tuple is some internal form of distance, but will get refactored out soon)
+#  
 # -------------------------------------------------------------------------
 'stations': {
 
