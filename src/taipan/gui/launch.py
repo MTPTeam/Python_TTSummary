@@ -53,6 +53,7 @@ run_ngr_dpp     = _lazy("taipan.plans.NGRDailyPlan",             "run_ngr_dpp")
 run_ngr_wpp     = _lazy("taipan.plans.NGRWeeklyPlan",            "run_ngr_wpp")
 TTS_VAS         = _lazy("taipan.reports.VASExtract",             "TTS_VAS")
 TTS_RSX_UTC     = _lazy("taipan.converters.convert_RSX_UTC",     "convert_RSX_UTC")
+TTS_TTO         = _lazy("taipan.reports.terminating_services_report",           "run_terminating_train_output")
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
@@ -759,6 +760,14 @@ class TaipanLauncher(QMainWindow):
         self.run_task(lambda: TTS_RSX_UTC(rsx_path = rsx_path, freight_folder=freight_folder),f"{snake_emoji} RUNNING — RSX → UTC CONVERTER...",f"{snake_emoji} DONE — RSX → UTC CONVERTER")
 
     
+
+    def _run_tto(self, button=None):
+        path = self.get_file(filter_str="RSX Files (*.rsx)")
+
+        if not path:
+            return
+
+        self.run_task(lambda: TTS_TTO(path),f"{snake_emoji} RUNNING — TTO...",f"{snake_emoji} DONE — TTO")
   
 
 

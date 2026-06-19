@@ -112,7 +112,7 @@ SCRIPTS = {
                 #("Closure Impacts",    "_run_closure",  "Assess closure impacts on services"),
                 #("Timetable Archiver", "_run_archiver", "Archive timetable files"),
                 ("RSX to UTC",      "_run_rsx_utc",      "Convert RSX to UTC (.csv) file format. Input RSX and (optionally) a folder containing freight TXT files, outputs a merged UTC CSV file."),
-
+                ("Terminating train output", "_run_tto", "Generate terminating train output")
             ],
 
         }
