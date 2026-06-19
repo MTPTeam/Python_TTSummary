@@ -260,7 +260,7 @@ def build_nursery_rows_from_rsx(path):
             f"Affected Services:\n{sample}\n\n"
             f"This is a critical data issue. Please assign lineID values and re-run the tool."
         )
-        return None, None
+        raise ValueError(f"Missing a lineID (Run).")
 
     nursery_rows = []
 
@@ -1290,10 +1290,7 @@ def run_terminating_train_output(path, mypath=None):
     try:
         df_nursery, qa_info = build_nursery_rows_from_rsx(path)
 
-        if df_nursery.empty:
-            return
-        if qa_info == None:
-            return
+        
 
        
         input_path = Path(path)
