@@ -1,0 +1,197 @@
+#### All the cosmetic/formatting constants live here 
+
+ALERT = "#CC194C"
+GREY  = "#CCCCCC"
+REP   = "#FFB7B7"
+NGR   = "#E4DFEC"
+NGRE  = "#FFFF93"
+IMU   = "#FDE9D9"
+EMU   = "#DAEEF3"
+SMU   = "#F2DCDB"
+DEPT  = "#EBF1DE"
+QMU = "#B7FFDB"
+
+
+UNBALANCED_YELLOW = "#CCB233"
+WHITE = "#FFFFFF"
+
+# Map used by the builder to generate families
+FAMILY_BG = {
+    "REP":    REP,
+    "NGR":    NGR,
+    "NGRE":   NGRE,
+    "IMU100": IMU,
+    "EMU":    EMU,
+    "HYBRID": EMU,   # shared EMU palette
+    "SMU":    SMU,
+    "DEPT":   DEPT,
+    "QMU":    QMU
+}
+
+
+STYLE_VARIANTS = {
+    "normal": {},
+
+    "bold": {
+        "bold": True,
+        "bottom": 1,
+    },
+
+    "boldred": {
+        "bold": True,
+        "font_color": ALERT,
+    },
+
+    "big": {
+        "font_size": 16,
+        "valign": "vcenter",
+    },
+
+    "bigred": {
+        "font_size": 16,
+        "valign": "vcenter",
+        "font_color": ALERT,
+    },
+
+    "border": {
+        "left": 1,
+        "right": 1,
+    },
+}
+
+
+
+GENERIC_STYLES = {
+    "title": {
+        "bold": True,
+        "align": "center",
+    },
+
+    "header": {
+        "bold": True,
+        "align": "center",
+        "bg_color": GREY,
+    },
+
+    "size16": {
+        "font_size": 16,
+    },
+
+    "size14": {
+        "font_size": 14,
+    },
+
+    "centered": {
+        "align": "center",
+    },
+
+    "boldleft": {
+        "bold": True,
+        "align": "left",
+    },
+
+    "boldright": {
+        "bold": True,
+        "align": "right",
+    },
+
+    "redcentered": {
+        "align": "center",
+        "font_color": ALERT,
+    },
+
+    "redleft": {
+        "align": "left",
+        "font_color": ALERT,
+    },
+
+    "redboldleft": {
+        "bold": True,
+        "align": "left",
+        "font_color": ALERT,
+    },
+}
+
+
+
+BORDER_STYLES = {
+    "top": {"top": 1},
+    "bottom": {"bottom": 1},
+    "left": {"left": 1},
+    "right": {"right": 1},
+    "border": {"border": 1, "border_color": "#000000"},
+    "border_alert": {"border": 1, "border_color": ALERT},
+}
+
+
+
+SEMANTIC_STYLES = {
+    "unbalanced": {
+        "bg_color": UNBALANCED_YELLOW,
+    },
+
+    "unbalanced_red": {
+        "bg_color": ALERT,
+        "font_color": WHITE,
+    },
+
+    "interpeak_flag": {
+        "bold": True,
+        "border": 1,
+        "border_color": "#000000",
+        "font_color": "#FF0000",
+        "bg_color": UNBALANCED_YELLOW,
+        "align": "center",
+    },
+}
+
+
+STEPS_COL = [
+            '1. Determine the location where each Run starts and finishes.',
+            '2. By Unit type by Day, count the number of Runs that start or finish at each location.',
+            '3. Find where start and finish counts do not match over the day.',
+            '4. Find where start and finish counts do not match over the week.'
+            ]
+
+
+# for first last graph
+CHART_W, CHART_H = 500, 380
+SLICER_LEFT      = 10
+CHART_LEFT       = 170   # leave room for slicers on the left
+
+SLICER_CONFIGS = [
+    # Station slicer — full chart height
+    ("StationName", "Station",
+     10,                      # Top (aligned with chart)
+     CHART_LEFT + CHART_W*2 + 40,
+     180,                     # Width
+     380),                    # Height = chart height
+
+    # Timetable slicer — top right
+    ("Timetable", "Timetable",
+     10,                      # Top
+     CHART_LEFT + CHART_W*2 + 40 + 180 + 10,
+     150,
+     180),
+
+    # Day slicer — below timetable
+    ("Day", "Day",
+     10 + 180 + 10,
+     CHART_LEFT + CHART_W*2 + 40 + 180 + 10,
+     150,
+     190),
+]
+
+
+
+# ── EXCEL CONSTANTS ───────────────────────────────────────────────────────────
+xlSrcRange             = 1
+xlCenter               = -4108
+xlLegendPositionBottom = -4107
+xlRowField             = 1
+xlPageField            = 3
+xlAverage              = -4106
+xlXYScatter            = 74
+xlOpenXMLWorkbook      = 51
+xlSheetVeryHidden      = 2
+xlMax = -4136
