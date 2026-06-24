@@ -53,7 +53,7 @@ run_ngr_dpp     = _lazy("taipan.plans.NGRDailyPlan",             "run_ngr_dpp")
 run_ngr_wpp     = _lazy("taipan.plans.NGRWeeklyPlan",            "run_ngr_wpp")
 TTS_VAS         = _lazy("taipan.reports.VASExtract",             "TTS_VAS")
 TTS_RSX_UTC     = _lazy("taipan.converters.convert_RSX_UTC",     "convert_RSX_UTC")
-TTS_TTO         = _lazy("taipan.reports.terminating_services_report",           "run_terminating_train_output")
+TTS_TTO         = _lazy("taipan.reports.TerminatingTrainOutput", "run_terminating_train_output")
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
