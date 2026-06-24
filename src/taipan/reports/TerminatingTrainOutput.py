@@ -19,7 +19,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 # ============================================================
 # CONFIG
 # ============================================================
-OUTPUT_NAME_SUFFIX = " - Terminating Train Output.xlsx"
+OUTPUT_NAME_SUFFIX = "TerminatingTrainOutput-"
 AUTO_OPEN_AFTER_SAVE = True
 
 HEADER_FILL_HEX = "BFBFBF"
@@ -1187,7 +1187,9 @@ def write_excel(df_nursery, out_path, timetable_input, qa_info):
 
             wb_excel = excel.Workbooks.Open(out_path_clean)
 
-            final_pdf_path = os.path.normpath(out_path_clean.replace(".xlsx", "_Summary.pdf"))
+            pdf_stem = os.path.splitext(os.path.basename(out_path_clean))[0].replace("TerminatingTrainOutput-","")
+            final_pdf_path = os.path.normpath(os.path.join(os.path.dirname(out_path_clean), f"TerminatingTrainOutputSummary-{pdf_stem}.pdf"))
+            
             temp_pdf_files = []
 
             for sheet_name in summary_sheet_names:
@@ -1294,7 +1296,7 @@ def run_terminating_train_output(path, mypath=None):
 
        
         input_path = Path(path)
-        out_path = str(input_path.with_name(input_path.stem + OUTPUT_NAME_SUFFIX))
+        out_path = str(input_path.with_name(OUTPUT_NAME_SUFFIX + input_path.stem + ".xlsx"))
 
         write_excel(df_nursery, out_path, input_path.stem, qa_info)
 
