@@ -7,13 +7,14 @@ SCRIPTS = {
         "groups": {
 
             "": [
-                ("Working Timetable",  "_run_wtt",               "Generate working timetable excel files from RSX"),
-                ("Public Timetable",   "_run_ptt",               "Generate public timetable excel files from RSX"),
-                ("RunInfo",            "_run_runinfo",           "Generate run information Excel report from RSX"),
-                ("Train Movements",    "_run_movements",         "Generate train movements Excel report from RSX"),
-                ("TripCount",          "_run_tripcount",         "Generate trip count Excel report from RSX"),
-                ("Runtime Dashboard",  "_run_runtime",           "Generate runtime dashboard in browser from RSX"),
-                ("KM Calculation",     "_run_km",                "Calculate kilometres from Excel export of RSX"),
+                ("Working Timetable",          "_run_wtt",               "Generate working timetable excel files from RSX"),
+                ("Public Timetable",           "_run_ptt",               "Generate public timetable excel files from RSX"),
+                ("RunInfo",                    "_run_runinfo",           "Generate run information Excel report from RSX"),
+                ("Train Movements",            "_run_movements",         "Generate train movements Excel report from RSX"),
+                ("TripCount",                  "_run_tripcount",         "Generate trip count Excel report from RSX"),
+                ("Runtime Dashboard",          "_run_runtime",           "Generate runtime dashboard in browser from RSX"),
+                ("KM Calculation",             "_run_km",                "Calculate kilometres from Excel export of RSX"),
+                ("Terminating Train Output",   "_run_tto",               "Generate terminating train PDF and Excel export from RSX"),
 
             ],
 
@@ -111,8 +112,7 @@ SCRIPTS = {
                 ("VAS Extractor",      "_run_vas",      "Extract VAS data from RSX"),
                 #("Closure Impacts",    "_run_closure",  "Assess closure impacts on services"),
                 #("Timetable Archiver", "_run_archiver", "Archive timetable files"),
-                ("RSX to UTC",      "_run_rsx_utc",      "Convert RSX to UTC (.csv) file format. Input RSX and (optionally) a folder containing freight TXT files, outputs a merged UTC CSV file."),
-                ("Terminating train output", "_run_tto", "Generate terminating train output")
+                ("RSX to UTC",      "_run_rsx_utc",      "Convert RSX to UTC (.csv) file format. Input RSX and (optionally) a folder containing freight TXT files, outputs a merged UTC CSV file.")
             ],
 
         }
