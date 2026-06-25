@@ -782,7 +782,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     section_font      = Font(color=WHITE,        bold=True,  size=9,  name="Calibri")
     body_font         = Font(color=DARK_GREY,                size=8,  name="Calibri")
     tile_value_font   = Font(color=MAROON_LIGHT, bold=True,  size=16, name="Calibri")
-    tile_label_font   = Font(color=SUBTLE_GREY,              size=7,  name="Calibri")
+    tile_label_font   = Font(color=SUBTLE_GREY,              size=9,  name="Calibri")
     dark_value_font   = Font(color=DARK_GREY,    bold=True,  size=16, name="Calibri")
     table_header_font = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
     warning_font      = Font(color="4A2700",                 size=8,  name="Calibri")
@@ -847,12 +847,12 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     ws.row_dimensions[5].height  = 13   # KPI section bar
     ws.row_dimensions[6].height  = 4    # WHITE gap — tiles will visually "float" off the bar
     ws.row_dimensions[7].height  = 6    # tile accent bar row 1
-    ws.row_dimensions[8].height  = 8    # tile label row 1
-    ws.row_dimensions[9].height  = 24   # tile value row 1
+    ws.row_dimensions[8].height  = 13   # tile label row 1  ← taller
+    ws.row_dimensions[9].height  = 20   # tile value row 1  ← slightly shorter
     ws.row_dimensions[10].height = 5    # spacer between tile rows
     ws.row_dimensions[11].height = 6    # tile accent bar row 2
-    ws.row_dimensions[12].height = 8    # tile label row 2
-    ws.row_dimensions[13].height = 24   # tile value row 2
+    ws.row_dimensions[12].height = 13   # tile label row 2  ← taller
+    ws.row_dimensions[13].height = 20   # tile value row 2  ← slightly shorter
     ws.row_dimensions[14].height = 5    # spacer
 
     # ── ROW 1: Title ─────────────────────────────────────────────────────────────
