@@ -892,13 +892,14 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     ws["A6"].fill = white_fill
 
     # ── KPI TILES helper ─────────────────────────────────────────────────────────
-    # 3-row tile: accent bar / value / label
-    # accent_hex  : saturated colour for the top stripe
-    # body_fill   : light fill for value + label rows
-    # vfont       : font for the large number
+    # 3-row tile: accent bar (top) / label row / value row (bottom)
+    # Reading order: accent colour → label → number  (natural top-to-bottom flow)
+    # row_a : accent stripe
+    # row_b : label (small text)
+    # row_c : value (large bold number)
 
     def write_tile(row_a, row_b, row_c, col_start, col_end,
-                   label_text, value, accent_hex, body_f, vfont):
+                   label_text, value, accent_hex, vfont):
         s = chr(ord("A") + col_start - 1)
         e = chr(ord("A") + col_end   - 1)
 
@@ -908,35 +909,41 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         ac.fill   = _fill(accent_hex)
         ac.border = Border(left=medium_side, right=medium_side, top=medium_side, bottom=no_side)
 
-        # Value row — white body, large bold number
+        # Label row — off-white, small descriptive text  ← NOW SECOND (reads first after accent)
         ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
-        vc = ws[f"{s}{row_b}"]
-        vc.value     = str(value)
-        vc.fill      = white_fill
-        vc.font      = vfont
-        vc.alignment = center
-        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
-
-        # Label row — slightly off-white, small grey label
-        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
-        lc = ws[f"{s}{row_c}"]
+        lc = ws[f"{s}{row_b}"]
         lc.value     = label_text
         lc.fill      = tile_spacer_fill
         lc.font      = tile_label_font
         lc.alignment = center
-        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
+        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
 
-    # Row 1 of tiles (rows 7-9): neutral KPIs — maroon accent, maroon value text
-    write_tile(7, 8, 9, 1, 2, "Total Terminating Services",  total_terminating_services,     MAROON_MID, near_white_fill, tile_value_font)
-    write_tile(7, 8, 9, 3, 4, "Travelling to Yard",           services_direct_to_yard,        MAROON_MID, near_white_fill, tile_value_font)
-    write_tile(7, 8, 9, 5, 6, "Shortest Dwell Prior to Yard", shortest_dwell_to_yard_display, MAROON_MID, near_white_fill, tile_value_font)
-    write_tile(7, 8, 9, 7, 8, "Longest Dwell Prior to Yard",  longest_dwell_to_yard_display,  MAROON_MID, near_white_fill, tile_value_font)
+        # Value row — white body, large bold number  ← NOW THIRD (punchline at bottom)
+        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
+        vc = ws[f"{s}{row_c}"]
+        vc.value     = str(value)
+        vc.fill      = white_fill
+        vc.font      = vfont
+        vc.alignment = center
+        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
 
-    # Row 2 of tiles (rows 11-13): risk KPIs — saturated accent, light body, dark value text
-    write_tile(11, 12, 13, 1, 2, "High Risk Services",    high_risk_services,    HIGH_ACCENT,    HIGH_RISK_FILL,    dark_value_font)
-    write_tile(11, 12, 13, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_ACCENT,  MEDIUM_RISK_FILL,  dark_value_font)
-    write_tile(11, 12, 13, 5, 6, "Low Risk Services",     low_risk_services,     LOW_ACCENT,     LOW_RISK_FILL,     dark_value_font)
-    write_tile(11, 12, 13, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_ACCENT, MINIMUM_RISK_FILL, dark_value_font)
+    # Top row: neutral KPIs — dark grey numbers (calm, informational)
+    neutral_font = Font(color=DARK_GREY, bold=True, size=16, name="Calibri")
+    write_tile(7, 8, 9, 1, 2, "Total Terminating Services",  total_terminating_services,     MAROON_MID, neutral_font)
+    write_tile(7, 8, 9, 3, 4, "Travelling to Yard",           services_direct_to_yard,        MAROON_MID, neutral_font)
+    write_tile(7, 8, 9, 5, 6, "Shortest Dwell Prior to Yard", shortest_dwell_to_yard_display, MAROON_MID, neutral_font)
+    write_tile(7, 8, 9, 7, 8, "Longest Dwell Prior to Yard",  longest_dwell_to_yard_display,  MAROON_MID, neutral_font)
+
+    # Bottom row: risk KPIs — number colour matches the saturated accent so the rating is unmistakable
+    high_font    = Font(color=HIGH_ACCENT,    bold=True, size=16, name="Calibri")
+    medium_font  = Font(color=MEDIUM_ACCENT,  bold=True, size=16, name="Calibri")
+    low_font     = Font(color=LOW_ACCENT,     bold=True, size=16, name="Calibri")
+    minimum_font = Font(color=MINIMUM_ACCENT, bold=True, size=16, name="Calibri")
+
+    write_tile(11, 12, 13, 1, 2, "High Risk Services",    high_risk_services,    HIGH_ACCENT,    high_font)
+    write_tile(11, 12, 13, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_ACCENT,  medium_font)
+    write_tile(11, 12, 13, 5, 6, "Low Risk Services",     low_risk_services,     LOW_ACCENT,     low_font)
+    write_tile(11, 12, 13, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_ACCENT, minimum_font)
 
     # ── ROW 15+: DQ Observations (A–E) + Risk Legend (F–H) ──────────────────────
     # DQ gets 5 cols so warnings fit on one line; legend gets 3 cols (label + description merged)
