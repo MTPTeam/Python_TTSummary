@@ -784,14 +784,14 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     tile_value_font   = Font(color=MAROON_LIGHT, bold=True,  size=16, name="Calibri")
     tile_label_font   = Font(color=SUBTLE_GREY,              size=8,  name="Calibri")
     dark_value_font   = Font(color=DARK_GREY,    bold=True,  size=16, name="Calibri")
-    table_header_font = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
+    table_header_font = Font(color=DARK_GREY,    bold=True,  size=9,  name="Calibri")
     warning_font      = Font(color="4A2700",                 size=8,  name="Calibri")
     ok_font           = Font(color="1B4F1B",                 size=8,  name="Calibri")
     legend_font       = Font(color=DARK_GREY,                size=8,  name="Calibri")
     legend_bold_font  = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
     note_font         = Font(color="999999",     italic=True,size=7,  name="Calibri")
-    station_font      = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
-    data_font         = Font(color=DARK_GREY,                size=8,  name="Calibri")
+    station_font      = Font(color=DARK_GREY,    bold=True,  size=9,  name="Calibri")
+    data_font         = Font(color=DARK_GREY,                size=9,  name="Calibri")
 
     # Borders
     thin_side   = Side(style="thin",   color="CCCCCC")
@@ -1114,7 +1114,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
             for col_idx, val, rfill in risk_cols:
                 c = ws.cell(row=row_ptr, column=col_idx, value=val)
                 c.fill      = rfill
-                c.font      = Font(size=8, name="Calibri")
+                c.font      = Font(size=9, name="Calibri")
                 c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                 c.border    = thin_box
 
