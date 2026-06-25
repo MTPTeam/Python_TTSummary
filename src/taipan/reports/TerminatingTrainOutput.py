@@ -723,7 +723,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         ascending=[False, False, False, False]
     )
 
-    TOP_N = 10
+    TOP_N = min(10, len(station_summary))
     station_summary = station_summary.head(TOP_N)
 
     if not station_summary.empty:
@@ -1350,7 +1350,7 @@ def write_excel(df_nursery, out_path, timetable_input, qa_info):
                         )
 
                     # Resolve logo path relative to this script file
-                    logo_path = Path(__file__).parent / "images" / "qr-logo-main.png"
+                    logo_path = Path(__file__).parent.parent.parent.parent / "images" / "qr-logo-main.png"
                     logo_path_str = str(logo_path.resolve())
                     logo_available = logo_path.exists()
 
