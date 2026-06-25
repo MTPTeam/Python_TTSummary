@@ -340,15 +340,17 @@ def build_nursery_rows_from_rsx(path):
             f"{excluded_count} service(s) were excluded based on unsupported train number prefixes.\n\n"
             f"Prefixes detected:\n{prefix_list}\n\n"
             f"This is expected behaviour.\n\n"
-            f"Please wait momentarily while the Excel file opens automatically.\n\n"
-            f"The associated PDF summary can be found in the same folder as the selected RSX file."
+            f"Output generation is now underway — this may take up to a minute.\n\n"
+            f"Please do not open any files manually until the Excel workbook appears automatically.\n\n"
+            f"The PDF summary will be saved to the same folder as the selected RSX file."
         )
     else:
         show_info_scroll_safe(
             "Data Integrity Check Passed",
             "No anomalies detected.\n\n"
-            "Please wait momentarily while the Excel file opens automatically.\n\n"
-            "The associated PDF summary can be found in the same folder as the selected RSX file."
+            "Output generation is now underway — this may take up to a minute.\n\n"
+            "Please do not open any files manually until the Excel workbook appears automatically.\n\n"
+            "The PDF summary will be saved to the same folder as the selected RSX file."
         )
 
     return df, {"excluded_count": excluded_count, "excluded_prefixes": excluded_prefixes}
@@ -976,10 +978,19 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     warning_msgs = []
     if not one_sec_summary.empty:
         for _, r in one_sec_summary.iterrows():
-            platform_text = ", ".join(r["Platforms"]) if r["Platforms"] else "unknown platform"
+            count = int(r['Count'])
+            platforms = r["Platforms"]
+            if len(platforms) > 1:
+                platform_text = ", ".join(platforms[:-1]) + f" and {platforms[-1]}"
+            elif len(platforms) == 1:
+                platform_text = platforms[0]
+            else:
+                platform_text = "an unknown platform"
+            service_word = "service" if count == 1 else "services"
+            verb = "has" if count == 1 else "have"
             warning_msgs.append((
-                f"⚠  {r['Terminating Station']}: {int(r['Count'])} service(s) at "
-                f"{platform_text} have a 1-second dwell — please review operational suitability.",
+                f"⚠  {r['Terminating Station']}: {count} {service_word} at "
+                f"{platform_text} {verb} a 1-second dwell, please review operational suitability.",
                 False
             ))
     else:
