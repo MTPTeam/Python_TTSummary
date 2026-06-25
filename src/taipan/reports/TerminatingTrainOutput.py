@@ -966,24 +966,24 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
 
     # Legend entries: label in F, description in G–H
     legend_entries = [
-        (HIGH_C,    HIGH_ACCENT,    "High Risk",    "≤ 30s dwell to yard"),
-        (MEDIUM_C,  MEDIUM_ACCENT,  "Medium Risk",  "30s < dwell ≤ 90s to yard"),
-        (LOW_C,     LOW_ACCENT,     "Low Risk",     "90s < dwell ≤ 150s to yard"),
-        (MINIMUM_C, MINIMUM_ACCENT, "Minimum Risk", "Not to yard / > 150s"),
+        (HIGH_C,    HIGH_ACCENT,    "High Risk",    "Travelling to yard with ≤ 30s dwell"),
+        (MEDIUM_C,  MEDIUM_ACCENT,  "Medium Risk",  "Travelling to yard with 30–90s dwell"),
+        (LOW_C,     LOW_ACCENT,     "Low Risk",     "Travelling to yard with 90–150s dwell"),
+        (MINIMUM_C, MINIMUM_ACCENT, "Minimum Risk", "Not to yard, or dwell exceeds 150s"),
     ]
 
-    # Build warning messages — no wrap, so keep them concise as they already are
+    # Build warning messages — single line, no wrap
     warning_msgs = []
     if not one_sec_summary.empty:
         for _, r in one_sec_summary.iterrows():
             platform_text = ", ".join(r["Platforms"]) if r["Platforms"] else "unknown platform"
             warning_msgs.append((
-                f"⚠  {r['Terminating Station']} — {int(r['Count'])} service(s) end at "
-                f"{platform_text} with a 1-second dwell. Please review operational suitability.",
+                f"⚠  {r['Terminating Station']}: {int(r['Count'])} service(s) at "
+                f"{platform_text} have a 1-second dwell — please review operational suitability.",
                 False
             ))
     else:
-        warning_msgs.append(("✔  No 1-second dwell anomalies detected.", True))
+        warning_msgs.append(("✔  No 1-second block dwell anomalies detected for this day type.", True))
 
     content_rows = max(len(warning_msgs), len(legend_entries))
 
