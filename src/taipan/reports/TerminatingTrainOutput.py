@@ -1385,7 +1385,7 @@ def write_excel(df_nursery, out_path, timetable_input, qa_info):
                         try:
                             rfp = sheet.PageSetup.RightFooterPicture
                             rfp.Filename = logo_path_str
-                            rfp.Height = 20
+                            rfp.Height = 14
                             rfp.LockAspectRatio = True
                         except Exception as logo_err:
                             print(f"Logo embed warning: {logo_err}")
