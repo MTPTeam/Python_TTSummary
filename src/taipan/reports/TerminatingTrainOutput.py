@@ -340,7 +340,7 @@ def build_nursery_rows_from_rsx(path):
             f"{excluded_count} service(s) were excluded based on unsupported train number prefixes.\n\n"
             f"Prefixes detected:\n{prefix_list}\n\n"
             f"This is expected behaviour.\n\n"
-            f"Output generation is now underway — this may take up to a minute.\n\n"
+            f"Output generation is now underway. This may take up to a minute.\n\n"
             f"Please do not open any files manually until the Excel workbook appears automatically.\n\n"
             f"The PDF summary will be saved to the same folder as the selected RSX file."
         )
@@ -348,7 +348,7 @@ def build_nursery_rows_from_rsx(path):
         show_info_scroll_safe(
             "Data Integrity Check Passed",
             "No anomalies detected.\n\n"
-            "Output generation is now underway — this may take up to a minute.\n\n"
+            "Output generation is now underway. This may take up to a minute.\n\n"
             "Please do not open any files manually until the Excel workbook appears automatically.\n\n"
             "The PDF summary will be saved to the same folder as the selected RSX file."
         )
@@ -990,7 +990,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
             verb = "has" if count == 1 else "have"
             warning_msgs.append((
                 f"⚠  {r['Terminating Station']}: {count} {service_word} at "
-                f"{platform_text} {verb} a 1-second dwell, please review operational suitability.",
+                f"{platform_text} {verb} a 1-second dwell. Please review operational suitability.",
                 False
             ))
     else:
