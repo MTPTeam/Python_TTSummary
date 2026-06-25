@@ -934,16 +934,45 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     write_tile(7, 8, 9, 5, 6, "Shortest Dwell Prior to Yard", shortest_dwell_to_yard_display, MAROON_MID, neutral_font)
     write_tile(7, 8, 9, 7, 8, "Longest Dwell Prior to Yard",  longest_dwell_to_yard_display,  MAROON_MID, neutral_font)
 
-    # Bottom row: risk KPIs — number colour matches the saturated accent so the rating is unmistakable
-    high_font    = Font(color=HIGH_ACCENT,    bold=True, size=16, name="Calibri")
-    medium_font  = Font(color=MEDIUM_ACCENT,  bold=True, size=16, name="Calibri")
-    low_font     = Font(color=LOW_ACCENT,     bold=True, size=16, name="Calibri")
-    minimum_font = Font(color=MINIMUM_ACCENT, bold=True, size=16, name="Calibri")
+    # Bottom row: risk KPIs — option 2 variant
+    # Accent bar on top uses a neutral dark grey (not the risk colour)
+    # The LABEL row at the bottom is filled with the saturated risk colour as a category tag
+    # Number stays dark grey — clean and readable
+    dark_neutral_accent = "4A4A4A"
 
-    write_tile(11, 12, 13, 1, 2, "High Risk Services",    high_risk_services,    HIGH_ACCENT,    high_font)
-    write_tile(11, 12, 13, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_ACCENT,  medium_font)
-    write_tile(11, 12, 13, 5, 6, "Low Risk Services",     low_risk_services,     LOW_ACCENT,     low_font)
-    write_tile(11, 12, 13, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_ACCENT, minimum_font)
+    def write_tile_risk_option2(row_a, row_b, row_c, col_start, col_end,
+                                label_text, value, label_accent_hex):
+        s = chr(ord("A") + col_start - 1)
+        e = chr(ord("A") + col_end   - 1)
+
+        # Top accent bar — neutral dark stripe (same for all risk tiles)
+        ws.merge_cells(f"{s}{row_a}:{e}{row_a}")
+        ac = ws[f"{s}{row_a}"]
+        ac.fill   = _fill(dark_neutral_accent)
+        ac.border = Border(left=medium_side, right=medium_side, top=medium_side, bottom=no_side)
+
+        # Label row (second) — off-white background, small grey text
+        ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
+        lc = ws[f"{s}{row_b}"]
+        lc.value     = label_text
+        lc.fill      = tile_spacer_fill
+        lc.font      = tile_label_font
+        lc.alignment = center
+        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
+
+        # Value row (bottom) — filled with the saturated risk colour, dark number
+        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
+        vc = ws[f"{s}{row_c}"]
+        vc.value     = str(value)
+        vc.fill      = _fill(label_accent_hex)
+        vc.font      = Font(color=DARK_GREY, bold=True, size=16, name="Calibri")
+        vc.alignment = center
+        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
+
+    write_tile_risk_option2(11, 12, 13, 1, 2, "High Risk Services",    high_risk_services,    HIGH_C)
+    write_tile_risk_option2(11, 12, 13, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_C)
+    write_tile_risk_option2(11, 12, 13, 5, 6, "Low Risk Services",     low_risk_services,     LOW_C)
+    write_tile_risk_option2(11, 12, 13, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_C)
 
     # ── ROW 15+: DQ Observations (A–E) + Risk Legend (F–H) ──────────────────────
     # DQ gets 5 cols so warnings fit on one line; legend gets 3 cols (label + description merged)
