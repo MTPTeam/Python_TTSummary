@@ -732,277 +732,317 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
             if col in station_summary.columns:
                 station_summary[col] = station_summary[col].fillna("")
 
-    # ── Colour palette ──────────────────────────────────────────
-    PRIMARY_RED   = "B71C1C"   # deep QR maroon (title bar)
-    ACCENT_RED    = "D32F2F"   # section headers
-    TILE_BG       = "FAFAFA"   # neutral tile background
-    TILE_LABEL_BG = "F0F0F0"   # label row inside tile
-    SECTION_BG    = "EBEBEB"   # section header bars
-    TABLE_HDR_BG  = "D6D6D6"   # table column headers
-    OBJECTIVE_BG  = "F5F5F5"   # objective text band
+    # ── Colour palette ──────────────────────────────────────────────────────────
+    # Maroon family
+    MAROON_DARK   = "7B0D0D"   # title bar
+    MAROON_MID    = "A61C1C"   # section header bars + tile accent bars
+    MAROON_LIGHT  = "C62828"   # tile value text (neutral KPIs)
+    # Neutrals
+    WHITE         = "FFFFFF"
+    NEAR_WHITE    = "F9F9F9"   # tile body background
+    LIGHT_GREY    = "EDEDED"   # section header bars, alt table rows
+    MID_GREY      = "D0D0D0"   # table header
+    DARK_GREY     = "1A1A1A"   # primary text
+    SUBTLE_GREY   = "5A5A5A"   # secondary labels
+    # Risk colours — desaturated / professional
+    HIGH_C        = "E8C3C3"   # muted dusty rose
+    MEDIUM_C      = "F0D9C0"   # muted peach
+    LOW_C         = "EDE8B8"   # muted straw
+    MINIMUM_C     = "D8D8D8"   # neutral light grey (no green)
+    # Warning panel
+    WARNING_BG    = "F4F4F4"   # clean light grey
+    WARNING_ACCENT= MAROON_MID # left-border stripe colour (applied via conditional logic)
 
-    HIGH_RISK_FILL    = PatternFill(start_color="F4CCCC", end_color="F4CCCC", fill_type="solid")
-    MEDIUM_RISK_FILL  = PatternFill(start_color="FCE5CD", end_color="FCE5CD", fill_type="solid")
-    LOW_RISK_FILL     = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
-    MINIMUM_RISK_FILL = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
+    def _fill(hex_col):
+        return PatternFill(start_color=hex_col, end_color=hex_col, fill_type="solid")
 
-    title_fill      = PatternFill(start_color=PRIMARY_RED,   end_color=PRIMARY_RED,   fill_type="solid")
-    section_fill    = PatternFill(start_color=SECTION_BG,    end_color=SECTION_BG,    fill_type="solid")
-    tile_fill       = PatternFill(start_color=TILE_BG,       end_color=TILE_BG,       fill_type="solid")
-    tile_label_fill = PatternFill(start_color=TILE_LABEL_BG, end_color=TILE_LABEL_BG, fill_type="solid")
-    table_hdr_fill  = PatternFill(start_color=TABLE_HDR_BG,  end_color=TABLE_HDR_BG,  fill_type="solid")
-    obj_fill        = PatternFill(start_color=OBJECTIVE_BG,  end_color=OBJECTIVE_BG,  fill_type="solid")
+    title_fill      = _fill(MAROON_DARK)
+    section_fill    = _fill(MAROON_MID)
+    light_grey_fill = _fill(LIGHT_GREY)
+    white_fill      = _fill(WHITE)
+    near_white_fill = _fill(NEAR_WHITE)
+    table_hdr_fill  = _fill(MID_GREY)
+    warning_bg_fill = _fill(WARNING_BG)
+    alt_row_fill    = _fill(LIGHT_GREY)
+
+    HIGH_RISK_FILL    = _fill(HIGH_C)
+    MEDIUM_RISK_FILL  = _fill(MEDIUM_C)
+    LOW_RISK_FILL     = _fill(LOW_C)
+    MINIMUM_RISK_FILL = _fill(MINIMUM_C)
 
     # Fonts
-    white_font        = Font(color="FFFFFF", bold=True, size=15, name="Calibri")
-    section_font      = Font(bold=True, size=10, color="222222", name="Calibri")
-    body_font         = Font(size=9, color="333333", name="Calibri")
-    tile_label_font   = Font(size=8,  color="555555", name="Calibri")
-    tile_value_font   = Font(bold=True, size=14, color=PRIMARY_RED, name="Calibri")
-    table_header_font = Font(bold=True, size=9,  color="222222", name="Calibri")
-    warning_font      = Font(size=8, color="7B3F00", name="Calibri")
-    legend_font       = Font(size=8, color="333333", name="Calibri")
-    legend_hdr_font   = Font(bold=True, size=8, color="222222", name="Calibri")
+    title_font        = Font(color=WHITE,       bold=True,  size=14, name="Calibri")
+    section_font      = Font(color=WHITE,       bold=True,  size=9,  name="Calibri")
+    body_font         = Font(color=DARK_GREY,               size=8,  name="Calibri")
+    tile_accent_font  = Font(color=WHITE,       bold=True,  size=7,  name="Calibri")   # accent bar label
+    tile_value_font   = Font(color=MAROON_LIGHT,bold=True,  size=16, name="Calibri")   # large KPI number
+    tile_label_font   = Font(color=SUBTLE_GREY,             size=7,  name="Calibri")   # label below number
+    risk_value_font   = Font(color=DARK_GREY,   bold=True,  size=16, name="Calibri")   # risk tile number
+    table_header_font = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
+    warning_font      = Font(color="5C3317",                size=8,  name="Calibri")   # dark brown text
+    ok_font           = Font(color="2E5C2E",                size=8,  name="Calibri")   # dark green text
+    legend_font       = Font(color=DARK_GREY,               size=8,  name="Calibri")
+    legend_bold_font  = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
+    note_font         = Font(color="999999",    italic=True,size=7,  name="Calibri")
+    station_font      = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
+    data_font         = Font(color=DARK_GREY,               size=8,  name="Calibri")
 
     # Borders
-    thin_side   = Side(style="thin",   color="CCCCCC")
-    medium_side = Side(style="medium", color="AAAAAA")
-    tile_border  = Border(left=medium_side, right=medium_side, top=medium_side, bottom=medium_side)
-    inner_border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=thin_side)
+    thin_side    = Side(style="thin",   color="CCCCCC")
+    medium_side  = Side(style="medium", color="999999")
+    maroon_side  = Side(style="medium", color=MAROON_MID)
+    no_side      = Side(style=None)
+
+    thin_box    = Border(left=thin_side,   right=thin_side,   top=thin_side,   bottom=thin_side)
+    medium_box  = Border(left=medium_side, right=medium_side, top=medium_side, bottom=medium_side)
+    # Left-accent border for warning rows (maroon left, thin elsewhere)
+    warn_border = Border(left=maroon_side, right=thin_side, top=thin_side, bottom=thin_side)
 
     # Alignments
-    center     = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    left       = Alignment(horizontal="left",   vertical="center", wrap_text=True)
-    left_nowrap= Alignment(horizontal="left",   vertical="center", wrap_text=False)
-    top_left   = Alignment(horizontal="left",   vertical="top",    wrap_text=True)
+    center      = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left        = Alignment(horizontal="left",   vertical="center", wrap_text=True)
+    left_nowrap = Alignment(horizontal="left",   vertical="center", wrap_text=False)
+    left_top    = Alignment(horizontal="left",   vertical="top",    wrap_text=True)
 
-    # ── Page setup ──────────────────────────────────────────────
+    # ── Page setup ──────────────────────────────────────────────────────────────
     ws.sheet_view.showGridLines = False
     ws.page_setup.orientation = "landscape"
-    ws.page_setup.paperSize = ws.PAPERSIZE_A4
-    ws.page_setup.fitToWidth = 1
+    ws.page_setup.paperSize   = ws.PAPERSIZE_A4
+    ws.page_setup.fitToWidth  = 1
     ws.page_setup.fitToHeight = 1
-    ws.page_margins.left   = 0.3
-    ws.page_margins.right  = 0.3
-    ws.page_margins.top    = 0.35
-    ws.page_margins.bottom = 0.35
-    ws.page_margins.header = 0.2
-    ws.page_margins.footer = 0.2
+    ws.page_margins.left   = 0.28
+    ws.page_margins.right  = 0.28
+    ws.page_margins.top    = 0.30
+    ws.page_margins.bottom = 0.30
+    ws.page_margins.header = 0.15
+    ws.page_margins.footer = 0.15
     ws.print_options.horizontalCentered = True
 
-    # 8 equal columns
+    # ── Column widths ────────────────────────────────────────────────────────────
+    # 9 columns: A-H are content (18 wide), I is a narrow right-margin spacer
     for col in ["A","B","C","D","E","F","G","H"]:
-        ws.column_dimensions[col].width = 18.2
+        ws.column_dimensions[col].width = 18.0
 
-    # ── Row height map (will grow dynamically for warnings) ─────
-    # Row 1-2 : Title bar (merged)
-    # Row 3   : spacer
-    # Row 4   : Objective header
-    # Row 5-6 : Objective text
-    # Row 7   : spacer
-    # Rows 8-10  : KPI tile row 1  (label / value / spacer)
-    # Row 11  : spacer
-    # Rows 12-14 : KPI tile row 2  (label / value / spacer)
-    # Row 15  : spacer
-    # Row 16  : DQ + Legend header  (side-by-side)
-    # Row 17+ : DQ warnings and legend rows (dynamic)
-    # ...
-    # separator row
-    # Top-N table header + data rows
+    # ── Layout overview ──────────────────────────────────────────────────────────
+    # Row  1    : Title bar
+    # Row  2    : thin spacer (2pt)
+    # Row  3    : KPI section label (maroon bar)
+    # Rows 4-6  : KPI tile ROW 1  — accent bar / big number / label  (3 rows × 4 tiles)
+    # Row  7    : spacer (4pt)
+    # Rows 8-10 : KPI tile ROW 2  — accent bar / big number / label  (risk tiles)
+    # Row 11    : spacer (4pt)
+    # Row 12    : Objective section header
+    # Row 13    : Objective text
+    # Row 14    : spacer (4pt)
+    # Row 15    : DQ header (A-D) | Legend header (E-H)
+    # Row 16+   : DQ warning rows (A-D) | Legend rows (E-H)  ← dynamic
+    # ...       : note row
+    # ...       : Top-N table header
+    # ...       : table data rows
 
-    ws.row_dimensions[1].height  = 24
-    ws.row_dimensions[2].height  = 8
-    ws.row_dimensions[3].height  = 4   # spacer
-    ws.row_dimensions[4].height  = 16  # Objective header
-    ws.row_dimensions[5].height  = 14
-    ws.row_dimensions[6].height  = 14  # objective text (2 rows merged)
-    ws.row_dimensions[7].height  = 5   # spacer
+    ws.row_dimensions[1].height  = 26   # title
+    ws.row_dimensions[2].height  = 3    # spacer
+    ws.row_dimensions[3].height  = 13   # "Key Performance Indicators" section bar
+    ws.row_dimensions[4].height  = 8    # tile accent bar row 1
+    ws.row_dimensions[5].height  = 22   # tile value row 1
+    ws.row_dimensions[6].height  = 11   # tile label row 1
+    ws.row_dimensions[7].height  = 4    # spacer
+    ws.row_dimensions[8].height  = 8    # tile accent bar row 2
+    ws.row_dimensions[9].height  = 22   # tile value row 2
+    ws.row_dimensions[10].height = 11   # tile label row 2
+    ws.row_dimensions[11].height = 5    # spacer
+    ws.row_dimensions[12].height = 13   # Objective header
+    ws.row_dimensions[13].height = 20   # Objective text
+    ws.row_dimensions[14].height = 5    # spacer
 
-    # Tile row 1: label row / value row / mini-spacer
-    ws.row_dimensions[8].height  = 14  # label
-    ws.row_dimensions[9].height  = 22  # value
-    ws.row_dimensions[10].height = 5   # spacer between tile rows
-
-    # Tile row 2: label row / value row / spacer
-    ws.row_dimensions[11].height = 14  # label
-    ws.row_dimensions[12].height = 22  # value
-    ws.row_dimensions[13].height = 5   # spacer
-
-    # ── ROW 1-2: Title ──────────────────────────────────────────
-    ws.merge_cells("A1:H2")
+    # ── ROW 1: Title ─────────────────────────────────────────────────────────────
+    ws.merge_cells("A1:H1")
     c = ws["A1"]
-    c.value = f"Terminating Service Dwell Time Summary  —  {day_label}"
-    c.fill  = title_fill
-    c.font  = white_font
+    c.value     = f"Terminating Service Dwell Time Summary  —  {day_label}"
+    c.fill      = title_fill
+    c.font      = title_font
     c.alignment = center
 
-    # ── ROW 4: Objective header ──────────────────────────────────
-    ws.merge_cells("A4:H4")
-    c = ws["A4"]
-    c.value = "Objective"
-    c.fill  = section_fill
-    c.font  = section_font
+    # ── ROW 3: KPI section bar ───────────────────────────────────────────────────
+    ws.merge_cells("A3:H3")
+    c = ws["A3"]
+    c.value     = "Key Performance Indicators"
+    c.fill      = section_fill
+    c.font      = section_font
     c.alignment = left
 
-    # ── ROW 5-6: Objective text ──────────────────────────────────
-    ws.merge_cells("A5:H6")
-    c = ws["A5"]
+    # ── KPI TILES: write_tile helper ─────────────────────────────────────────────
+    # Each tile = 3 rows: accent bar (row a), value (row b), label (row c)
+    # col_start / col_end are 1-based column indices (A=1 … H=8)
+    # accent_hex: colour for the top bar; use maroon for neutral tiles, risk colour for risk tiles
+    # value_colour_hex: font colour for the number (maroon for neutral, dark for risk)
+
+    def write_tile(row_a, row_b, row_c, col_start, col_end,
+                   label_text, value, accent_hex,
+                   value_font_override=None, label_font_override=None):
+        s = chr(ord("A") + col_start - 1)
+        e = chr(ord("A") + col_end   - 1)
+        accent_fill = _fill(accent_hex)
+
+        # Accent bar
+        ws.merge_cells(f"{s}{row_a}:{e}{row_a}")
+        ac = ws[f"{s}{row_a}"]
+        ac.fill      = accent_fill
+        ac.border    = Border(left=medium_side, right=medium_side, top=medium_side, bottom=no_side)
+
+        # Value cell
+        ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
+        vc = ws[f"{s}{row_b}"]
+        vc.value     = str(value)
+        vc.fill      = white_fill
+        vc.font      = value_font_override if value_font_override else tile_value_font
+        vc.alignment = center
+        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
+
+        # Label cell
+        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
+        lc = ws[f"{s}{row_c}"]
+        lc.value     = label_text
+        lc.fill      = near_white_fill
+        lc.font      = label_font_override if label_font_override else tile_label_font
+        lc.alignment = center
+        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
+
+    # Row 1 of tiles: neutral KPIs (maroon accent, maroon value text)
+    write_tile(4, 5, 6, 1, 2, "Total Terminating Services", total_terminating_services,    MAROON_MID)
+    write_tile(4, 5, 6, 3, 4, "Travelling to Yard",          services_direct_to_yard,       MAROON_MID)
+    write_tile(4, 5, 6, 5, 6, "Shortest Dwell Prior to Yard",shortest_dwell_to_yard_display,MAROON_MID)
+    write_tile(4, 5, 6, 7, 8, "Longest Dwell Prior to Yard", longest_dwell_to_yard_display, MAROON_MID)
+
+    # Row 2 of tiles: risk KPIs (risk-colour accent, dark value text for readability on light bg)
+    dark_value_font = Font(color=DARK_GREY, bold=True, size=16, name="Calibri")
+    write_tile(8, 9, 10, 1, 2, "High Risk Services",    high_risk_services,    HIGH_C,    dark_value_font)
+    write_tile(8, 9, 10, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_C,  dark_value_font)
+    write_tile(8, 9, 10, 5, 6, "Low Risk Services",     low_risk_services,     LOW_C,     dark_value_font)
+    write_tile(8, 9, 10, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_C, dark_value_font)
+
+    # ── ROW 12: Objective section header ─────────────────────────────────────────
+    ws.merge_cells("A12:H12")
+    c = ws["A12"]
+    c.value     = "Objective"
+    c.fill      = section_fill
+    c.font      = section_font
+    c.alignment = left
+
+    # ── ROW 13: Objective text ───────────────────────────────────────────────────
+    ws.merge_cells("A13:H13")
+    c = ws["A13"]
     c.value = (
         f"This summary presents dwell time characteristics for terminating trains on {day_label}, "
         "with the objective of identifying higher risk stations and services to strengthen safe railway operations."
     )
-    c.fill  = obj_fill
-    c.font  = body_font
+    c.fill      = near_white_fill
+    c.font      = body_font
     c.alignment = left
-    c.border = inner_border
+    c.border    = thin_box
 
-    # ── ROWS 8-9 + 11-12: KPI tiles (2 × 4 grid) ───────────────
-    # Each tile occupies 2 columns.
-    # Label row = top row of pair, value row = bottom row of pair.
-    # A thin spacer column is NOT used — instead we use the medium border
-    # on every tile so they appear visually separated.
+    # ── ROW 15+: DQ Observations (A–D) + Risk Legend (E–H) ──────────────────────
+    DQ_START = 15
+    ws.row_dimensions[DQ_START].height = 13
 
-    def write_tile(label_row, value_row, col_start, col_end, label, value, fill_label=None, fill_value=None):
-        start_col_letter = chr(ord("A") + col_start - 1)
-        end_col_letter   = chr(ord("A") + col_end   - 1)
-
-        # label row
-        merge_label = f"{start_col_letter}{label_row}:{end_col_letter}{label_row}"
-        ws.merge_cells(merge_label)
-        lc = ws[f"{start_col_letter}{label_row}"]
-        lc.value = label
-        lc.font  = tile_label_font
-        lc.alignment = center
-        lc.fill  = fill_label if fill_label else tile_label_fill
-        lc.border = Border(
-            left=medium_side, right=medium_side, top=medium_side, bottom=thin_side
-        )
-
-        # value row
-        merge_val = f"{start_col_letter}{value_row}:{end_col_letter}{value_row}"
-        ws.merge_cells(merge_val)
-        vc = ws[f"{start_col_letter}{value_row}"]
-        vc.value = str(value)
-        vc.font  = tile_value_font
-        vc.alignment = center
-        vc.fill  = fill_value if fill_value else tile_fill
-        vc.border = Border(
-            left=medium_side, right=medium_side, top=thin_side, bottom=medium_side
-        )
-
-    # Row 1 of tiles  (rows 8-9)
-    write_tile(8, 9, 1, 2, "Total Terminating Services", total_terminating_services)
-    write_tile(8, 9, 3, 4, "Travelling to Yard",         services_direct_to_yard)
-    write_tile(8, 9, 5, 6, "Shortest Dwell Prior to Yard", shortest_dwell_to_yard_display)
-    write_tile(8, 9, 7, 8, "Longest Dwell Prior to Yard",  longest_dwell_to_yard_display)
-
-    # Row 2 of tiles  (rows 11-12)
-    write_tile(11, 12, 1, 2, "High Risk Services",     high_risk_services,
-               fill_label=HIGH_RISK_FILL, fill_value=HIGH_RISK_FILL)
-    write_tile(11, 12, 3, 4, "Medium Risk Services",   medium_risk_services,
-               fill_label=MEDIUM_RISK_FILL, fill_value=MEDIUM_RISK_FILL)
-    write_tile(11, 12, 5, 6, "Low Risk Services",      low_risk_services,
-               fill_label=LOW_RISK_FILL, fill_value=LOW_RISK_FILL)
-    write_tile(11, 12, 7, 8, "Minimum Risk Services",  minimum_risk_services,
-               fill_label=MINIMUM_RISK_FILL, fill_value=MINIMUM_RISK_FILL)
-
-    # ── ROW 16+: DQ warnings (cols A-D) + Risk Legend (cols E-H) ─
-    # Both sit side-by-side, starting at the same row.
-
-    DQ_LEGEND_START = 15   # first content row (header)
-
-    ws.row_dimensions[DQ_LEGEND_START].height = 14
-
-    # DQ header (cols A-D)
-    ws.merge_cells(f"A{DQ_LEGEND_START}:D{DQ_LEGEND_START}")
-    c = ws[f"A{DQ_LEGEND_START}"]
-    c.value = "Data Quality Observations"
-    c.fill  = section_fill
-    c.font  = section_font
+    # DQ header
+    ws.merge_cells(f"A{DQ_START}:D{DQ_START}")
+    c = ws[f"A{DQ_START}"]
+    c.value     = "Data Quality Observations"
+    c.fill      = section_fill
+    c.font      = section_font
     c.alignment = left
 
-    # Legend header (cols E-H)
-    ws.merge_cells(f"E{DQ_LEGEND_START}:H{DQ_LEGEND_START}")
-    c = ws[f"E{DQ_LEGEND_START}"]
-    c.value = "Risk Legend"
-    c.fill  = section_fill
-    c.font  = section_font
+    # Legend header
+    ws.merge_cells(f"E{DQ_START}:H{DQ_START}")
+    c = ws[f"E{DQ_START}"]
+    c.value     = "Risk Legend"
+    c.fill      = section_fill
+    c.font      = section_font
     c.alignment = left
 
-    # Legend rows (fixed 4 lines)
+    # Legend entries — muted risk colours, no green
     legend_entries = [
-        ("High Risk",     "≤ 30s dwell to yard",               HIGH_RISK_FILL),
-        ("Medium Risk",   "To Yard AND 30s < dwell ≤ 90s",     MEDIUM_RISK_FILL),
-        ("Low Risk",      "To Yard AND 90s < dwell ≤ 150s",    LOW_RISK_FILL),
-        ("Minimum Risk",  "Not To Yard OR > 150s dwell",        MINIMUM_RISK_FILL),
+        (HIGH_C,    "High Risk",    "≤ 30s dwell to yard"),
+        (MEDIUM_C,  "Medium Risk",  "To Yard AND 30s < dwell ≤ 90s"),
+        (LOW_C,     "Low Risk",     "To Yard AND 90s < dwell ≤ 150s"),
+        (MINIMUM_C, "Minimum Risk", "Not To Yard OR > 150s dwell"),
     ]
 
-    # Build warning messages
+    # Build warning messages (flexible — 0 to N)
     warning_msgs = []
     if not one_sec_summary.empty:
         for _, r in one_sec_summary.iterrows():
             platform_text = ", ".join(r["Platforms"]) if r["Platforms"] else "unknown platform"
-            warning_msgs.append(
+            warning_msgs.append((
                 f"⚠  At non-yard terminus {r['Terminating Station']}, {int(r['Count'])} service(s) "
                 f"end their block/run at {platform_text} with a dwell time of 1 second. "
-                f"Please review operational suitability."
-            )
+                f"Please review operational suitability.",
+                False   # is_ok = False → warning style
+            ))
     else:
-        warning_msgs.append("✔  No 1-second dwell anomalies detected.")
+        warning_msgs.append(("✔  No 1-second dwell anomalies detected.", True))
 
-    content_rows_needed = max(len(warning_msgs), len(legend_entries))
+    content_rows = max(len(warning_msgs), len(legend_entries))
 
-    for i in range(content_rows_needed):
-        row = DQ_LEGEND_START + 1 + i
-        ws.row_dimensions[row].height = 20
+    for i in range(content_rows):
+        row = DQ_START + 1 + i
+        ws.row_dimensions[row].height = 18
 
-        # DQ warning (cols A-D)
+        # DQ column (A–D)
         ws.merge_cells(f"A{row}:D{row}")
         wc = ws[f"A{row}"]
         if i < len(warning_msgs):
-            wc.value = warning_msgs[i]
-            wc.font  = warning_font
+            msg_text, is_ok = warning_msgs[i]
+            wc.value     = msg_text
+            wc.font      = ok_font if is_ok else warning_font
+            wc.fill      = warning_bg_fill
+            wc.border    = warn_border    # maroon left accent for every row
+        else:
+            wc.fill   = warning_bg_fill
+            wc.border = thin_box
         wc.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-        wc.fill = PatternFill(start_color="FFFDE7", end_color="FFFDE7", fill_type="solid") if i < len(warning_msgs) and warning_msgs[i].startswith("⚠") else PatternFill(start_color="F1F8E9", end_color="F1F8E9", fill_type="solid")
-        wc.border = inner_border
 
-        # Legend entry (cols E-H)
+        # Legend column (E–H): label (E–F) | description (G–H)
         if i < len(legend_entries):
-            lbl, desc, risk_fill = legend_entries[i]
+            hex_col, lbl, desc = legend_entries[i]
+            leg_fill = _fill(hex_col)
+
             ws.merge_cells(f"E{row}:F{row}")
             lc = ws[f"E{row}"]
-            lc.value = lbl
-            lc.font  = legend_hdr_font
-            lc.fill  = risk_fill
+            lc.value     = lbl
+            lc.fill      = leg_fill
+            lc.font      = legend_bold_font
             lc.alignment = left_nowrap
-            lc.border = inner_border
+            lc.border    = thin_box
 
             ws.merge_cells(f"G{row}:H{row}")
             dc = ws[f"G{row}"]
-            dc.value = desc
-            dc.font  = legend_font
-            dc.fill  = risk_fill
+            dc.value     = desc
+            dc.fill      = leg_fill
+            dc.font      = legend_font
             dc.alignment = left_nowrap
-            dc.border = inner_border
+            dc.border    = thin_box
+        # else: legend rows exhausted before warnings — leave E-H blank
 
-    # ── Spacer + italic note ──────────────────────────────────────
-    note_row = DQ_LEGEND_START + 1 + content_rows_needed
-    ws.row_dimensions[note_row].height = 10
+    # ── Note row ─────────────────────────────────────────────────────────────────
+    note_row = DQ_START + 1 + content_rows
+    ws.row_dimensions[note_row].height = 9
     ws.merge_cells(f"A{note_row}:H{note_row}")
     nc = ws[f"A{note_row}"]
-    nc.value = "Full terminating station details available in the output sheet"
-    nc.font  = Font(size=7, italic=True, color="888888", name="Calibri")
+    nc.value     = "Full terminating station details available in the output sheet"
+    nc.font      = note_font
     nc.alignment = center
 
-    # ── Top-N table ───────────────────────────────────────────────
+    # ── Top-N table ──────────────────────────────────────────────────────────────
     table_title_row = note_row + 1
-    ws.row_dimensions[table_title_row].height = 16
+    ws.row_dimensions[table_title_row].height = 13
 
     ws.merge_cells(f"A{table_title_row}:H{table_title_row}")
     c = ws[f"A{table_title_row}"]
-    c.value = f"Top {TOP_N} Terminating Stations"
-    c.fill  = section_fill
-    c.font  = section_font
+    c.value     = f"Top {TOP_N} Terminating Stations"
+    c.fill      = section_fill
+    c.font      = section_font
     c.alignment = left
 
     headers = [
@@ -1011,31 +1051,39 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     ]
 
     hdr_row = table_title_row + 1
-    ws.row_dimensions[hdr_row].height = 26
+    ws.row_dimensions[hdr_row].height = 24
 
     for i, h in enumerate(headers, start=1):
         cell = ws.cell(row=hdr_row, column=i, value=h)
         cell.fill      = table_hdr_fill
         cell.font      = table_header_font
         cell.alignment = center
-        cell.border    = inner_border
+        cell.border    = thin_box
 
     row_ptr = hdr_row + 1
     if not station_summary.empty:
-        for _, r in station_summary.iterrows():
-            ws.row_dimensions[row_ptr].height = 28
+        for idx, (_, r) in enumerate(station_summary.iterrows()):
+            ws.row_dimensions[row_ptr].height = 26
 
-            ws.cell(row=row_ptr, column=1, value=r["Terminating Station"]).font = Font(bold=True, size=9, name="Calibri")
-            ws.cell(row=row_ptr, column=1).alignment = left
-            ws.cell(row=row_ptr, column=1).border = inner_border
+            is_alt = (idx % 2 == 1)
+            base_fill = alt_row_fill if is_alt else white_fill
 
-            for col_idx, val in [(2, int(r["Terminating_Trains"])),
-                                  (3, int(r["Trains_to_Yard"])),
-                                  (4, int(r["Min_Dwell_To_Yard_Sec"]))]:
+            c1 = ws.cell(row=row_ptr, column=1, value=r["Terminating Station"])
+            c1.font      = station_font
+            c1.alignment = left
+            c1.border    = thin_box
+            c1.fill      = base_fill
+
+            for col_idx, val in [
+                (2, int(r["Terminating_Trains"])),
+                (3, int(r["Trains_to_Yard"])),
+                (4, int(r["Min_Dwell_To_Yard_Sec"]))
+            ]:
                 c = ws.cell(row=row_ptr, column=col_idx, value=val)
                 c.alignment = center
-                c.font = Font(size=9, name="Calibri")
-                c.border = inner_border
+                c.font      = data_font
+                c.border    = thin_box
+                c.fill      = base_fill
 
             risk_cols = [
                 (5, r["High Risk"],    HIGH_RISK_FILL),
@@ -1043,26 +1091,20 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
                 (7, r["Low Risk"],     LOW_RISK_FILL),
                 (8, r["Minimum Risk"], MINIMUM_RISK_FILL),
             ]
-            for col_idx, val, fill in risk_cols:
+            for col_idx, val, rfill in risk_cols:
                 c = ws.cell(row=row_ptr, column=col_idx, value=val)
-                c.fill      = fill
+                c.fill      = rfill
                 c.font      = Font(size=8, name="Calibri")
                 c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-                c.border    = inner_border
-
-            # Alternate row shading on non-risk columns
-            if (row_ptr - hdr_row) % 2 == 0:
-                alt_fill = PatternFill(start_color="F7F7F7", end_color="F7F7F7", fill_type="solid")
-                for col_idx in [1, 2, 3, 4]:
-                    ws.cell(row=row_ptr, column=col_idx).fill = alt_fill
+                c.border    = thin_box
 
             row_ptr += 1
     else:
         ws.merge_cells(f"A{row_ptr}:H{row_ptr}")
         c = ws[f"A{row_ptr}"]
-        c.value = "No terminating station data available"
+        c.value     = "No terminating station data available"
         c.alignment = center
-        c.border = inner_border
+        c.border    = thin_box
 
     last_used_row = max(row_ptr, hdr_row + 2)
     ws.print_area = f"A1:H{last_used_row}"
