@@ -844,12 +844,12 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     ws.row_dimensions[5].height  = 13   # KPI section bar
     ws.row_dimensions[6].height  = 4    # WHITE gap — tiles will visually "float" off the bar
     ws.row_dimensions[7].height  = 6    # tile accent bar row 1
-    ws.row_dimensions[8].height  = 8    # tile label row 1  ← much shorter
-    ws.row_dimensions[9].height  = 30   # tile value row 1  ← much taller
+    ws.row_dimensions[8].height  = 8    # tile label row 1
+    ws.row_dimensions[9].height  = 24   # tile value row 1
     ws.row_dimensions[10].height = 5    # spacer between tile rows
     ws.row_dimensions[11].height = 6    # tile accent bar row 2
-    ws.row_dimensions[12].height = 8    # tile label row 2  ← much shorter
-    ws.row_dimensions[13].height = 30   # tile value row 2  ← much taller
+    ws.row_dimensions[12].height = 8    # tile label row 2
+    ws.row_dimensions[13].height = 24   # tile value row 2
     ws.row_dimensions[14].height = 5    # spacer
 
     # ── ROW 1: Title ─────────────────────────────────────────────────────────────
@@ -1349,10 +1349,22 @@ def write_excel(df_nursery, out_path, timetable_input, qa_info):
                             f"Timetable: {timetable_input}"
                         )
 
-                    right_footer_text = (
-                        f'&8&K666666&"Arial,Bold"Master Train Planning\n'
-                        f'&9&KD32F2F&"Arial,Bold"Queensland Rail'
-                    )
+                    # Resolve logo path relative to this script file
+                    logo_path = Path(__file__).parent / "images" / "qr-logo-main.png"
+                    logo_path_str = str(logo_path.resolve())
+                    logo_available = logo_path.exists()
+
+                    # &G is Excel's image placeholder in footer strings
+                    if logo_available:
+                        right_footer_text = (
+                            f'&8&K666666&"Arial,Bold"Master Train Planning\n'
+                            f'&G'
+                        )
+                    else:
+                        right_footer_text = (
+                            f'&8&K666666&"Arial,Bold"Master Train Planning\n'
+                            f'&9&KD32F2F&"Arial,Bold"Queensland Rail'
+                        )
 
                     sheet.PageSetup.Orientation = 2
                     sheet.PageSetup.Zoom = False
@@ -1367,6 +1379,16 @@ def write_excel(df_nursery, out_path, timetable_input, qa_info):
                     sheet.PageSetup.LeftFooter = left_footer_text
                     sheet.PageSetup.RightFooter = right_footer_text
                     sheet.PageSetup.CenterFooter = ""
+
+                    # Embed the logo into the right footer picture slot
+                    if logo_available:
+                        try:
+                            rfp = sheet.PageSetup.RightFooterPicture
+                            rfp.Filename = logo_path_str
+                            rfp.Height = 20
+                            rfp.LockAspectRatio = True
+                        except Exception as logo_err:
+                            print(f"Logo embed warning: {logo_err}")
 
                     safe_sheet_name = re.sub(r'[\\/:*?"<>|]', "_", sheet_name)
                     temp_pdf = os.path.normpath(out_path_clean.replace(".xlsx", f"_{safe_sheet_name}.pdf"))
