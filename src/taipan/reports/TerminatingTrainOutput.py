@@ -594,10 +594,12 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     if not df_to_yard.empty:
         shortest_val = df_to_yard["SummaryDwellSec"].min()
         count_shortest = len(df_to_yard[df_to_yard["SummaryDwellSec"] == shortest_val])
-        shortest_dwell_to_yard_display = f"{int(shortest_val)}s x {count_shortest} train(s)"
+        shortest_train_word = "train" if count_shortest == 1 else "trains"
+        shortest_dwell_to_yard_display = f"{int(shortest_val)}s x {count_shortest} {shortest_train_word}"
         longest_val = df_to_yard["SummaryDwellSec"].max()
         count_longest = len(df_to_yard[df_to_yard["SummaryDwellSec"] == longest_val])
-        longest_dwell_to_yard_display = f"{int(longest_val)}s x {count_longest} train(s)"
+        longest_train_word = "train" if count_longest == 1 else "trains"
+        longest_dwell_to_yard_display = f"{int(longest_val)}s x {count_longest} {longest_train_word}"
     else:
         shortest_dwell_to_yard_display = "N/A"
         longest_dwell_to_yard_display = "N/A"
