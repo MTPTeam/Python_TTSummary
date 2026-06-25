@@ -575,7 +575,8 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
             Platforms=("Platform", lambda x: sorted(
                 set(p for p in x if pd.notna(p)),
                 key=lambda p: int(str(p).split("-")[1]) if "-" in str(p) else 999
-            ))
+            )),
+            Times=("Finish", lambda x: sorted(set(t for t in x if pd.notna(t))))
         )
         .reset_index()
         .sort_values("Count", ascending=False)
@@ -980,17 +981,25 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         for _, r in one_sec_summary.iterrows():
             count = int(r['Count'])
             platforms = r["Platforms"]
+            times = r["Times"]
             if len(platforms) > 1:
                 platform_text = ", ".join(platforms[:-1]) + f" and {platforms[-1]}"
             elif len(platforms) == 1:
                 platform_text = platforms[0]
             else:
                 platform_text = "an unknown platform"
+            if len(times) == 1:
+                time_text = f"at {times[0]}"
+            elif len(times) > 1:
+                time_text = "at " + ", ".join(times[:-1]) + f" and {times[-1]}"
+            else:
+                time_text = ""
             service_word = "service" if count == 1 else "services"
             verb = "has" if count == 1 else "have"
+            dwell_clause = f"a 1-second dwell {time_text}".strip()
             warning_msgs.append((
                 f"⚠  {r['Terminating Station']}: {count} {service_word} at "
-                f"{platform_text} {verb} a 1-second dwell. Please review operational suitability.",
+                f"{platform_text} {verb} {dwell_clause}. Please review operational suitability.",
                 False
             ))
     else:
