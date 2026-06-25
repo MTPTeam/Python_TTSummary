@@ -734,34 +734,38 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
 
     # ── Colour palette ──────────────────────────────────────────────────────────
     # Maroon family
-    MAROON_DARK   = "7B0D0D"   # title bar
-    MAROON_MID    = "A61C1C"   # section header bars + tile accent bars
-    MAROON_LIGHT  = "C62828"   # tile value text (neutral KPIs)
+    MAROON_DARK    = "6B0000"   # title bar (deeper, richer)
+    MAROON_MID     = "A61C1C"   # section header bars
+    MAROON_LIGHT   = "C62828"   # tile value text (neutral KPIs)
+    # Tile accent bars — saturated versions of each risk for contrast on white
+    HIGH_ACCENT    = "C0392B"   # strong red-rose accent bar
+    MEDIUM_ACCENT  = "CA6F1E"   # strong amber-orange accent bar
+    LOW_ACCENT     = "B7950B"   # strong gold accent bar
+    MINIMUM_ACCENT = "717D7E"   # medium slate-grey accent bar
+    # Tile body risk fills — deliberately lighter / more muted than accent
+    HIGH_C         = "F2D7D5"   # very soft rose
+    MEDIUM_C       = "FAE5D3"   # very soft peach
+    LOW_C          = "FDFBD4"   # very soft straw
+    MINIMUM_C      = "E8EAED"   # cool blue-grey (distinct from table header grey)
     # Neutrals
-    WHITE         = "FFFFFF"
-    NEAR_WHITE    = "F9F9F9"   # tile body background
-    LIGHT_GREY    = "EDEDED"   # section header bars, alt table rows
-    MID_GREY      = "D0D0D0"   # table header
-    DARK_GREY     = "1A1A1A"   # primary text
-    SUBTLE_GREY   = "5A5A5A"   # secondary labels
-    # Risk colours — desaturated / professional
-    HIGH_C        = "E8C3C3"   # muted dusty rose
-    MEDIUM_C      = "F0D9C0"   # muted peach
-    LOW_C         = "EDE8B8"   # muted straw
-    MINIMUM_C     = "D8D8D8"   # neutral light grey (no green)
-    # Warning panel
-    WARNING_BG    = "F4F4F4"   # clean light grey
-    WARNING_ACCENT= MAROON_MID # left-border stripe colour (applied via conditional logic)
+    WHITE          = "FFFFFF"
+    NEAR_WHITE     = "F9F9F9"
+    TILE_SPACER    = "F2F2F2"   # slightly off-white for label row
+    LIGHT_GREY     = "EDEDED"   # alt table rows
+    TABLE_HDR_GREY = "CACACA"   # table header — clearly different from MINIMUM_C
+    DARK_GREY      = "1A1A1A"
+    SUBTLE_GREY    = "5A5A5A"
+    WARNING_BG     = "F5F5F5"
 
     def _fill(hex_col):
         return PatternFill(start_color=hex_col, end_color=hex_col, fill_type="solid")
 
     title_fill      = _fill(MAROON_DARK)
     section_fill    = _fill(MAROON_MID)
-    light_grey_fill = _fill(LIGHT_GREY)
     white_fill      = _fill(WHITE)
     near_white_fill = _fill(NEAR_WHITE)
-    table_hdr_fill  = _fill(MID_GREY)
+    tile_spacer_fill= _fill(TILE_SPACER)
+    table_hdr_fill  = _fill(TABLE_HDR_GREY)
     warning_bg_fill = _fill(WARNING_BG)
     alt_row_fill    = _fill(LIGHT_GREY)
 
@@ -771,38 +775,34 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     MINIMUM_RISK_FILL = _fill(MINIMUM_C)
 
     # Fonts
-    title_font        = Font(color=WHITE,       bold=True,  size=14, name="Calibri")
-    section_font      = Font(color=WHITE,       bold=True,  size=9,  name="Calibri")
-    body_font         = Font(color=DARK_GREY,               size=8,  name="Calibri")
-    tile_accent_font  = Font(color=WHITE,       bold=True,  size=7,  name="Calibri")   # accent bar label
-    tile_value_font   = Font(color=MAROON_LIGHT,bold=True,  size=16, name="Calibri")   # large KPI number
-    tile_label_font   = Font(color=SUBTLE_GREY,             size=7,  name="Calibri")   # label below number
-    risk_value_font   = Font(color=DARK_GREY,   bold=True,  size=16, name="Calibri")   # risk tile number
-    table_header_font = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
-    warning_font      = Font(color="5C3317",                size=8,  name="Calibri")   # dark brown text
-    ok_font           = Font(color="2E5C2E",                size=8,  name="Calibri")   # dark green text
-    legend_font       = Font(color=DARK_GREY,               size=8,  name="Calibri")
-    legend_bold_font  = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
-    note_font         = Font(color="999999",    italic=True,size=7,  name="Calibri")
-    station_font      = Font(color=DARK_GREY,   bold=True,  size=8,  name="Calibri")
-    data_font         = Font(color=DARK_GREY,               size=8,  name="Calibri")
+    title_font        = Font(color=WHITE,        bold=True,  size=14, name="Calibri")
+    section_font      = Font(color=WHITE,        bold=True,  size=9,  name="Calibri")
+    body_font         = Font(color=DARK_GREY,                size=8,  name="Calibri")
+    tile_value_font   = Font(color=MAROON_LIGHT, bold=True,  size=16, name="Calibri")
+    tile_label_font   = Font(color=SUBTLE_GREY,              size=7,  name="Calibri")
+    dark_value_font   = Font(color=DARK_GREY,    bold=True,  size=16, name="Calibri")
+    table_header_font = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
+    warning_font      = Font(color="4A2700",                 size=8,  name="Calibri")
+    ok_font           = Font(color="1B4F1B",                 size=8,  name="Calibri")
+    legend_font       = Font(color=DARK_GREY,                size=8,  name="Calibri")
+    legend_bold_font  = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
+    note_font         = Font(color="999999",     italic=True,size=7,  name="Calibri")
+    station_font      = Font(color=DARK_GREY,    bold=True,  size=8,  name="Calibri")
+    data_font         = Font(color=DARK_GREY,                size=8,  name="Calibri")
 
     # Borders
-    thin_side    = Side(style="thin",   color="CCCCCC")
-    medium_side  = Side(style="medium", color="999999")
-    maroon_side  = Side(style="medium", color=MAROON_MID)
-    no_side      = Side(style=None)
+    thin_side   = Side(style="thin",   color="CCCCCC")
+    medium_side = Side(style="medium", color="999999")
+    maroon_side = Side(style="medium", color=MAROON_MID)
+    no_side     = Side(style=None)
 
     thin_box    = Border(left=thin_side,   right=thin_side,   top=thin_side,   bottom=thin_side)
-    medium_box  = Border(left=medium_side, right=medium_side, top=medium_side, bottom=medium_side)
-    # Left-accent border for warning rows (maroon left, thin elsewhere)
-    warn_border = Border(left=maroon_side, right=thin_side, top=thin_side, bottom=thin_side)
+    warn_border = Border(left=maroon_side, right=thin_side,   top=thin_side,   bottom=thin_side)
 
     # Alignments
     center      = Alignment(horizontal="center", vertical="center", wrap_text=True)
     left        = Alignment(horizontal="left",   vertical="center", wrap_text=True)
     left_nowrap = Alignment(horizontal="left",   vertical="center", wrap_text=False)
-    left_top    = Alignment(horizontal="left",   vertical="top",    wrap_text=True)
 
     # ── Page setup ──────────────────────────────────────────────────────────────
     ws.sheet_view.showGridLines = False
@@ -818,41 +818,38 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     ws.page_margins.footer = 0.15
     ws.print_options.horizontalCentered = True
 
-    # ── Column widths ────────────────────────────────────────────────────────────
-    # 9 columns: A-H are content (18 wide), I is a narrow right-margin spacer
     for col in ["A","B","C","D","E","F","G","H"]:
         ws.column_dimensions[col].width = 18.0
 
-    # ── Layout overview ──────────────────────────────────────────────────────────
+    # ── Layout ──────────────────────────────────────────────────────────────────
     # Row  1    : Title bar
-    # Row  2    : thin spacer (2pt)
-    # Row  3    : KPI section label (maroon bar)
-    # Rows 4-6  : KPI tile ROW 1  — accent bar / big number / label  (3 rows × 4 tiles)
-    # Row  7    : spacer (4pt)
-    # Rows 8-10 : KPI tile ROW 2  — accent bar / big number / label  (risk tiles)
-    # Row 11    : spacer (4pt)
-    # Row 12    : Objective section header
-    # Row 13    : Objective text
-    # Row 14    : spacer (4pt)
-    # Row 15    : DQ header (A-D) | Legend header (E-H)
-    # Row 16+   : DQ warning rows (A-D) | Legend rows (E-H)  ← dynamic
+    # Row  2    : Objective section header
+    # Row  3    : Objective text
+    # Row  4    : white spacer (separates objective from KPI tiles)
+    # Row  5    : KPI section bar
+    # Row  6    : white spacer (so tile accent bars don't bleed into maroon above)
+    # Rows 7-9  : KPI tile row 1  (accent / value / label)
+    # Row  10   : spacer
+    # Rows 11-13: KPI tile row 2  (accent / value / label)
+    # Row  14   : spacer
+    # Row  15   : DQ header (A–E) | Legend header (F–H)
+    # Row  16+  : DQ rows (A–E, no wrap) | Legend rows (F–H)  ← dynamic
     # ...       : note row
-    # ...       : Top-N table header
-    # ...       : table data rows
+    # ...       : Top-N table
 
     ws.row_dimensions[1].height  = 26   # title
-    ws.row_dimensions[2].height  = 3    # spacer
-    ws.row_dimensions[3].height  = 13   # "Key Performance Indicators" section bar
-    ws.row_dimensions[4].height  = 8    # tile accent bar row 1
-    ws.row_dimensions[5].height  = 22   # tile value row 1
-    ws.row_dimensions[6].height  = 11   # tile label row 1
-    ws.row_dimensions[7].height  = 4    # spacer
-    ws.row_dimensions[8].height  = 8    # tile accent bar row 2
-    ws.row_dimensions[9].height  = 22   # tile value row 2
-    ws.row_dimensions[10].height = 11   # tile label row 2
-    ws.row_dimensions[11].height = 5    # spacer
-    ws.row_dimensions[12].height = 13   # Objective header
-    ws.row_dimensions[13].height = 20   # Objective text
+    ws.row_dimensions[2].height  = 13   # Objective header
+    ws.row_dimensions[3].height  = 18   # Objective text
+    ws.row_dimensions[4].height  = 4    # spacer
+    ws.row_dimensions[5].height  = 13   # KPI section bar
+    ws.row_dimensions[6].height  = 4    # WHITE gap — tiles will visually "float" off the bar
+    ws.row_dimensions[7].height  = 7    # tile accent bar row 1
+    ws.row_dimensions[8].height  = 22   # tile value row 1
+    ws.row_dimensions[9].height  = 10   # tile label row 1
+    ws.row_dimensions[10].height = 5    # spacer between tile rows
+    ws.row_dimensions[11].height = 7    # tile accent bar row 2
+    ws.row_dimensions[12].height = 22   # tile value row 2
+    ws.row_dimensions[13].height = 10   # tile label row 2
     ws.row_dimensions[14].height = 5    # spacer
 
     # ── ROW 1: Title ─────────────────────────────────────────────────────────────
@@ -863,75 +860,16 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     c.font      = title_font
     c.alignment = center
 
-    # ── ROW 3: KPI section bar ───────────────────────────────────────────────────
-    ws.merge_cells("A3:H3")
-    c = ws["A3"]
-    c.value     = "Key Performance Indicators"
-    c.fill      = section_fill
-    c.font      = section_font
-    c.alignment = left
-
-    # ── KPI TILES: write_tile helper ─────────────────────────────────────────────
-    # Each tile = 3 rows: accent bar (row a), value (row b), label (row c)
-    # col_start / col_end are 1-based column indices (A=1 … H=8)
-    # accent_hex: colour for the top bar; use maroon for neutral tiles, risk colour for risk tiles
-    # value_colour_hex: font colour for the number (maroon for neutral, dark for risk)
-
-    def write_tile(row_a, row_b, row_c, col_start, col_end,
-                   label_text, value, accent_hex,
-                   value_font_override=None, label_font_override=None):
-        s = chr(ord("A") + col_start - 1)
-        e = chr(ord("A") + col_end   - 1)
-        accent_fill = _fill(accent_hex)
-
-        # Accent bar
-        ws.merge_cells(f"{s}{row_a}:{e}{row_a}")
-        ac = ws[f"{s}{row_a}"]
-        ac.fill      = accent_fill
-        ac.border    = Border(left=medium_side, right=medium_side, top=medium_side, bottom=no_side)
-
-        # Value cell
-        ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
-        vc = ws[f"{s}{row_b}"]
-        vc.value     = str(value)
-        vc.fill      = white_fill
-        vc.font      = value_font_override if value_font_override else tile_value_font
-        vc.alignment = center
-        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
-
-        # Label cell
-        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
-        lc = ws[f"{s}{row_c}"]
-        lc.value     = label_text
-        lc.fill      = near_white_fill
-        lc.font      = label_font_override if label_font_override else tile_label_font
-        lc.alignment = center
-        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
-
-    # Row 1 of tiles: neutral KPIs (maroon accent, maroon value text)
-    write_tile(4, 5, 6, 1, 2, "Total Terminating Services", total_terminating_services,    MAROON_MID)
-    write_tile(4, 5, 6, 3, 4, "Travelling to Yard",          services_direct_to_yard,       MAROON_MID)
-    write_tile(4, 5, 6, 5, 6, "Shortest Dwell Prior to Yard",shortest_dwell_to_yard_display,MAROON_MID)
-    write_tile(4, 5, 6, 7, 8, "Longest Dwell Prior to Yard", longest_dwell_to_yard_display, MAROON_MID)
-
-    # Row 2 of tiles: risk KPIs (risk-colour accent, dark value text for readability on light bg)
-    dark_value_font = Font(color=DARK_GREY, bold=True, size=16, name="Calibri")
-    write_tile(8, 9, 10, 1, 2, "High Risk Services",    high_risk_services,    HIGH_C,    dark_value_font)
-    write_tile(8, 9, 10, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_C,  dark_value_font)
-    write_tile(8, 9, 10, 5, 6, "Low Risk Services",     low_risk_services,     LOW_C,     dark_value_font)
-    write_tile(8, 9, 10, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_C, dark_value_font)
-
-    # ── ROW 12: Objective section header ─────────────────────────────────────────
-    ws.merge_cells("A12:H12")
-    c = ws["A12"]
+    # ── ROWS 2-3: Objective (first, before KPIs) ─────────────────────────────────
+    ws.merge_cells("A2:H2")
+    c = ws["A2"]
     c.value     = "Objective"
     c.fill      = section_fill
     c.font      = section_font
     c.alignment = left
 
-    # ── ROW 13: Objective text ───────────────────────────────────────────────────
-    ws.merge_cells("A13:H13")
-    c = ws["A13"]
+    ws.merge_cells("A3:H3")
+    c = ws["A3"]
     c.value = (
         f"This summary presents dwell time characteristics for terminating trains on {day_label}, "
         "with the objective of identifying higher risk stations and services to strengthen safe railway operations."
@@ -941,44 +879,101 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
     c.alignment = left
     c.border    = thin_box
 
-    # ── ROW 15+: DQ Observations (A–D) + Risk Legend (E–H) ──────────────────────
+    # ── ROW 5: KPI section bar ───────────────────────────────────────────────────
+    ws.merge_cells("A5:H5")
+    c = ws["A5"]
+    c.value     = "Key Performance Indicators"
+    c.fill      = section_fill
+    c.font      = section_font
+    c.alignment = left
+
+    # Row 6: white gap so tile accent bars are clearly visible below the maroon bar
+    ws.merge_cells("A6:H6")
+    ws["A6"].fill = white_fill
+
+    # ── KPI TILES helper ─────────────────────────────────────────────────────────
+    # 3-row tile: accent bar / value / label
+    # accent_hex  : saturated colour for the top stripe
+    # body_fill   : light fill for value + label rows
+    # vfont       : font for the large number
+
+    def write_tile(row_a, row_b, row_c, col_start, col_end,
+                   label_text, value, accent_hex, body_f, vfont):
+        s = chr(ord("A") + col_start - 1)
+        e = chr(ord("A") + col_end   - 1)
+
+        # Accent bar — saturated stripe on top
+        ws.merge_cells(f"{s}{row_a}:{e}{row_a}")
+        ac = ws[f"{s}{row_a}"]
+        ac.fill   = _fill(accent_hex)
+        ac.border = Border(left=medium_side, right=medium_side, top=medium_side, bottom=no_side)
+
+        # Value row — white body, large bold number
+        ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
+        vc = ws[f"{s}{row_b}"]
+        vc.value     = str(value)
+        vc.fill      = white_fill
+        vc.font      = vfont
+        vc.alignment = center
+        vc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=no_side)
+
+        # Label row — slightly off-white, small grey label
+        ws.merge_cells(f"{s}{row_c}:{e}{row_c}")
+        lc = ws[f"{s}{row_c}"]
+        lc.value     = label_text
+        lc.fill      = tile_spacer_fill
+        lc.font      = tile_label_font
+        lc.alignment = center
+        lc.border    = Border(left=medium_side, right=medium_side, top=no_side, bottom=medium_side)
+
+    # Row 1 of tiles (rows 7-9): neutral KPIs — maroon accent, maroon value text
+    write_tile(7, 8, 9, 1, 2, "Total Terminating Services",  total_terminating_services,     MAROON_MID, near_white_fill, tile_value_font)
+    write_tile(7, 8, 9, 3, 4, "Travelling to Yard",           services_direct_to_yard,        MAROON_MID, near_white_fill, tile_value_font)
+    write_tile(7, 8, 9, 5, 6, "Shortest Dwell Prior to Yard", shortest_dwell_to_yard_display, MAROON_MID, near_white_fill, tile_value_font)
+    write_tile(7, 8, 9, 7, 8, "Longest Dwell Prior to Yard",  longest_dwell_to_yard_display,  MAROON_MID, near_white_fill, tile_value_font)
+
+    # Row 2 of tiles (rows 11-13): risk KPIs — saturated accent, light body, dark value text
+    write_tile(11, 12, 13, 1, 2, "High Risk Services",    high_risk_services,    HIGH_ACCENT,    HIGH_RISK_FILL,    dark_value_font)
+    write_tile(11, 12, 13, 3, 4, "Medium Risk Services",  medium_risk_services,  MEDIUM_ACCENT,  MEDIUM_RISK_FILL,  dark_value_font)
+    write_tile(11, 12, 13, 5, 6, "Low Risk Services",     low_risk_services,     LOW_ACCENT,     LOW_RISK_FILL,     dark_value_font)
+    write_tile(11, 12, 13, 7, 8, "Minimum Risk Services", minimum_risk_services, MINIMUM_ACCENT, MINIMUM_RISK_FILL, dark_value_font)
+
+    # ── ROW 15+: DQ Observations (A–E) + Risk Legend (F–H) ──────────────────────
+    # DQ gets 5 cols so warnings fit on one line; legend gets 3 cols (label + description merged)
     DQ_START = 15
     ws.row_dimensions[DQ_START].height = 13
 
-    # DQ header
-    ws.merge_cells(f"A{DQ_START}:D{DQ_START}")
+    ws.merge_cells(f"A{DQ_START}:E{DQ_START}")
     c = ws[f"A{DQ_START}"]
     c.value     = "Data Quality Observations"
     c.fill      = section_fill
     c.font      = section_font
     c.alignment = left
 
-    # Legend header
-    ws.merge_cells(f"E{DQ_START}:H{DQ_START}")
-    c = ws[f"E{DQ_START}"]
+    ws.merge_cells(f"F{DQ_START}:H{DQ_START}")
+    c = ws[f"F{DQ_START}"]
     c.value     = "Risk Legend"
     c.fill      = section_fill
     c.font      = section_font
     c.alignment = left
 
-    # Legend entries — muted risk colours, no green
+    # Legend entries: label in F, description in G–H
     legend_entries = [
-        (HIGH_C,    "High Risk",    "≤ 30s dwell to yard"),
-        (MEDIUM_C,  "Medium Risk",  "To Yard AND 30s < dwell ≤ 90s"),
-        (LOW_C,     "Low Risk",     "To Yard AND 90s < dwell ≤ 150s"),
-        (MINIMUM_C, "Minimum Risk", "Not To Yard OR > 150s dwell"),
+        (HIGH_C,    HIGH_ACCENT,    "High Risk",    "≤ 30s dwell to yard"),
+        (MEDIUM_C,  MEDIUM_ACCENT,  "Medium Risk",  "30s < dwell ≤ 90s to yard"),
+        (LOW_C,     LOW_ACCENT,     "Low Risk",     "90s < dwell ≤ 150s to yard"),
+        (MINIMUM_C, MINIMUM_ACCENT, "Minimum Risk", "Not to yard / > 150s"),
     ]
 
-    # Build warning messages (flexible — 0 to N)
+    # Build warning messages — no wrap, so keep them concise as they already are
     warning_msgs = []
     if not one_sec_summary.empty:
         for _, r in one_sec_summary.iterrows():
             platform_text = ", ".join(r["Platforms"]) if r["Platforms"] else "unknown platform"
             warning_msgs.append((
-                f"⚠  At non-yard terminus {r['Terminating Station']}, {int(r['Count'])} service(s) "
-                f"end their block/run at {platform_text} with a dwell time of 1 second. "
-                f"Please review operational suitability.",
-                False   # is_ok = False → warning style
+                f"⚠  {r['Terminating Station']} — {int(r['Count'])} service(s) end at "
+                f"{platform_text} with a 1-second dwell. Please review operational suitability.",
+                False
             ))
     else:
         warning_msgs.append(("✔  No 1-second dwell anomalies detected.", True))
@@ -987,34 +982,33 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
 
     for i in range(content_rows):
         row = DQ_START + 1 + i
-        ws.row_dimensions[row].height = 18
+        ws.row_dimensions[row].height = 14
 
-        # DQ column (A–D)
-        ws.merge_cells(f"A{row}:D{row}")
+        # DQ column A–E: no wrap, single line
+        ws.merge_cells(f"A{row}:E{row}")
         wc = ws[f"A{row}"]
         if i < len(warning_msgs):
             msg_text, is_ok = warning_msgs[i]
-            wc.value     = msg_text
-            wc.font      = ok_font if is_ok else warning_font
-            wc.fill      = warning_bg_fill
-            wc.border    = warn_border    # maroon left accent for every row
+            wc.value  = msg_text
+            wc.font   = ok_font if is_ok else warning_font
+            wc.fill   = warning_bg_fill
+            wc.border = warn_border
         else:
             wc.fill   = warning_bg_fill
             wc.border = thin_box
-        wc.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        wc.alignment = left_nowrap   # NO wrap — single line per warning
 
-        # Legend column (E–H): label (E–F) | description (G–H)
+        # Legend F (label) + G–H (description)
         if i < len(legend_entries):
-            hex_col, lbl, desc = legend_entries[i]
-            leg_fill = _fill(hex_col)
+            body_hex, accent_hex, lbl, desc = legend_entries[i]
+            leg_fill    = _fill(body_hex)
+            accent_fill = _fill(accent_hex)
 
-            ws.merge_cells(f"E{row}:F{row}")
-            lc = ws[f"E{row}"]
-            lc.value     = lbl
-            lc.fill      = leg_fill
-            lc.font      = legend_bold_font
-            lc.alignment = left_nowrap
-            lc.border    = thin_box
+            ws["F" + str(row)].fill   = accent_fill
+            ws["F" + str(row)].value  = lbl
+            ws["F" + str(row)].font   = Font(color=WHITE, bold=True, size=8, name="Calibri")
+            ws["F" + str(row)].alignment = left_nowrap
+            ws["F" + str(row)].border = thin_box
 
             ws.merge_cells(f"G{row}:H{row}")
             dc = ws[f"G{row}"]
@@ -1023,7 +1017,6 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
             dc.font      = legend_font
             dc.alignment = left_nowrap
             dc.border    = thin_box
-        # else: legend rows exhausted before warnings — leave E-H blank
 
     # ── Note row ─────────────────────────────────────────────────────────────────
     note_row = DQ_START + 1 + content_rows
@@ -1065,7 +1058,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         for idx, (_, r) in enumerate(station_summary.iterrows()):
             ws.row_dimensions[row_ptr].height = 26
 
-            is_alt = (idx % 2 == 1)
+            is_alt    = (idx % 2 == 1)
             base_fill = alt_row_fill if is_alt else white_fill
 
             c1 = ws.cell(row=row_ptr, column=1, value=r["Terminating Station"])
