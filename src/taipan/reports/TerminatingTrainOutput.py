@@ -910,7 +910,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         ws.merge_cells(f"{s}{row_a}:{e}{row_a}")
         ac = ws[f"{s}{row_a}"]
         ac.fill   = _fill(accent_hex)
-        ac.border = Border(left=thin_side, right=thin_side, top=medium_side, bottom=no_side)
+        ac.border = Border(left=thin_side, right=thin_side, top=thin_side, bottom=no_side)
 
         # Label row — off-white, small descriptive text  ← NOW SECOND (reads first after accent)
         ws.merge_cells(f"{s}{row_b}:{e}{row_b}")
@@ -928,7 +928,7 @@ def create_summary_sheet(wb, output_df, sheet_name="Summary"):
         vc.fill      = white_fill
         vc.font      = vfont
         vc.alignment = center
-        vc.border    = Border(left=thin_side, right=thin_side, top=no_side, bottom=medium_side)
+        vc.border    = Border(left=thin_side, right=thin_side, top=no_side, bottom=thin_side)
 
     # Top row: neutral KPIs — dark grey numbers (calm, informational)
     neutral_font = Font(color=DARK_GREY, bold=True, size=16, name="Calibri")
