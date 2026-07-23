@@ -504,15 +504,18 @@ def TTS_H(path, mypath = None):
                         direction = entry[2]
                         stations  = entry[3]
 
-                        
-                        if empty == '3':
+                        # GRANT
+                        """if empty == '3':
                             dir_str = "CITY-EMPTY"
                         elif empty == '0':
                             dir_str = "CITY-REGULAR"
                         else:
                             dir_str = "CITY-REGULAR" # this is just so it doesn't error if train numbering is wrong 
 
-                        wl([nl,'trip',l,tn,l,tn,l,dir_str,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
+                        wl([nl,'trip',l,tn,l,tn,l,dir_str,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])"""
+
+
+                        wl([nl,'trip',l,tn,l,tn,l,'QR',l,empty,l,direction,l,daycode,l,run,l,f'{run}_{tn}',l,'1'])
                         
                         
                         for station in stations:
