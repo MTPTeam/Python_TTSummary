@@ -182,6 +182,24 @@ def TTS_TC(path, mypath = None):
             if (tn,day) in tn_list: tn_doubles.append((tn,day))
             tn_list.append((tn,day))
                 
+        unique_codes = list(set(day for _, day in tn_list))
+        daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
+        daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
+
+        if set(daysinfile) == {'Fri', 'Sat'}:
+
+            apply_ratio_method = select_option_safe(
+                "Only Fri and Sat trains detected in the RSX file",
+                "Apply Current Timetable based Ratio Method for Weekly Trip Count Estimates?",
+                [("Yes", True), ("No", False)]
+            )
+
+            if apply_ratio_method is None:
+                return  # User clicked X, exit script
+
+        else:
+            apply_ratio_method = False
+            
         if tn_doubles:
             print('           Error: Duplicate train numbers')
             for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
