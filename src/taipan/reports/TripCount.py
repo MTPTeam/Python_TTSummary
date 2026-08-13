@@ -186,6 +186,9 @@ def TTS_TC(path, mypath = None):
         daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
         daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
 
+        has_full_week = {'Mon-Thu','Fri','Sat','Sun'}.issubset(daysinfile)
+        has_fri_sat_only = set(daysinfile) == {'Fri','Sat'}
+
         if set(daysinfile) == {'Fri', 'Sat'}:
 
             apply_ratio_method = select_option_safe(
@@ -563,6 +566,7 @@ def TTS_TC(path, mypath = None):
             'Beenleigh':                  vrt_2Beenleigh,
             'Caboolture':                 vrt_2Caboolture,
             'Sunshine Coast':             vrt_2GympieNth,
+            'Gympie North':               vrt_2GympieNth,
             'Cleveland':                  vrt_2Cleveland,
             'Doomben':                    vrt_2Doomben,
             'Ferny Grove':                vrt_2FernyGrove,
@@ -579,6 +583,7 @@ def TTS_TC(path, mypath = None):
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
             'Caboolture':                 ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN'),
             'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
+            'Gympie North':               ('YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
@@ -855,7 +860,8 @@ def TTS_TC(path, mypath = None):
             findtrips('Shorncliffe',        ['SHC','NTG'])
             findtrips('Redcliffe Peninsula',['KPR'])
             findtrips('Gold Coast',         ['VYS','VYST'])
-            findtrips('Sunshine Coast',     ['GYN','NBR','CRD'])
+            findtrips('Sunshine Coast',     ['NBR','CRD']),
+            findtrips('Gympie North',       ['GYN'])
             findtrips('Rosewood',           ['RSW'])
             
             if 'RSW' not in stations:
@@ -898,23 +904,31 @@ def TTS_TC(path, mypath = None):
         ######################################################################
         Periods = ['AM','AMC','PM','PMC','OPI','OPO']
         LineList = [
-            'Beenleigh',
-            'Caboolture',
-            'Cleveland',
-            'Springfield',
-            'Doomben',
-            'Ferny Grove',
-            'Ipswich',
-            'Shorncliffe',
-            'Redcliffe Peninsula',
-            ' ',
-            ' ',
-            'Gold Coast',
-            'Sunshine Coast',
-            'Rosewood',
-            ' ',
-            ' ',
-            'Total (Excluding Airtrain)']
+                    'Beenleigh',
+                    'Cleveland',
+                    'Springfield',
+                    'Doomben',
+                    'Ferny Grove',
+                    'Shorncliffe',
+                    'Redcliffe Peninsula',
+                    ' ',
+                    ' ',
+                    'Gold Coast',
+                    'Ipswich + Rosewood',
+                    'Rosewood',
+                    'Caboolture + Sunshine Coast',
+                    'Sunshine Coast',
+                    'Gympie North',
+                    ' ',
+                    ' ',
+                    'Rosewood Shuttle',
+                    'Sunshine Coast Shuttle',
+                    'Inner City Shuttle',
+                    'CRR Shuttle',
+                    ' ',
+                    ' ',
+                    'Total (Excluding Airtrain)'
+                    ]
         LineList2 = list(LineList); LineList2[-1] = 'Airport'
         
         FormulasList_TripSummary = [
@@ -925,18 +939,25 @@ def TTS_TC(path, mypath = None):
             '=COUNTIF(B:B,J6)',
             '=COUNTIF(B:B,J7)',
             '=COUNTIF(B:B,J8)',
-            '=COUNTIF(B:B,J9)',
-            '=COUNTIF(B:B,J10)',
-            '=SUM(K2:K10)',
+            '=SUM(K2:K8)',
             '',
+            '=COUNTIF(B:B,J11)',
+            '=COUNTIF(B:B,TRIM(LEFT(J12,FIND("+",J12)-1)))+COUNTIF(B:B,J13)',
             '=COUNTIF(B:B,J13)',
-            '=COUNTIF(B:B,J14)',
+            '=COUNTIF(B:B,TRIM(LEFT(J14,FIND("+",J14)-1)))+COUNTIF(B:B,J15)',
             '=COUNTIF(B:B,J15)',
-            '=SUM(K13:K15)',
+            '=COUNTIF(B:B,J16)',
+            '=SUM(K11,K12,K14,K16)',
             '',
-            '=COUNTIF(B:B,J18)',
-            '=SUM(K18)'
-            ]
+            '=COUNTIF(B:B,J19)',
+            '=COUNTIF(B:B,J20)',
+            '=COUNTIF(B:B,J21)',
+            '=COUNTIF(B:B,J22)',
+            '=SUM(K19:K22)',
+            '',
+            '=COUNTIF(B:B,J25)',
+            '=SUM(K25)'
+                                ]
         #_________________________________________________________________________________________________________________________________________________________
         #_________________________________________________________________________________________________________________________________________________________
         bold                        = workbook.add_format({'bold': True, 'align':'center'})
@@ -1003,8 +1024,8 @@ def TTS_TC(path, mypath = None):
             sheet.autofilter('A2:I700')
         
         #TOTAL COUNT
-        total_count.set_column(1,1,22.57)
-        total_count.set_column(10,10,22.57)
+        total_count.set_column(1,1,25)
+        total_count.set_column(10,10,25)
         
         total_count.set_row(0,15.75)
         total_count.set_row(4,15.75)
@@ -1019,59 +1040,73 @@ def TTS_TC(path, mypath = None):
         
         total_count.merge_range('C5:H5','Mon - Thu',  greyt)
         total_count.merge_range('L5:Q5','Fri',        greyt)
-        total_count.merge_range('C26:D26','Sat',      greyt)
-        total_count.merge_range('G26:H26','Sun',      greyt)
-        total_count.merge_range('L26:Q26','AirTrain', greyt)
+        total_count.merge_range('C34:D34','Sat',      greyt)
+        total_count.merge_range('G34:H34','Sun',      greyt)
+        total_count.merge_range('L34:Q34','AirTrain', greyt)
         
         #MON-THURS
-        total_count.write_row('C6',     Periods,    bold)
-        total_count.write_column('B7',  LineList,   bold)
+        total_count.write_row('C7',     Periods,    bold)
+        total_count.write_column('B8',  LineList,   bold)
         #FRIDAY
-        total_count.write_row('L6',     Periods,    bold)
-        total_count.write_column('K7',  LineList,   bold)
+        total_count.write_row('L7',     Periods,    bold)
+        total_count.write_column('K8',  LineList,   bold)
         #SAT/SUN
-        total_count.write('C27','Sat In',bold);   total_count.write('D27','Sat Out',bold)
-        total_count.write('G27','Sun In',bold);   total_count.write('H27','Sun Out',bold)
-        total_count.write_column('B28',LineList,bold)
+        total_count.write('C35','Sat In',bold);   total_count.write('D35','Sat Out',bold)
+        total_count.write('G35','Sun In',bold);   total_count.write('H35','Sun Out',bold)
+        total_count.write_column('B37',LineList,bold)
         #AIRTRAIN
-        total_count.write_row('L27',Periods,bold  )
-        total_count.write('K28','Mon - Thu'       );    total_count.write('K29','Fri')
-        total_count.write('P31','Inbound',  bold  );    total_count.write('Q31','Outbound',bold)
-        total_count.write('O32','Sat'             );    total_count.write('O33','Sun')
+        total_count.write_row('L35',Periods,bold  )
+        total_count.write('K37','Mon - Thu'       );    total_count.write('K38','Fri')
+        total_count.write('P40','Inbound',  bold  );    total_count.write('Q40','Outbound',bold)
+        total_count.write('O42','Sat'             );    total_count.write('O43','Sun')
         
         
         
         #Sunday
-        FormulasList_SunTotal = ['=SUM(G29:H29)','=SUM(G30:H30)','=SUM(G31:H31)','=SUM(G32:H32)','=SUM(G33:H33)',
-                                 '=SUM(G34:H34)','=SUM(G35:H35)','=SUM(G36:H36)','=SUM(G37:H37)','','=SUM(G39:H39)',
-                                 '=SUM(G40:H40)','=SUM(G41:H41)','=SUM(G42:H42)','']
+        FormulasList_SunTotal = ['=SUM(G38:H38)','=SUM(G39:H39)','=SUM(G40:H40)','=SUM(G41:H41)','=SUM(G42:H42)','=SUM(G43:H43)','=SUM(G44:H44)',
+                                 '','=SUM(G46:H46)','=SUM(G47:H47)','','=SUM(G49:H49)','','=SUM(G51:H51)','=SUM(G52:H52)',
+                                 '','=SUM(G54:H54)','=SUM(G55:H55)','=SUM(G56:H56)','=SUM(G57:H57)','=SUM(G58:H58)',
+                                 '',]
         
         
-        FormulasList_SunIn = ['=Sun_Inbound!K3','=Sun_Inbound!K4','=Sun_Inbound!K5','=Sun_Inbound!K6',
-                              '=Sun_Inbound!K7','=Sun_Inbound!K8','=Sun_Inbound!K9','=Sun_Inbound!K10','','',
-                              '=Sun_Inbound!K13','=Sun_Inbound!K14','=Sun_Inbound!K15','','']
+        FormulasList_SunIn = ['=Sun_Inbound!K3','=Sun_Inbound!K4','=Sun_Inbound!K5','=Sun_Inbound!K6','=Sun_Inbound!K7','=Sun_Inbound!K8','','',
+                              '=Sun_Inbound!K11','=Sun_Inbound!K12','=Sun_Inbound!K13','=Sun_Inbound!K14','=Sun_Inbound!K15','=Sun_Inbound!K16','','',
+                              '=Sun_Inbound!K19','=Sun_Inbound!K20','=Sun_Inbound!K21','=Sun_Inbound!K22','','',
+                              '=Sun_Inbound!K25']
         
-        FormulasList_SunOut = ['=Sun_Outbound!K3','=Sun_Outbound!K4','=Sun_Outbound!K5','=Sun_Outbound!K6',
-                               '=Sun_Outbound!K7','=Sun_Outbound!K8','=Sun_Outbound!K9','=Sun_Outbound!K10','','',
-                               '=Sun_Outbound!K13','=Sun_Outbound!K14','=Sun_Outbound!K15','','']
+        FormulasList_SunOut = ['=Sun_Outbound!K3','=Sun_Outbound!K4','=Sun_Outbound!K5','=Sun_Outbound!K6','=Sun_Outbound!K7','=Sun_Outbound!K8','','',
+                              '=Sun_Outbound!K11','=Sun_Outbound!K12','=Sun_Outbound!K13','=Sun_Outbound!K14','=Sun_Outbound!K15','=Sun_Outbound!K16','','',
+                              '=Sun_Outbound!K19','=Sun_Outbound!K20','=Sun_Outbound!K21','=Sun_Outbound!K22','','',
+                              '=Sun_Outbound!K25']
         
-        total_count.write('G28','=Sun_Inbound!K2',              whitecell_tbordertopleft) #toptop left
-        total_count.write('H28','=Sun_Outbound!K2',             whitecell_tbordertop) #toptop midlle
-        total_count.write('I28','=SUM(G28:H28)',                greyalln) #toptop right
+        total_count.write('G37','=Sun_Inbound!K2',              whitecell_tbordertopleft) #toptop left
+        total_count.write('H37','=Sun_Outbound!K2',             whitecell_tbordertop) #toptop midlle
+        total_count.write('I37','=SUM(G37:H37)',                greyalln) #toptop right
         
-        total_count.write_column('G29',FormulasList_SunIn,      whitecell_tborderleft)
-        total_count.write_column('H29',FormulasList_SunOut,     border)
-        total_count.write_column('I29',FormulasList_SunTotal,   greyallleftright)
+        total_count.write_column('G38',FormulasList_SunIn,      whitecell_tborderleft)
+        total_count.write_column('H38',FormulasList_SunOut,     border)
+        total_count.write_column('I38',FormulasList_SunTotal,   greyallleftright)
+
+        total_count.merge_range('G36:H36','Suburban',   bold)
+        total_count.merge_range('G45:H45','Interurban', bold)
+        total_count.merge_range('G53:H53','Shuttles',   bold)
+
         
-        total_count.write('G44','=G37+G42',                     greyallbottomleft) #bottom left
-        total_count.write('H44','=H37+H42',                     greyallbottom) #bottom middle
-        total_count.write('I44','=SUM(G44:H44)',                greyallu) #bottom right
+        total_count.write('G60','=G44+G52+G58',                 greyallbottomleft) #bottom left
+        total_count.write('H60','=H44+H52+H58',                 greyallbottom) #bottom middle
+        total_count.write('I60','=I44+I52+I58',                 greyallu) #bottom right
         
-        total_count.write('G42','=SUM(G39:G41)',                greyallleft) #middle left
-        total_count.write('H42','=SUM(H39:H41)',                greyallright) #middle middle
+        #shuttes total
+        total_count.write('G58','=SUM(G54:G57)',                greyallleft) #middle left
+        total_count.write('H58','=SUM(H54:H57)',                greyallright) #middle middle
+
+        #interurban total
+        total_count.write('G52','=SUM(G46,G47,G49,G51)',        greyallleft) #middle left
+        total_count.write('H52','=SUM(H46,H47,H49,H51)',        greyallright) #middle middle
         
-        total_count.write('G37','=SUM(G28:G36)',                greyallleft) #top left
-        total_count.write('H37','=SUM(H28:H36)',                greyallright) #top middle
+        #suburban total
+        total_count.write('G44','=SUM(G37:G43)',                greyallleft) #top left
+        total_count.write('H44','=SUM(H37:H43)',                greyallright) #top middle
         
         
         
