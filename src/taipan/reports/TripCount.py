@@ -963,6 +963,7 @@ def TTS_TC(path, mypath = None):
         bold                        = workbook.add_format({'bold': True, 'align':'center'})
         border                      = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center'})
         bold12                      = workbook.add_format({'bold': True, 'align':'center', 'font_size':12})
+        bold13                     = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter', 'font_size':14})
         
         grey                        = workbook.add_format({'bold': True, 'align':'center', 'bg_color':'#C0C0C0'})
         greybottom                  = workbook.add_format({'bold': True, 'align':'center','bottom':2, 'bg_color':'#C0C0C0'})
@@ -970,7 +971,7 @@ def TTS_TC(path, mypath = None):
         greybottomright             = workbook.add_format({'bold': True, 'align':'center','bottom':2, 'right':2, 'bg_color':'#C0C0C0'})
         greyleftright               = workbook.add_format({'bold': True, 'align':'center','left':2, 'right':2, 'bg_color':'#C0C0C0'})
     
-        greyt                       = workbook.add_format({'bold': True, 'align':'center','border':2, 'bg_color':'#C0C0C0'})
+        greyt                       = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter','border':2, 'bg_color':'#C0C0C0'})
         greyb                       = workbook.add_format({'bold': True, 'align':'center','border':1, 'bg_color':'#C0C0C0'})
         greyallbottom               = workbook.add_format({'bold': True, 'align':'center','border':1,'bottom':2, 'bg_color':'#C0C0C0'})
         greyallbottomleft           = workbook.add_format({'bold': True, 'align':'center','border':1,'bottom':2, 'left':2, 'bg_color':'#C0C0C0'})
@@ -989,6 +990,7 @@ def TTS_TC(path, mypath = None):
         left                        = workbook.add_format({'align':'left'})
         boldleft                    = workbook.add_format({'align':'left','bold':True})
         boldright                   = workbook.add_format({'align':'right','bold':True})
+        grey_note                   = workbook.add_format({'bold': True,'italic': True,'font_color': '#BFBFBF','align': 'center'})    
         
         workbook.formats[0].set_align('center') 
         
@@ -1024,8 +1026,8 @@ def TTS_TC(path, mypath = None):
             sheet.autofilter('A2:I700')
         
         #TOTAL COUNT
-        total_count.set_column(1,1,25)
-        total_count.set_column(10,10,25)
+        total_count.set_column(1,1,30)
+        total_count.set_column(10,10,30)
         
         total_count.set_row(0,15.75)
         total_count.set_row(4,15.75)
@@ -1108,40 +1110,52 @@ def TTS_TC(path, mypath = None):
         total_count.write('G44','=SUM(G37:G43)',                greyallleft) #top left
         total_count.write('H44','=SUM(H37:H43)',                greyallright) #top middle
         
-        
-        
         #Saturday
-        FormulasList_SatTotal = ['=SUM(C29:D29)','=SUM(C30:D30)','=SUM(C31:D31)','=SUM(C32:D32)',
-                                 '=SUM(C33:D33)','=SUM(C34:D34)','=SUM(C35:D35)','=SUM(C36:D36)','=SUM(C37:D37)',
-                                 '','=SUM(C39:D39)','=SUM(C40:D40)','=SUM(C41:D41)','=SUM(C42:D42)','']
-        
-        
-        FormulasList_SatIn = ['=Sat_Inbound!K3','=Sat_Inbound!K4','=Sat_Inbound!K5','=Sat_Inbound!K6',
-                              '=Sat_Inbound!K7','=Sat_Inbound!K8','=Sat_Inbound!K9','=Sat_Inbound!K10',
-                              '','','=Sat_Inbound!K13','=Sat_Inbound!K14','=Sat_Inbound!K15','','']
-        
-        FormulasList_SatOut = ['=Sat_Outbound!K3','=Sat_Outbound!K4','=Sat_Outbound!K5','=Sat_Outbound!K6',
-                               '=Sat_Outbound!K7','=Sat_Outbound!K8','=Sat_Outbound!K9','=Sat_Outbound!K10',
-                               '','','=Sat_Outbound!K13','=Sat_Outbound!K14','=Sat_Outbound!K15','','']
-        
-        total_count.write('C28','=Sat_Inbound!K2',              whitecell_tbordertopleft) #toptop left
-        total_count.write('D28','=Sat_Outbound!K2',             whitecell_tbordertop) #toptop midlle
-        total_count.write('E28','=SUM(C28:D28)',                greyalln) #toptop right
-        
-        total_count.write_column('C29',FormulasList_SatIn,      whitecell_tborderleft)
-        total_count.write_column('D29',FormulasList_SatOut,     border)
-        total_count.write_column('E29',FormulasList_SatTotal,   greyallleftright)
-        
-        total_count.write('C44','=C37+C42',                     greyallbottomleft) #bottom left
-        total_count.write('D44','=D37+D42',                     greyallbottom) #bottom middle
-        total_count.write('E44','=SUM(C44:D44)',                greyallu) #bottom right
-        
-        total_count.write('C42','=SUM(C39:C41)',                greyallleft) #middle left
-        total_count.write('D42','=SUM(D39:D41)',                greyallright) #middle middle
-        
-        total_count.write('C37','=SUM(C28:C36)',                greyallleft) #top left
-        total_count.write('D37','=SUM(D28:D36)',                greyallright) #top middle
-        
+        FormulasList_SatTotal = ['=SUM(C38:D38)','=SUM(C39:D39)','=SUM(C40:D40)','=SUM(C41:D41)','=SUM(C42:D42)','=SUM(C43:D43)','=SUM(C44:D44)',
+                                '','=SUM(C46:D46)','=SUM(C47:D47)','','=SUM(C49:D49)','','=SUM(C51:D51)','=SUM(C52:D52)',
+                                '','=SUM(C54:D54)','=SUM(C55:D55)','=SUM(C56:D56)','=SUM(C57:D57)','=SUM(C58:D58)',
+                                '',]
+
+        FormulasList_SatIn = ['=Sat_Inbound!K3','=Sat_Inbound!K4','=Sat_Inbound!K5','=Sat_Inbound!K6','=Sat_Inbound!K7','=Sat_Inbound!K8','','',
+                            '=Sat_Inbound!K11','=Sat_Inbound!K12','=Sat_Inbound!K13','=Sat_Inbound!K14','=Sat_Inbound!K15','=Sat_Inbound!K16','','',
+                            '=Sat_Inbound!K19','=Sat_Inbound!K20','=Sat_Inbound!K21','=Sat_Inbound!K22','','',
+                            '=Sat_Inbound!K25']
+
+        FormulasList_SatOut = ['=Sat_Outbound!K3','=Sat_Outbound!K4','=Sat_Outbound!K5','=Sat_Outbound!K6','=Sat_Outbound!K7','=Sat_Outbound!K8','','',
+                            '=Sat_Outbound!K11','=Sat_Outbound!K12','=Sat_Outbound!K13','=Sat_Outbound!K14','=Sat_Outbound!K15','=Sat_Outbound!K16','','',
+                            '=Sat_Outbound!K19','=Sat_Outbound!K20','=Sat_Outbound!K21','=Sat_Outbound!K22','','',
+                            '=Sat_Outbound!K25']
+
+        total_count.write('C37','=Sat_Inbound!K2',          whitecell_tbordertopleft)
+        total_count.write('D37','=Sat_Outbound!K2',         whitecell_tbordertop)
+        total_count.write('E37','=SUM(C37:D37)',            greyalln)
+
+        total_count.write_column('C38',FormulasList_SatIn,  whitecell_tborderleft)
+        total_count.write_column('D38',FormulasList_SatOut, border)
+        total_count.write_column('E38',FormulasList_SatTotal,greyallleftright)
+
+        total_count.merge_range('C36:D36','Suburban',   bold)
+        total_count.merge_range('C45:D45','Interurban', bold)
+        total_count.merge_range('C53:D53','Shuttles',   bold)
+
+        total_count.write('C60','=C44+C52+C58',         greyallbottomleft)
+        total_count.write('D60','=D44+D52+D58',         greyallbottom)
+        total_count.write('E60','=E44+E52+E58',         greyallu)
+
+        # shuttles total
+        total_count.write('C58','=SUM(C54:C57)',        greyallleft)
+        total_count.write('D58','=SUM(D54:D57)',        greyallright)
+
+        # interurban total
+        total_count.write('C52','=SUM(C46,C47,C49,C51)',greyallleft)
+        total_count.write('D52','=SUM(D46,D47,D49,D51)',greyallright)
+
+        # suburban total
+        total_count.write('C44','=SUM(C37:C43)',        greyallleft)
+        total_count.write('D44','=SUM(D37:D43)',        greyallright)
+
+        total_count.write('B48', 'Rosewood', grey_note)
+        total_count.write('B50', 'Sunshine Coast', grey_note)
         
         
         #Mon - Thurs
@@ -1264,18 +1278,23 @@ def TTS_TC(path, mypath = None):
         total_count.write('R29','=SUM(L29:Q29)',greyallu)#total fri
         
         
-        total_count.write('P32','=Sat_Inbound!K18',whitecell_tbordertopleft)#topleft
-        total_count.write('P33','=Sun_Inbound!K18',whitecell_tborderbottomleft)#bottomleft
-        total_count.write('Q32','=Sat_Outbound!K18',whitecell_tbordertop)#top middle
-        total_count.write('Q33','=Sun_Outbound!K18',whitecell_tborderbottom)#bottom middle
-        total_count.write('R32','=SUM(P32:Q32)',greyalln)#top right
-        total_count.write('R33','=SUM(P33:Q33)',greyallu)#bottom right
+        total_count.write('P42','=Sat_Inbound!K25',whitecell_tbordertopleft)#topleft
+        total_count.write('P43','=Sun_Inbound!K25',whitecell_tborderbottomleft)#bottomleft
+        total_count.write('Q42','=Sat_Outbound!K25',whitecell_tbordertop)#top middle
+        total_count.write('Q43','=Sun_Outbound!K25',whitecell_tborderbottom)#bottom middle
+        total_count.write('R36','',greyallu)
+        total_count.write('R41','',greyallu)
+        total_count.write('R42','=SUM(P42:Q42)',greyalln)#top right
+        total_count.write('R43','=SUM(P43:Q43)',greyallu)#bottom right
+        total_count.merge_range('L36:Q36','Suburban', bold)
+        total_count.merge_range('P41:Q41','Suburban', bold)
         
         
-        total_count.write('R44','=SUM((4*I23),R23,E44,I44,(4*R28),R29,R32,R33)', greyt)
+        #total_count.write('R44','=SUM((4*I23),R23,E44,I44,(4*R28),R29,R32,R33)', greyt)
+        total_count.merge_range('Q59:R60','=SUM((4*I31),R31,E60,I60,(4*R37),R38,R42,R43)', greyt)
         # total_count.write('R44', total_tripcount, greyt)
         # total_count.write('R46', total_shuttles,  greyt)
-        total_count.merge_range('O44:Q44','Total Weekly Trip Count:', boldright)
+        total_count.merge_range('L59:P60','Total Weekly Trip Count:', bold13)
         # total_count.merge_range('O46:Q46','Innercity Shuttles:', boldright)
         
         
@@ -1362,7 +1381,7 @@ def TTS_TC(path, mypath = None):
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
-            time.sleep(15)
+            time.sleep(5)
             
 if __name__ == "__main__":
 
