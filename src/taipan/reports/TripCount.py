@@ -36,10 +36,10 @@ ampeak_end = '09:00:00'
 pmpeak_srt = '15:30:00'
 pmpeak_end = '18:30:00'
 
-
-
-
-
+Trips_MTh = 1343
+Trips_Fri = 1381
+Trips_Sat = 928
+Trips_Sun = 822
 
 ### Used to filter out stations where passengers cannot board
 ### Want to only iterate over revenue locations
@@ -968,7 +968,7 @@ def TTS_TC(path, mypath = None):
         bold                        = workbook.add_format({'bold': True, 'align':'center'})
         border                      = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center'})
         bold12                      = workbook.add_format({'bold': True, 'align':'center', 'font_size':12})
-        bold13                     = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter', 'font_size':14})
+        bold13                     = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter', 'border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2,'font_size':14,'num_format': '0'})
         
         grey                        = workbook.add_format({'bold': True, 'align':'center', 'bg_color':'#C0C0C0'})
         greybottom                  = workbook.add_format({'bold': True, 'align':'center','bottom':2, 'bg_color':'#C0C0C0'})
@@ -998,6 +998,7 @@ def TTS_TC(path, mypath = None):
 
         grey_note                   = workbook.add_format({'bold': True,'italic': True,'font_color': '#BFBFBF','align': 'center'})
         whiteallu = workbook.add_format({'bold': True,'align': 'center','border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2})
+        percent_border = workbook.add_format({'bold': True,'align': 'center','valign': 'vcenter','border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2,'num_format': '0.00%','bg_color':'#C0C0C0'})
         
         workbook.formats[0].set_align('center') 
         
@@ -1332,9 +1333,13 @@ def TTS_TC(path, mypath = None):
         
         
         # Total Weekly Trip Count
-        total_count.merge_range('Q59:R60','=SUM((4*I31),R31,E60,I60,(4*R37),R38,R42,R43)', greyt)
-        total_count.merge_range('L59:P60','Total Weekly Trip Count:', bold13)
+        total_count.merge_range('Q59:R60','=SUM((4*I31),R31,E60,I60,(4*R37),R38,R42,R43)', bold13)
 
+        if has_fri_sat_only and apply_ratio_method:
+            varLabel = 'Fri + Sat Trip Count:'
+        else: varLabel = 'Total Weekly Trip Count:'
+
+        total_count.merge_range('L59:P60', varLabel, bold13)
 
         #Formatting for Rosewood, Sunshine Coast in Interurban ranges
         for cell in ['B19:H19','K19:Q19','B21:H21','K21:Q21',
@@ -1343,7 +1348,38 @@ def TTS_TC(path, mypath = None):
                 'type': 'no_blanks',
                 'format': grey_note
             })
-        
+
+        #Day Totals
+        for row, label in zip([54,55,56,57], ['MTh','Fri','Sat','Sun']):
+            total_count.write(f'Q{row}', f'{label} Tot.', whiteallu)
+
+        total_count.write_formula('R54', '=I31+R37', greyalln)
+        total_count.write_formula('R55', '=R31+R38', greyalln)
+        total_count.write_formula('R56', '=E60+R42', greyallu)
+        total_count.write_formula('R57', '=I60+R43', greyallu)
+
+        if has_fri_sat_only and apply_ratio_method:
+            total_count.merge_range('L65:P65', 'Current MTh Trip Count', whiteallu)
+            total_count.merge_range('Q65:R65', Trips_MTh, greyalln)
+
+            total_count.merge_range('L66:P66', 'Current Fri Trip Count', whiteallu)
+            total_count.merge_range('Q66:R66', Trips_Fri, greyalln)
+
+            total_count.merge_range('L67:P67', 'MTh/Fri Ratio', whiteallu)
+            total_count.merge_range('Q67:R67', '=Q65/Q66', percent_border)
+
+            total_count.merge_range('L69:P69', 'Current Sat Trip Count', whiteallu)
+            total_count.merge_range('Q69:R69', Trips_Sat, greyalln)
+
+            total_count.merge_range('L70:P70', 'Current Sun Trip Count', whiteallu)
+            total_count.merge_range('Q70:R70', Trips_Sun, greyalln)
+
+            total_count.merge_range('L71:P71', 'Sun/Sat Ratio', whiteallu)
+            total_count.merge_range('Q71:R71', '=Q70/Q69', percent_border)
+
+            total_count.merge_range('L62:P63','Estimate Trip Count (Fri + Sat CTP\'s):',bold13)
+            total_count.merge_range('Q62:R63','=SUM(4*R55*Q67,R55,R56,R56*Q71)',bold13)
+
         info_sheet.write('B2','Trip Count Report', boldleft)
         info_sheet.write('B4','Extracted from \'' + filename + '\'', left)
         info_sheet.write('B6','Report created on ' + datetime.now().strftime("%d-%b-%Y %H:%M"), left)
