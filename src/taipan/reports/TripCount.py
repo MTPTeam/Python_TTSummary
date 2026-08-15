@@ -92,6 +92,7 @@ non_revenue_stations = [
     'BHNJ',
     'MEJ',
     'ORMS',
+    'ORMH',
     'MNYE',
     
     
