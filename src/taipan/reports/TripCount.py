@@ -862,7 +862,12 @@ def TTS_TC(path, mypath = None):
             findtrips('Gold Coast',         ['VYS','VYST'])
             findtrips('Sunshine Coast',     ['NBR','CRD']),
             findtrips('Gympie North',       ['GYN'])
-            findtrips('Rosewood',           ['RSW'])
+            #findtrips('Rosewood',           ['RSW'])
+            findtrips(
+                        'Rosewood' if ('RS' in stations or 'RTL' in stations)
+                        else 'Rosewood Shuttle',
+                        ['RSW']
+                    )
             
             if 'RSW' not in stations:
                 findtrips('Ipswich',        ['IPS','IPSS'])
@@ -956,8 +961,7 @@ def TTS_TC(path, mypath = None):
             '=SUM(K19:K22)',
             '',
             '=COUNTIF(B:B,J25)',
-            '=SUM(K25)'
-                                ]
+            '=SUM(K25)']
         #_________________________________________________________________________________________________________________________________________________________
         #_________________________________________________________________________________________________________________________________________________________
         bold                        = workbook.add_format({'bold': True, 'align':'center'})
@@ -1162,11 +1166,13 @@ def TTS_TC(path, mypath = None):
         FormulasList_MtT2 = ['=Mon_Thu_AM!K3','=Mon_Thu_AM!K4','=Mon_Thu_AM!K5','=Mon_Thu_AM!K6',
                              '=Mon_Thu_AM!K7','=Mon_Thu_AM!K8', '=SUM(C8:C14)','',
                              '=Mon_Thu_AM!K11','=Mon_Thu_AM!K12','=Mon_Thu_AM!K13','=Mon_Thu_AM!K14','=Mon_Thu_AM!K15','=Mon_Thu_AM!K16',
-                             '=SUM(C17,C18,C20,C22)',''] #firstcol
+                             '=SUM(C17,C18,C20,C22)','',
+                             '=Mon_Thu_AM!K19','=Mon_Thu_AM!K20','=Mon_Thu_AM!K21','=Mon_Thu_AM!K22',
+                             '=SUM(C25:C28)',''] #firstcol
         FormulasList_MtT3 = ['=SUM(D8:D14)','=SUM(E8:E14)','=SUM(F8:F14)','=SUM(G8:G14)','=SUM(H8:H14)'] #1st sumrow
         FormulasList_MtT4 = ['=SUM(D17,D18,D20,D22)','=SUM(E17,E18,E20,E22)','=SUM(F17,F18,F20,F22)','=SUM(G17,G18,G20,G22)','=SUM(H17,H18,H20,H22)'] #2nd sumrow
         FormulasList_MtT5 = ['=D15+D23+D29','=E15+E23+E29','=F15+F23+F29','=G15+G23+G29','=H15+H23+H29','=I15+I23+I29',] #3rd sumrow
-        
+    
         FormulasList_MtT6 = [
             ('=Mon_Thu_AM_Contra!K3','=Mon_Thu_PM!K3','=Mon_Thu_PM_Contra!K3','=Mon_Thu_OFF_Inbound!K3','=Mon_Thu_OFF_Outbound!K3'),
             ('=Mon_Thu_AM_Contra!K4','=Mon_Thu_PM!K4','=Mon_Thu_PM_Contra!K4','=Mon_Thu_OFF_Inbound!K4','=Mon_Thu_OFF_Outbound!K4'),
@@ -1181,14 +1187,21 @@ def TTS_TC(path, mypath = None):
             ('=Mon_Thu_AM_Contra!K13','=Mon_Thu_PM!K13','=Mon_Thu_PM_Contra!K13','=Mon_Thu_OFF_Inbound!K13','=Mon_Thu_OFF_Outbound!K13'),
             ('=Mon_Thu_AM_Contra!K14','=Mon_Thu_PM!K14','=Mon_Thu_PM_Contra!K14','=Mon_Thu_OFF_Inbound!K14','=Mon_Thu_OFF_Outbound!K14'),
             ('=Mon_Thu_AM_Contra!K15','=Mon_Thu_PM!K15','=Mon_Thu_PM_Contra!K15','=Mon_Thu_OFF_Inbound!K15','=Mon_Thu_OFF_Outbound!K15'),
-            ('=Mon_Thu_AM_Contra!K16','=Mon_Thu_PM!K16','=Mon_Thu_PM_Contra!K16','=Mon_Thu_OFF_Inbound!K16','=Mon_Thu_OFF_Outbound!K16')
+            ('=Mon_Thu_AM_Contra!K16','=Mon_Thu_PM!K16','=Mon_Thu_PM_Contra!K16','=Mon_Thu_OFF_Inbound!K16','=Mon_Thu_OFF_Outbound!K16'),
+            ('=Mon_Thu_AM_Contra!K17','=Mon_Thu_PM!K17','=Mon_Thu_PM_Contra!K17','=Mon_Thu_OFF_Inbound!K17','=Mon_Thu_OFF_Outbound!K17'),
+            ('=Mon_Thu_AM_Contra!K18','=Mon_Thu_PM!K18','=Mon_Thu_PM_Contra!K18','=Mon_Thu_OFF_Inbound!K18','=Mon_Thu_OFF_Outbound!K18'),
+            ('=Mon_Thu_AM_Contra!K19','=Mon_Thu_PM!K19','=Mon_Thu_PM_Contra!K19','=Mon_Thu_OFF_Inbound!K19','=Mon_Thu_OFF_Outbound!K19'),
+            ('=Mon_Thu_AM_Contra!K20','=Mon_Thu_PM!K20','=Mon_Thu_PM_Contra!K20','=Mon_Thu_OFF_Inbound!K20','=Mon_Thu_OFF_Outbound!K20'),
+            ('=Mon_Thu_AM_Contra!K21','=Mon_Thu_PM!K21','=Mon_Thu_PM_Contra!K21','=Mon_Thu_OFF_Inbound!K21','=Mon_Thu_OFF_Outbound!K21'),
+            ('=Mon_Thu_AM_Contra!K22','=Mon_Thu_PM!K22','=Mon_Thu_PM_Contra!K22','=Mon_Thu_OFF_Inbound!K22','=Mon_Thu_OFF_Outbound!K22'),
             ] 
         
         FormulasList_MtT7 = ['=SUM(C8:H8)','=SUM(C9:H9)','=SUM(C10:H10)','=SUM(C11:H11)','=SUM(C12:H12)',
                              '=SUM(C13:H13)','=SUM(C14:H14)','=SUM(C15:H15)','','=SUM(C17:H17)',
-                             '=SUM(C18:H18)','','=SUM(C20:H20)','','=SUM(C21:H21)','=SUM(C22:H22)'] #totalcol
+                             '=SUM(C18:H18)','','=SUM(C20:H20)','','=SUM(C22:H22)','=SUM(C23:H23)','',
+                             '=SUM(C25:H25)','=SUM(C26:H26)','=SUM(C27:H27)','=SUM(C28:H28)','=SUM(C29:H29)',] #totalcol
 
-
+        FormulasList_MtT8 = ['=SUM(D25:D28)','=SUM(E25:E28)','=SUM(F25:F28)','=SUM(G25:G28)','=SUM(H25:H28)'] #shuttle sumrow
 
         total_count.write('C8','=Mon_Thu_AM!K2',            whitecell_tbordertopleft)
         total_count.write_row('D8',FormulasList_MtT1,       whitecell_tbordertop)
@@ -1202,11 +1215,13 @@ def TTS_TC(path, mypath = None):
         total_count.write('C15','=SUM(C8:C14)',             greyallleft)
         total_count.write_row('D15',FormulasList_MtT3,      greyb)
         total_count.write('C23','=SUM(C17,C18,C20,C22)',    greyallleft)
+        total_count.write('C29','=SUM(C25:C28)',            greyallleft)
         total_count.write_row('D23',FormulasList_MtT4,      greyb)
-        total_count.write('C31','=C15+C23+C29',                 greyallbottomleft)
+        total_count.write('C31','=C15+C23+C29',             greyallbottomleft)
         total_count.write_row('D31',FormulasList_MtT5,      greyallbottom)
         
         total_count.write_column('I8',FormulasList_MtT7,    greyallleftright)
+        total_count.write_row('D29',FormulasList_MtT8,      greyb)
 
         total_count.merge_range('C7:H7','Suburban',     whiteallu)
         total_count.merge_range('C16:H16','Interurban', whiteallu)
@@ -1214,11 +1229,13 @@ def TTS_TC(path, mypath = None):
 
         #Friday
         ############################################################################
-        FormulasList_Fri1 = ['=Fri_AM_Contra!K2','=Fri_PM!K2','=Fri_PM_Contra!K2','=Fri_OFF_Inbound!K2','=Fri_OFF_Outbound!K2']																															
+        FormulasList_Fri1 = ['=Fri_AM_Contra!K2','=Fri_PM!K2','=Fri_PM_Contra!K2','=Fri_OFF_Inbound!K2','=Fri_OFF_Outbound!K2']
         FormulasList_Fri2 = ['=Fri_AM!K3','=Fri_AM!K4','=Fri_AM!K5','=Fri_AM!K6',
                             '=Fri_AM!K7','=Fri_AM!K8','=SUM(L8:L14)','',
                             '=Fri_AM!K11','=Fri_AM!K12','=Fri_AM!K13','=Fri_AM!K14','=Fri_AM!K15','=Fri_AM!K16',
-                            '=SUM(L17,L18,L20,L22)','']
+                            '=SUM(L17,L18,L20,L22)','',
+                            '=Fri_AM!K19','=Fri_AM!K20','=Fri_AM!K21','=Fri_AM!K22',
+                            '=SUM(L25:L28)','']
         FormulasList_Fri3 = ['=SUM(M8:M14)','=SUM(N8:N14)','=SUM(O8:O14)','=SUM(P8:P14)','=SUM(Q8:Q14)']
         FormulasList_Fri4 = ['=SUM(M17,M18,M20,M22)','=SUM(N17,N18,N20,N22)','=SUM(O17,O18,O20,O22)','=SUM(P17,P18,P20,P22)','=SUM(Q17,Q18,Q20,Q22)']
         FormulasList_Fri5 = ['=M15+M23+M29','=N15+N23+N29','=O15+O23+O29','=P15+P23+P29','=Q15+Q23+Q29','=R15+R23+R29']
@@ -1237,35 +1254,45 @@ def TTS_TC(path, mypath = None):
             ('=Fri_AM_Contra!K13','=Fri_PM!K13','=Fri_PM_Contra!K13','=Fri_OFF_Inbound!K13','=Fri_OFF_Outbound!K13'),
             ('=Fri_AM_Contra!K14','=Fri_PM!K14','=Fri_PM_Contra!K14','=Fri_OFF_Inbound!K14','=Fri_OFF_Outbound!K14'),
             ('=Fri_AM_Contra!K15','=Fri_PM!K15','=Fri_PM_Contra!K15','=Fri_OFF_Inbound!K15','=Fri_OFF_Outbound!K15'),
-            ('=Fri_AM_Contra!K16','=Fri_PM!K16','=Fri_PM_Contra!K16','=Fri_OFF_Inbound!K16','=Fri_OFF_Outbound!K16')
+            ('=Fri_AM_Contra!K16','=Fri_PM!K16','=Fri_PM_Contra!K16','=Fri_OFF_Inbound!K16','=Fri_OFF_Outbound!K16'),
+            ('=Fri_AM_Contra!K17','=Fri_PM!K17','=Fri_PM_Contra!K17','=Fri_OFF_Inbound!K17','=Fri_OFF_Outbound!K17'),
+            ('=Fri_AM_Contra!K18','=Fri_PM!K18','=Fri_PM_Contra!K18','=Fri_OFF_Inbound!K18','=Fri_OFF_Outbound!K18'),
+            ('=Fri_AM_Contra!K19','=Fri_PM!K19','=Fri_PM_Contra!K19','=Fri_OFF_Inbound!K19','=Fri_OFF_Outbound!K19'),
+            ('=Fri_AM_Contra!K20','=Fri_PM!K20','=Fri_PM_Contra!K20','=Fri_OFF_Inbound!K20','=Fri_OFF_Outbound!K20'),
+            ('=Fri_AM_Contra!K21','=Fri_PM!K21','=Fri_PM_Contra!K21','=Fri_OFF_Inbound!K21','=Fri_OFF_Outbound!K21'),
+            ('=Fri_AM_Contra!K22','=Fri_PM!K22','=Fri_PM_Contra!K22','=Fri_OFF_Inbound!K22','=Fri_OFF_Outbound!K22'),
             ]
 
         FormulasList_Fri7 = ['=SUM(L8:Q8)','=SUM(L9:Q9)','=SUM(L10:Q10)','=SUM(L11:Q11)','=SUM(L12:Q12)',
                             '=SUM(L13:Q13)','=SUM(L14:Q14)','=SUM(L15:Q15)','','=SUM(L17:Q17)',
-                            '=SUM(L18:Q18)','','=SUM(L20:Q20)','','=SUM(L21:Q21)','=SUM(L22:Q22)']
+                            '=SUM(L18:Q18)','','=SUM(L20:Q20)','','=SUM(L22:Q22)','=SUM(L23:Q23)','',
+                            '=SUM(L25:Q25)','=SUM(L26:Q26)','=SUM(L27:Q27)','=SUM(L28:Q28)','=SUM(L29:Q29)']
 
+        FormulasList_Fri8 = ['=SUM(M25:M28)','=SUM(N25:N28)','=SUM(O25:O28)','=SUM(P25:P28)','=SUM(Q25:Q28)']
 
         total_count.write('L8','=Fri_AM!K2',                whitecell_tbordertopleft)
         total_count.write_row('M8',FormulasList_Fri1,       whitecell_tbordertop)
-        total_count.write('R8','=SUM(L8:Q8)',              greyalln)
-        total_count.write('R23','=SUM(L23:Q23)',           greyallu)
-        total_count.write_column('L9',FormulasList_Fri2,   whitecell_tborderleft)
+        total_count.write('R8','=SUM(L8:Q8)',               greyalln)
+        total_count.write('R23','=SUM(L23:Q23)',            greyallu)
+        total_count.write_column('L9',FormulasList_Fri2,    whitecell_tborderleft)
 
         for i,x in enumerate(FormulasList_Fri6):
             total_count.write_row(i+8,12,x,border)
 
-        total_count.write('L15','=SUM(L8:L14)',            greyallleft)
-        total_count.write_row('M15',FormulasList_Fri3,     greyb)
-        total_count.write('L23','=SUM(L17,L18,L20,L22)',   greyallleft)
-        total_count.write_row('M23',FormulasList_Fri4,     greyb)
-        total_count.write('L31','=L15+L23+L29',            greyallbottomleft)
-        total_count.write_row('M31',FormulasList_Fri5,     greyallbottom)
+        total_count.write('L15','=SUM(L8:L14)',             greyallleft)
+        total_count.write_row('M15',FormulasList_Fri3,      greyb)
+        total_count.write('L23','=SUM(L17,L18,L20,L22)',    greyallleft)
+        total_count.write('L29','=SUM(L25:L28)',            greyallleft)
+        total_count.write_row('M23',FormulasList_Fri4,      greyb)
+        total_count.write('L31','=L15+L23+L29',             greyallbottomleft)
+        total_count.write_row('M31',FormulasList_Fri5,      greyallbottom)
 
-        total_count.write_column('R8',FormulasList_Fri7,   greyallleftright)
+        total_count.write_column('R8',FormulasList_Fri7,    greyallleftright)
+        total_count.write_row('M29',FormulasList_Fri8,      greyb)
 
-        total_count.merge_range('L7:Q7','Suburban',        whiteallu)
-        total_count.merge_range('L16:Q16','Interurban',    whiteallu)
-        total_count.merge_range('L24:Q24','Shuttles',      whiteallu)
+        total_count.merge_range('L7:Q7','Suburban',     whiteallu)
+        total_count.merge_range('L16:Q16','Interurban', whiteallu)
+        total_count.merge_range('L24:Q24','Shuttles',   whiteallu)
 
         #Airtrain
         FormulasList_AirMtT = [
