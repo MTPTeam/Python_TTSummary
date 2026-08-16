@@ -788,7 +788,7 @@ def TTS_TC(path, mypath = None):
                         elif line == 'Redcliffe Peninsula':
                             shared_line_rdp_stations = ['LWO', 'BPR', 'SPN', 'BDS', 'CDE', 'ZLL', 'GEB', 'SSN', 'VGI']
                             condition = condition or dID in shared_line_rdp_stations or oID in shared_line_rdp_stations
-    
+
                         if condition:
                             
                             for n,entry in enumerate(entries):
@@ -799,13 +799,14 @@ def TTS_TC(path, mypath = None):
                                     break
                             
                             for n,entry in enumerate(entries):
+
                                 if n <= first_sIDinVRT:
                                     secondonline = firstonline
                                 else:
                                     if entry.attrib['stationID'] in vrt:
                                         secondonline = entry.attrib['stationID']
                                         break
-                                
+                                    
                             a = int(vrt.get(firstonline)[0])    
                             b = int(vrt.get(secondonline)[0])
                             increasing = b > a
@@ -861,7 +862,12 @@ def TTS_TC(path, mypath = None):
             findtrips('Shorncliffe',        ['SHC','NTG'])
             findtrips('Redcliffe Peninsula',['KPR'])
             findtrips('Gold Coast',         ['VYS','VYST'])
-            findtrips('Sunshine Coast',     ['NBR','CRD']),
+            #findtrips('Sunshine Coast',     ['NBR','CRD']),
+            findtrips(
+                        'Sunshine Coast' if ('RS' in stations or 'RTL' in stations)
+                        else 'Sunshine Coast Shuttle',
+                        ['NBR','CRD']
+                    )
             findtrips('Gympie North',       ['GYN'])
             #findtrips('Rosewood',           ['RSW'])
             findtrips(
