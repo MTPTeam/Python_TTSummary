@@ -53,7 +53,7 @@ non_revenue_stations = [
     'YLE',
     'ETS',
     'CAM',
-    'EXH',
+    #'EXH',
     'NBY',
     'YNA',
     'YN',
@@ -135,6 +135,10 @@ non_revenue_stations = [
 
 
 weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
+shuttle_dict = {
+    ('PKR', 'BHI'): 'Inner City Shuttle',
+    ('BOG', 'EXH'): 'CRR Shuttle',
+}
 
 
 def TTS_TC(path, mypath = None):
@@ -204,6 +208,16 @@ def TTS_TC(path, mypath = None):
         else:
             apply_ratio_method = False
             
+        include_inner_crr_shuttles = select_option_safe(
+                "Shuttle Trip Counts",
+                "Do you want to include Inner City and CRR Shuttle trips?",
+                [("Yes", True), ("No", False)]
+            )
+
+        if include_inner_crr_shuttles is None:
+            return  # User clicked X
+
+
         if tn_doubles:
             print('           Error: Duplicate train numbers')
             for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
@@ -850,6 +864,10 @@ def TTS_TC(path, mypath = None):
             cbdarr = timetrim(cbdarr)
             cbddep = timetrim(cbddep)
             darr = timetrim(darr)
+
+            if include_inner_crr_shuttles and {oID, dID} in [set(x) for x in shuttle_dict]:
+                findtrips('Inner City Shuttle', ['PKR'])
+                findtrips('CRR Shuttle',        ['BOG'])
     
             
             findtrips('Airport',            ['BDT'])
@@ -1383,7 +1401,7 @@ def TTS_TC(path, mypath = None):
             total_count.merge_range('L71:P71', 'Sun/Sat Ratio', whiteallu)
             total_count.merge_range('Q71:R71', '=Q70/Q69', percent_border)
 
-            total_count.merge_range('L62:P63','Estimate Trip Count (Fri + Sat CTP\'s):',bold13)
+            total_count.merge_range('L62:P63','Estimated Weekly Trip Count Ratio Method',bold13)
             total_count.merge_range('Q62:R63','=SUM(4*R55*Q67,R55,R56,R56*Q71)',bold13)
 
         info_sheet.write('B2','Trip Count Report', boldleft)
