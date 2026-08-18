@@ -597,7 +597,7 @@ def TTS_TC(path, mypath = None):
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
             'Caboolture':                 ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN'),
-            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
+            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','AUR','CRD','ARO','BIR'),
             'Gympie North':               ('YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
@@ -884,7 +884,7 @@ def TTS_TC(path, mypath = None):
             findtrips(
                         'Sunshine Coast' if ('RS' in stations or 'RTL' in stations)
                         else 'Sunshine Coast Shuttle',
-                        ['NBR','CRD']
+                        ['NBR','CRD','BIR']
                     )
             findtrips('Gympie North',       ['GYN'])
             #findtrips('Rosewood',           ['RSW'])
