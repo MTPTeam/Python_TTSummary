@@ -33,7 +33,15 @@ def select_file(caption: str = "Select a file",directory: str = "",filter_str: s
     )
     return file_path or ""
 
-
+def select_multi_rsl_files(caption: str = "Select RSL files",directory: str = "",) -> list[str]:
+    ensure_app()
+    files, _ = QFileDialog.getOpenFileNames(
+        None,
+        caption,
+        directory,
+        "RSL Files (*.rsl)",
+    )
+    return files
 
 
 def select_multi_rsx_files(caption: str = "Select RSX files",directory: str = "",) -> list[str]:

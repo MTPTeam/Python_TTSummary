@@ -2,7 +2,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QScrollArea, QSizePolicy, QGridLayout, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
 from PyQt6.QtGui import QFont, QCursor, QColor, QIcon
-from taipan.gui.base import select_file, select_multi_rsx_files, select_folder
+from taipan.gui.base import select_file, select_multi_rsx_files, select_folder, select_multi_rsl_files
 from taipan.gui.ui_constants.stylesheet import STYLESHEET, img_path
 import os
 from taipan.gui.ui_constants.names import SCRIPTS, COLUMN_ORDER
@@ -620,7 +620,8 @@ class TaipanLauncher(QMainWindow):
 
     def _run_itops_geo(self, button=None):
         
-        paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSX Files (*.rsx)")
+        #paths = self.get_file(multi_rsx=True, force_new=True, filter_str="RSL Files (*.rsl)")
+        paths = select_multi_rsl_files()
 
         if not paths:
             return

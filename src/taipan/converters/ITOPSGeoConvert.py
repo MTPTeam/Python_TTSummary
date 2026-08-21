@@ -1,7 +1,7 @@
 import re
 from lxml import etree as ET
 
-from taipan.gui.base import select_multi_rsx_files
+from taipan.gui.base import select_multi_rsl_files
 from PyQt6.QtWidgets import QApplication
 import sys
 
@@ -15,7 +15,7 @@ def replace_all(text, dic):
 def run_geo_convert(paths=None):
 
     if not paths:
-        paths = select_multi_rsx_files()
+        paths = select_multi_rsl_files()
 
     if not paths:
         return
@@ -55,6 +55,6 @@ def run_geo_convert(paths=None):
 if __name__ == "__main__":
     app = QApplication.instance() or QApplication(sys.argv)
 
-    paths = select_multi_rsx_files()
+    paths = select_multi_rsl_files()
     if paths:
         run_geo_convert(paths)
