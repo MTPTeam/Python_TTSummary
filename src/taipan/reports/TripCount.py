@@ -36,10 +36,21 @@ ampeak_end = '09:00:00'
 pmpeak_srt = '15:30:00'
 pmpeak_end = '18:30:00'
 
+trip_sets = {
+    'Current': {
+        'MTh': 1343,
+        'Fri': 1381,
+        'Sat': 928,
+        'Sun': 822
+    },
 
-
-
-
+    '3STT': {
+        'MTh': 1533,
+        'Fri': 1571,
+        'Sat': 1252,
+        'Sun': 1186
+    }
+}
 
 ### Used to filter out stations where passengers cannot board
 ### Want to only iterate over revenue locations
@@ -53,7 +64,7 @@ non_revenue_stations = [
     'YLE',
     'ETS',
     'CAM',
-    'EXH',
+    #'EXH',
     'NBY',
     'YNA',
     'YN',
@@ -92,6 +103,7 @@ non_revenue_stations = [
     'BHNJ',
     'MEJ',
     'ORMS',
+    'ORMH',
     'MNYE',
     
     
@@ -134,6 +146,10 @@ non_revenue_stations = [
 
 
 weekdaykey_dict = {'120':'Mon-Thu','64': 'Mon','32': 'Tue','16': 'Wed','8':  'Thu', '4':  'Fri','2':  'Sat','1':  'Sun'}
+shuttle_dict = {
+    ('PKR', 'BHI'): 'Inner City Shuttle',
+    ('BOG', 'EXH'): 'CRR Shuttle',
+}
 
 
 def TTS_TC(path, mypath = None):
@@ -170,7 +186,14 @@ def TTS_TC(path, mypath = None):
             filename_xlsx = f'TripCountCENTRAL-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         
-    
+        use_trip_set = '3STT' if any(
+                        {'RSW','BDT'} == {
+                            list(t.iter('entry'))[0].attrib['stationID'],
+                            list(t.iter('entry'))[-1].attrib['stationID']
+                        }
+                        for t in root.findall('.//train')
+                    ) else 'Current'
+
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
@@ -182,6 +205,32 @@ def TTS_TC(path, mypath = None):
             if (tn,day) in tn_list: tn_doubles.append((tn,day))
             tn_list.append((tn,day))
                 
+        unique_codes = list(set(day for _, day in tn_list))
+        daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
+        daysinfile = [weekdaykey_dict.get(code) for code in unique_codes]
+
+        has_full_week = {'Mon-Thu','Fri','Sat','Sun'}.issubset(daysinfile)
+        has_fri_sat_only = set(daysinfile) == {'Fri','Sat'}
+
+        if set(daysinfile) == {'Fri', 'Sat'}:
+
+            apply_ratio_method = select_option_safe(
+                "Only Fri and Sat trains detected in the RSX file",
+                "Apply Current Timetable based Ratio Method for Weekly Trip Count Estimates?",
+                [("Yes", True), ("No", False)]
+            )
+
+            if apply_ratio_method is None:
+                return  # User clicked X, exit script
+
+        else:
+            apply_ratio_method = False
+            
+        if use_trip_set == 'Current':
+            include_inner_crr_shuttles = False
+        else:
+            include_inner_crr_shuttles = True
+
         if tn_doubles:
             print('           Error: Duplicate train numbers')
             for tn,day in tn_doubles: print(f' - 2 trains runnnig on {weekdaykey_dict.get(day)} with train number {tn} - ')
@@ -545,6 +594,7 @@ def TTS_TC(path, mypath = None):
             'Beenleigh':                  vrt_2Beenleigh,
             'Caboolture':                 vrt_2Caboolture,
             'Sunshine Coast':             vrt_2GympieNth,
+            'Gympie North':               vrt_2GympieNth,
             'Cleveland':                  vrt_2Cleveland,
             'Doomben':                    vrt_2Doomben,
             'Ferny Grove':                vrt_2FernyGrove,
@@ -560,7 +610,8 @@ def TTS_TC(path, mypath = None):
         uniquestations_dict = {
             'Beenleigh':                  ('BNHS','BNT','HVW','EDL','BTI','KGT','WOI','TDP','KRY','FTG','RUC','SYK','BQO','CEP','SLY','RKET','RKE','MQK','CPM','ORMS'), # 'TNY', 'MBN','YLY','YRG','FFI','DUP'
             'Caboolture':                 ('DKB','NRB','BPY','MYE','CAB','CAW','CAE','CEN'),
-            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN','AUR','CRD'),
+            'Sunshine Coast':             ('EMH','EMHS','BEB','GSS','BWH','LSH','MOH','EUD','PAL','WOB','WOBS','NBR','AUR','CRD','ARO','BIR'),
+            'Gympie North':               ('YAN','NHR','EUM','SSE','COO','PMQ','COZ','TRA','WOO','GMR','GYN'),
             'Cleveland':                  ('BRD','CRO','NPR','MGS','CNQ','MJE','HMM','LDM','LJM','WYH','WNM','WNC','MNY','LOT','TNS','BDE','WPT','ORO','CVN'),
             'Doomben':                    ('CYF','HDR','ACO','DBN'),
             'Ferny Grove':                ('WID','WLQ','NWM','ADY','EGG','GAO','MHQ','OXP','GOQ','KEP','FYG'),
@@ -764,7 +815,7 @@ def TTS_TC(path, mypath = None):
                         elif line == 'Redcliffe Peninsula':
                             shared_line_rdp_stations = ['LWO', 'BPR', 'SPN', 'BDS', 'CDE', 'ZLL', 'GEB', 'SSN', 'VGI']
                             condition = condition or dID in shared_line_rdp_stations or oID in shared_line_rdp_stations
-    
+
                         if condition:
                             
                             for n,entry in enumerate(entries):
@@ -775,13 +826,14 @@ def TTS_TC(path, mypath = None):
                                     break
                             
                             for n,entry in enumerate(entries):
+
                                 if n <= first_sIDinVRT:
                                     secondonline = firstonline
                                 else:
                                     if entry.attrib['stationID'] in vrt:
                                         secondonline = entry.attrib['stationID']
                                         break
-                                
+                                    
                             a = int(vrt.get(firstonline)[0])    
                             b = int(vrt.get(secondonline)[0])
                             increasing = b > a
@@ -825,6 +877,10 @@ def TTS_TC(path, mypath = None):
             cbdarr = timetrim(cbdarr)
             cbddep = timetrim(cbddep)
             darr = timetrim(darr)
+
+            if include_inner_crr_shuttles and {oID, dID} in [set(x) for x in shuttle_dict]:
+                findtrips('Inner City Shuttle', ['PKR'])
+                findtrips('CRR Shuttle',        ['BOG'])
     
             
             findtrips('Airport',            ['BDT'])
@@ -837,8 +893,19 @@ def TTS_TC(path, mypath = None):
             findtrips('Shorncliffe',        ['SHC','NTG'])
             findtrips('Redcliffe Peninsula',['KPR'])
             findtrips('Gold Coast',         ['VYS','VYST'])
-            findtrips('Sunshine Coast',     ['GYN','NBR','CRD'])
-            findtrips('Rosewood',           ['RSW'])
+            #findtrips('Sunshine Coast',     ['NBR','CRD']),
+            findtrips(
+                        'Sunshine Coast' if ('RS' in stations or 'RTL' in stations)
+                        else 'Sunshine Coast Shuttle',
+                        ['NBR','CRD','BIR']
+                    )
+            findtrips('Gympie North',       ['GYN'])
+            #findtrips('Rosewood',           ['RSW'])
+            findtrips(
+                        'Rosewood' if ('RS' in stations or 'RTL' in stations)
+                        else 'Rosewood Shuttle',
+                        ['RSW']
+                    )
             
             if 'RSW' not in stations:
                 findtrips('Ipswich',        ['IPS','IPSS'])
@@ -880,23 +947,31 @@ def TTS_TC(path, mypath = None):
         ######################################################################
         Periods = ['AM','AMC','PM','PMC','OPI','OPO']
         LineList = [
-            'Beenleigh',
-            'Caboolture',
-            'Cleveland',
-            'Springfield',
-            'Doomben',
-            'Ferny Grove',
-            'Ipswich',
-            'Shorncliffe',
-            'Redcliffe Peninsula',
-            ' ',
-            ' ',
-            'Gold Coast',
-            'Sunshine Coast',
-            'Rosewood',
-            ' ',
-            ' ',
-            'Total (Excluding Airtrain)']
+                    'Beenleigh',
+                    'Cleveland',
+                    'Springfield',
+                    'Doomben',
+                    'Ferny Grove',
+                    'Shorncliffe',
+                    'Redcliffe Peninsula',
+                    ' ',
+                    ' ',
+                    'Gold Coast',
+                    'Ipswich + Rosewood',
+                    'Rosewood',
+                    'Caboolture + Sunshine Coast',
+                    'Sunshine Coast',
+                    'Gympie North',
+                    ' ',
+                    ' ',
+                    'Rosewood Shuttle',
+                    'Sunshine Coast Shuttle',
+                    'Inner City Shuttle',
+                    'CRR Shuttle',
+                    ' ',
+                    ' ',
+                    'Total (Excluding Airtrain)'
+                    ]
         LineList2 = list(LineList); LineList2[-1] = 'Airport'
         
         FormulasList_TripSummary = [
@@ -907,23 +982,30 @@ def TTS_TC(path, mypath = None):
             '=COUNTIF(B:B,J6)',
             '=COUNTIF(B:B,J7)',
             '=COUNTIF(B:B,J8)',
-            '=COUNTIF(B:B,J9)',
-            '=COUNTIF(B:B,J10)',
-            '=SUM(K2:K10)',
+            '=SUM(K2:K8)',
             '',
+            '=COUNTIF(B:B,J11)',
+            '=COUNTIF(B:B,TRIM(LEFT(J12,FIND("+",J12)-1)))+COUNTIF(B:B,J13)',
             '=COUNTIF(B:B,J13)',
-            '=COUNTIF(B:B,J14)',
+            '=COUNTIF(B:B,TRIM(LEFT(J14,FIND("+",J14)-1)))+COUNTIF(B:B,J15)',
             '=COUNTIF(B:B,J15)',
-            '=SUM(K13:K15)',
+            '=COUNTIF(B:B,J16)',
+            '=SUM(K11,K12,K14,K16)',
             '',
-            '=COUNTIF(B:B,J18)',
-            '=SUM(K18)'
-            ]
+            '=COUNTIF(B:B,J19)',
+            '=COUNTIF(B:B,J20)',
+            '=COUNTIF(B:B,J21)',
+            '=COUNTIF(B:B,J22)',
+            '=SUM(K19:K22)',
+            '',
+            '=COUNTIF(B:B,J25)',
+            '=SUM(K25)']
         #_________________________________________________________________________________________________________________________________________________________
         #_________________________________________________________________________________________________________________________________________________________
         bold                        = workbook.add_format({'bold': True, 'align':'center'})
         border                      = workbook.add_format({'border':1, 'border_color':'#000000', 'align':'center'})
         bold12                      = workbook.add_format({'bold': True, 'align':'center', 'font_size':12})
+        bold13                     = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter', 'border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2,'font_size':14,'num_format': '0'})
         
         grey                        = workbook.add_format({'bold': True, 'align':'center', 'bg_color':'#C0C0C0'})
         greybottom                  = workbook.add_format({'bold': True, 'align':'center','bottom':2, 'bg_color':'#C0C0C0'})
@@ -931,7 +1013,7 @@ def TTS_TC(path, mypath = None):
         greybottomright             = workbook.add_format({'bold': True, 'align':'center','bottom':2, 'right':2, 'bg_color':'#C0C0C0'})
         greyleftright               = workbook.add_format({'bold': True, 'align':'center','left':2, 'right':2, 'bg_color':'#C0C0C0'})
     
-        greyt                       = workbook.add_format({'bold': True, 'align':'center','border':2, 'bg_color':'#C0C0C0'})
+        greyt                       = workbook.add_format({'bold': True, 'align':'center','valign':'vcenter','border':2, 'bg_color':'#C0C0C0'})
         greyb                       = workbook.add_format({'bold': True, 'align':'center','border':1, 'bg_color':'#C0C0C0'})
         greyallbottom               = workbook.add_format({'bold': True, 'align':'center','border':1,'bottom':2, 'bg_color':'#C0C0C0'})
         greyallbottomleft           = workbook.add_format({'bold': True, 'align':'center','border':1,'bottom':2, 'left':2, 'bg_color':'#C0C0C0'})
@@ -950,6 +1032,10 @@ def TTS_TC(path, mypath = None):
         left                        = workbook.add_format({'align':'left'})
         boldleft                    = workbook.add_format({'align':'left','bold':True})
         boldright                   = workbook.add_format({'align':'right','bold':True})
+
+        grey_note                   = workbook.add_format({'bold': True,'italic': True,'font_color': '#BFBFBF','align': 'center'})
+        whiteallu = workbook.add_format({'bold': True,'align': 'center','border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2})
+        percent_border = workbook.add_format({'bold': True,'align': 'center','valign': 'vcenter','border': 1,'left': 2,'right': 2,'top': 2,'bottom': 2,'num_format': '0.00%','bg_color':'#C0C0C0'})
         
         workbook.formats[0].set_align('center') 
         
@@ -985,8 +1071,8 @@ def TTS_TC(path, mypath = None):
             sheet.autofilter('A2:I700')
         
         #TOTAL COUNT
-        total_count.set_column(1,1,22.57)
-        total_count.set_column(10,10,22.57)
+        total_count.set_column(1,1,30)
+        total_count.set_column(10,10,30)
         
         total_count.set_row(0,15.75)
         total_count.set_row(4,15.75)
@@ -1001,231 +1087,342 @@ def TTS_TC(path, mypath = None):
         
         total_count.merge_range('C5:H5','Mon - Thu',  greyt)
         total_count.merge_range('L5:Q5','Fri',        greyt)
-        total_count.merge_range('C26:D26','Sat',      greyt)
-        total_count.merge_range('G26:H26','Sun',      greyt)
-        total_count.merge_range('L26:Q26','AirTrain', greyt)
+        total_count.merge_range('C34:D34','Sat',      greyt)
+        total_count.merge_range('G34:H34','Sun',      greyt)
+        total_count.merge_range('L34:Q34','AirTrain', greyt)
         
         #MON-THURS
         total_count.write_row('C6',     Periods,    bold)
-        total_count.write_column('B7',  LineList,   bold)
+        total_count.write_column('B8',  LineList,   bold)
         #FRIDAY
         total_count.write_row('L6',     Periods,    bold)
-        total_count.write_column('K7',  LineList,   bold)
+        total_count.write_column('K8',  LineList,   bold)
         #SAT/SUN
-        total_count.write('C27','Sat In',bold);   total_count.write('D27','Sat Out',bold)
-        total_count.write('G27','Sun In',bold);   total_count.write('H27','Sun Out',bold)
-        total_count.write_column('B28',LineList,bold)
+        total_count.write('C35','Sat In',bold);   total_count.write('D35','Sat Out',bold)
+        total_count.write('G35','Sun In',bold);   total_count.write('H35','Sun Out',bold)
+        total_count.write_column('B37',LineList,bold)
         #AIRTRAIN
-        total_count.write_row('L27',Periods,bold  )
-        total_count.write('K28','Mon - Thu'       );    total_count.write('K29','Fri')
-        total_count.write('P31','Inbound',  bold  );    total_count.write('Q31','Outbound',bold)
-        total_count.write('O32','Sat'             );    total_count.write('O33','Sun')
+        total_count.write_row('L35',Periods,bold  )
+        total_count.write('K37','Mon - Thu'       );    total_count.write('K38','Fri')
+        total_count.write('P40','Inbound',  bold  );    total_count.write('Q40','Outbound',bold)
+        total_count.write('O42','Sat'             );    total_count.write('O43','Sun')
         
         
         
         #Sunday
-        FormulasList_SunTotal = ['=SUM(G29:H29)','=SUM(G30:H30)','=SUM(G31:H31)','=SUM(G32:H32)','=SUM(G33:H33)',
-                                 '=SUM(G34:H34)','=SUM(G35:H35)','=SUM(G36:H36)','=SUM(G37:H37)','','=SUM(G39:H39)',
-                                 '=SUM(G40:H40)','=SUM(G41:H41)','=SUM(G42:H42)','']
+        FormulasList_SunTotal = ['=SUM(G38:H38)','=SUM(G39:H39)','=SUM(G40:H40)','=SUM(G41:H41)','=SUM(G42:H42)','=SUM(G43:H43)','=SUM(G44:H44)',
+                                 '','=SUM(G46:H46)','=SUM(G47:H47)','','=SUM(G49:H49)','','=SUM(G51:H51)','=SUM(G52:H52)',
+                                 '','=SUM(G54:H54)','=SUM(G55:H55)','=SUM(G56:H56)','=SUM(G57:H57)','=SUM(G58:H58)',
+                                 '',]
         
         
-        FormulasList_SunIn = ['=Sun_Inbound!K3','=Sun_Inbound!K4','=Sun_Inbound!K5','=Sun_Inbound!K6',
-                              '=Sun_Inbound!K7','=Sun_Inbound!K8','=Sun_Inbound!K9','=Sun_Inbound!K10','','',
-                              '=Sun_Inbound!K13','=Sun_Inbound!K14','=Sun_Inbound!K15','','']
+        FormulasList_SunIn = ['=Sun_Inbound!K3','=Sun_Inbound!K4','=Sun_Inbound!K5','=Sun_Inbound!K6','=Sun_Inbound!K7','=Sun_Inbound!K8','','',
+                              '=Sun_Inbound!K11','=Sun_Inbound!K12','=Sun_Inbound!K13','=Sun_Inbound!K14','=Sun_Inbound!K15','=Sun_Inbound!K16','','',
+                              '=Sun_Inbound!K19','=Sun_Inbound!K20','=Sun_Inbound!K21','=Sun_Inbound!K22','','',
+                              '=Sun_Inbound!K25']
         
-        FormulasList_SunOut = ['=Sun_Outbound!K3','=Sun_Outbound!K4','=Sun_Outbound!K5','=Sun_Outbound!K6',
-                               '=Sun_Outbound!K7','=Sun_Outbound!K8','=Sun_Outbound!K9','=Sun_Outbound!K10','','',
-                               '=Sun_Outbound!K13','=Sun_Outbound!K14','=Sun_Outbound!K15','','']
+        FormulasList_SunOut = ['=Sun_Outbound!K3','=Sun_Outbound!K4','=Sun_Outbound!K5','=Sun_Outbound!K6','=Sun_Outbound!K7','=Sun_Outbound!K8','','',
+                              '=Sun_Outbound!K11','=Sun_Outbound!K12','=Sun_Outbound!K13','=Sun_Outbound!K14','=Sun_Outbound!K15','=Sun_Outbound!K16','','',
+                              '=Sun_Outbound!K19','=Sun_Outbound!K20','=Sun_Outbound!K21','=Sun_Outbound!K22','','',
+                              '=Sun_Outbound!K25']
         
-        total_count.write('G28','=Sun_Inbound!K2',              whitecell_tbordertopleft) #toptop left
-        total_count.write('H28','=Sun_Outbound!K2',             whitecell_tbordertop) #toptop midlle
-        total_count.write('I28','=SUM(G28:H28)',                greyalln) #toptop right
+        total_count.write('G37','=Sun_Inbound!K2',              whitecell_tbordertopleft) #toptop left
+        total_count.write('H37','=Sun_Outbound!K2',             whitecell_tbordertop) #toptop midlle
+        total_count.write('I37','=SUM(G37:H37)',                greyalln) #toptop right
         
-        total_count.write_column('G29',FormulasList_SunIn,      whitecell_tborderleft)
-        total_count.write_column('H29',FormulasList_SunOut,     border)
-        total_count.write_column('I29',FormulasList_SunTotal,   greyallleftright)
+        total_count.write_column('G38',FormulasList_SunIn,      whitecell_tborderleft)
+        total_count.write_column('H38',FormulasList_SunOut,     border)
+        total_count.write_column('I38',FormulasList_SunTotal,   greyallleftright)
+
+        total_count.merge_range('G36:H36','Suburban',   whiteallu)
+        total_count.merge_range('G45:H45','Interurban', whiteallu)
+        total_count.merge_range('G53:H53','Shuttles',   whiteallu)
+
         
-        total_count.write('G44','=G37+G42',                     greyallbottomleft) #bottom left
-        total_count.write('H44','=H37+H42',                     greyallbottom) #bottom middle
-        total_count.write('I44','=SUM(G44:H44)',                greyallu) #bottom right
+        total_count.write('G60','=G44+G52+G58',                 greyallbottomleft) #bottom left
+        total_count.write('H60','=H44+H52+H58',                 greyallbottom) #bottom middle
+        total_count.write('I60','=I44+I52+I58',                 greyallu) #bottom right
         
-        total_count.write('G42','=SUM(G39:G41)',                greyallleft) #middle left
-        total_count.write('H42','=SUM(H39:H41)',                greyallright) #middle middle
+        #shuttes total
+        total_count.write('G58','=SUM(G54:G57)',                greyallleft) #middle left
+        total_count.write('H58','=SUM(H54:H57)',                greyallright) #middle middle
+
+        #interurban total
+        total_count.write('G52','=SUM(G46,G47,G49,G51)',        greyallleft) #middle left
+        total_count.write('H52','=SUM(H46,H47,H49,H51)',        greyallright) #middle middle
         
-        total_count.write('G37','=SUM(G28:G36)',                greyallleft) #top left
-        total_count.write('H37','=SUM(H28:H36)',                greyallright) #top middle
-        
-        
+        #suburban total
+        total_count.write('G44','=SUM(G37:G43)',                greyallleft) #top left
+        total_count.write('H44','=SUM(H37:H43)',                greyallright) #top middle
         
         #Saturday
-        FormulasList_SatTotal = ['=SUM(C29:D29)','=SUM(C30:D30)','=SUM(C31:D31)','=SUM(C32:D32)',
-                                 '=SUM(C33:D33)','=SUM(C34:D34)','=SUM(C35:D35)','=SUM(C36:D36)','=SUM(C37:D37)',
-                                 '','=SUM(C39:D39)','=SUM(C40:D40)','=SUM(C41:D41)','=SUM(C42:D42)','']
-        
-        
-        FormulasList_SatIn = ['=Sat_Inbound!K3','=Sat_Inbound!K4','=Sat_Inbound!K5','=Sat_Inbound!K6',
-                              '=Sat_Inbound!K7','=Sat_Inbound!K8','=Sat_Inbound!K9','=Sat_Inbound!K10',
-                              '','','=Sat_Inbound!K13','=Sat_Inbound!K14','=Sat_Inbound!K15','','']
-        
-        FormulasList_SatOut = ['=Sat_Outbound!K3','=Sat_Outbound!K4','=Sat_Outbound!K5','=Sat_Outbound!K6',
-                               '=Sat_Outbound!K7','=Sat_Outbound!K8','=Sat_Outbound!K9','=Sat_Outbound!K10',
-                               '','','=Sat_Outbound!K13','=Sat_Outbound!K14','=Sat_Outbound!K15','','']
-        
-        total_count.write('C28','=Sat_Inbound!K2',              whitecell_tbordertopleft) #toptop left
-        total_count.write('D28','=Sat_Outbound!K2',             whitecell_tbordertop) #toptop midlle
-        total_count.write('E28','=SUM(C28:D28)',                greyalln) #toptop right
-        
-        total_count.write_column('C29',FormulasList_SatIn,      whitecell_tborderleft)
-        total_count.write_column('D29',FormulasList_SatOut,     border)
-        total_count.write_column('E29',FormulasList_SatTotal,   greyallleftright)
-        
-        total_count.write('C44','=C37+C42',                     greyallbottomleft) #bottom left
-        total_count.write('D44','=D37+D42',                     greyallbottom) #bottom middle
-        total_count.write('E44','=SUM(C44:D44)',                greyallu) #bottom right
-        
-        total_count.write('C42','=SUM(C39:C41)',                greyallleft) #middle left
-        total_count.write('D42','=SUM(D39:D41)',                greyallright) #middle middle
-        
-        total_count.write('C37','=SUM(C28:C36)',                greyallleft) #top left
-        total_count.write('D37','=SUM(D28:D36)',                greyallright) #top middle
-        
-        
-        
+        FormulasList_SatTotal = ['=SUM(C38:D38)','=SUM(C39:D39)','=SUM(C40:D40)','=SUM(C41:D41)','=SUM(C42:D42)','=SUM(C43:D43)','=SUM(C44:D44)',
+                                '','=SUM(C46:D46)','=SUM(C47:D47)','','=SUM(C49:D49)','','=SUM(C51:D51)','=SUM(C52:D52)',
+                                '','=SUM(C54:D54)','=SUM(C55:D55)','=SUM(C56:D56)','=SUM(C57:D57)','=SUM(C58:D58)',
+                                '',]
+
+        FormulasList_SatIn = ['=Sat_Inbound!K3','=Sat_Inbound!K4','=Sat_Inbound!K5','=Sat_Inbound!K6','=Sat_Inbound!K7','=Sat_Inbound!K8','','',
+                            '=Sat_Inbound!K11','=Sat_Inbound!K12','=Sat_Inbound!K13','=Sat_Inbound!K14','=Sat_Inbound!K15','=Sat_Inbound!K16','','',
+                            '=Sat_Inbound!K19','=Sat_Inbound!K20','=Sat_Inbound!K21','=Sat_Inbound!K22','','',
+                            '=Sat_Inbound!K25']
+
+        FormulasList_SatOut = ['=Sat_Outbound!K3','=Sat_Outbound!K4','=Sat_Outbound!K5','=Sat_Outbound!K6','=Sat_Outbound!K7','=Sat_Outbound!K8','','',
+                            '=Sat_Outbound!K11','=Sat_Outbound!K12','=Sat_Outbound!K13','=Sat_Outbound!K14','=Sat_Outbound!K15','=Sat_Outbound!K16','','',
+                            '=Sat_Outbound!K19','=Sat_Outbound!K20','=Sat_Outbound!K21','=Sat_Outbound!K22','','',
+                            '=Sat_Outbound!K25']
+
+        total_count.write('C37','=Sat_Inbound!K2',          whitecell_tbordertopleft)
+        total_count.write('D37','=Sat_Outbound!K2',         whitecell_tbordertop)
+        total_count.write('E37','=SUM(C37:D37)',            greyalln)
+
+        total_count.write_column('C38',FormulasList_SatIn,  whitecell_tborderleft)
+        total_count.write_column('D38',FormulasList_SatOut, border)
+        total_count.write_column('E38',FormulasList_SatTotal,greyallleftright)
+
+        total_count.merge_range('C36:D36','Suburban',   whiteallu)
+        total_count.merge_range('C45:D45','Interurban', whiteallu)
+        total_count.merge_range('C53:D53','Shuttles',   whiteallu)
+
+        total_count.write('C60','=C44+C52+C58',         greyallbottomleft)
+        total_count.write('D60','=D44+D52+D58',         greyallbottom)
+        total_count.write('E60','=E44+E52+E58',         greyallu)
+
+        # shuttles total
+        total_count.write('C58','=SUM(C54:C57)',        greyallleft)
+        total_count.write('D58','=SUM(D54:D57)',        greyallright)
+
+        # interurban total
+        total_count.write('C52','=SUM(C46,C47,C49,C51)',greyallleft)
+        total_count.write('D52','=SUM(D46,D47,D49,D51)',greyallright)
+
+        # suburban total
+        total_count.write('C44','=SUM(C37:C43)',        greyallleft)
+        total_count.write('D44','=SUM(D37:D43)',        greyallright)
+
         #Mon - Thurs
         ############################################################################
         FormulasList_MtT1 = ['=Mon_Thu_AM_Contra!K2','=Mon_Thu_PM!K2','=Mon_Thu_PM_Contra!K2','=Mon_Thu_OFF_Inbound!K2','=Mon_Thu_OFF_Outbound!K2'	] #toprow
         FormulasList_MtT2 = ['=Mon_Thu_AM!K3','=Mon_Thu_AM!K4','=Mon_Thu_AM!K5','=Mon_Thu_AM!K6',
-                             '=Mon_Thu_AM!K7','=Mon_Thu_AM!K8','=Mon_Thu_AM!K9','=Mon_Thu_AM!K10',
-                             '=SUM(C7:C15)','','=Mon_Thu_AM!K13','=Mon_Thu_AM!K14','=Mon_Thu_AM!K15',
-                             '=SUM(C18:C20)',''] #firstcol
-        FormulasList_MtT3 = ['=SUM(D7:D15)','=SUM(E7:E15)','=SUM(F7:F15)','=SUM(G7:G15)',	'=SUM(H7:H15)'] #1st sumrow
-        FormulasList_MtT4 = ['=SUM(D18:D20)','=SUM(E18:E20)','=SUM(F18:F20)',	'=SUM(G18:G20)',	'=SUM(H18:H20)'] #2nd sumrow
-        FormulasList_MtT5 = ['=D16+D21',	'=E16+E21','=F16+F21','=G16+G21'	,'=H16+H21'] #3rd sumrow
-        
+                             '=Mon_Thu_AM!K7','=Mon_Thu_AM!K8', '=SUM(C8:C14)','',
+                             '=Mon_Thu_AM!K11','=Mon_Thu_AM!K12','=Mon_Thu_AM!K13','=Mon_Thu_AM!K14','=Mon_Thu_AM!K15','=Mon_Thu_AM!K16',
+                             '=SUM(C17,C18,C20,C22)','',
+                             '=Mon_Thu_AM!K19','=Mon_Thu_AM!K20','=Mon_Thu_AM!K21','=Mon_Thu_AM!K22',
+                             '=SUM(C25:C28)',''] #firstcol
+        FormulasList_MtT3 = ['=SUM(D8:D14)','=SUM(E8:E14)','=SUM(F8:F14)','=SUM(G8:G14)','=SUM(H8:H14)'] #1st sumrow
+        FormulasList_MtT4 = ['=SUM(D17,D18,D20,D22)','=SUM(E17,E18,E20,E22)','=SUM(F17,F18,F20,F22)','=SUM(G17,G18,G20,G22)','=SUM(H17,H18,H20,H22)'] #2nd sumrow
+        FormulasList_MtT5 = ['=D15+D23+D29','=E15+E23+E29','=F15+F23+F29','=G15+G23+G29','=H15+H23+H29','=I15+I23+I29',] #3rd sumrow
+    
         FormulasList_MtT6 = [
             ('=Mon_Thu_AM_Contra!K3','=Mon_Thu_PM!K3','=Mon_Thu_PM_Contra!K3','=Mon_Thu_OFF_Inbound!K3','=Mon_Thu_OFF_Outbound!K3'),
-            ('=Mon_Thu_AM_Contra!K4'	,'=Mon_Thu_PM!K4','=Mon_Thu_PM_Contra!K4','=Mon_Thu_OFF_Inbound!K4','=Mon_Thu_OFF_Outbound!K4'),
+            ('=Mon_Thu_AM_Contra!K4','=Mon_Thu_PM!K4','=Mon_Thu_PM_Contra!K4','=Mon_Thu_OFF_Inbound!K4','=Mon_Thu_OFF_Outbound!K4'),
             ('=Mon_Thu_AM_Contra!K5','=Mon_Thu_PM!K5','=Mon_Thu_PM_Contra!K5','=Mon_Thu_OFF_Inbound!K5','=Mon_Thu_OFF_Outbound!K5'),
             ('=Mon_Thu_AM_Contra!K6','=Mon_Thu_PM!K6','=Mon_Thu_PM_Contra!K6','=Mon_Thu_OFF_Inbound!K6','=Mon_Thu_OFF_Outbound!K6'),
-            ('=Mon_Thu_AM_Contra!K7'	,'=Mon_Thu_PM!K7','=Mon_Thu_PM_Contra!K7','=Mon_Thu_OFF_Inbound!K7','=Mon_Thu_OFF_Outbound!K7'),
-            ('=Mon_Thu_AM_Contra!K8'	,'=Mon_Thu_PM!K8','=Mon_Thu_PM_Contra!K8','=Mon_Thu_OFF_Inbound!K8','=Mon_Thu_OFF_Outbound!K8'),
+            ('=Mon_Thu_AM_Contra!K7','=Mon_Thu_PM!K7','=Mon_Thu_PM_Contra!K7','=Mon_Thu_OFF_Inbound!K7','=Mon_Thu_OFF_Outbound!K7'),
+            ('=Mon_Thu_AM_Contra!K8','=Mon_Thu_PM!K8','=Mon_Thu_PM_Contra!K8','=Mon_Thu_OFF_Inbound!K8','=Mon_Thu_OFF_Outbound!K8'),
             ('=Mon_Thu_AM_Contra!K9','=Mon_Thu_PM!K9','=Mon_Thu_PM_Contra!K9','=Mon_Thu_OFF_Inbound!K9','=Mon_Thu_OFF_Outbound!K9'),
-            ('=Mon_Thu_AM_Contra!K10','=Mon_Thu_PM!K10','=Mon_Thu_PM_Contra!K10',	'=Mon_Thu_OFF_Inbound!K10','=Mon_Thu_OFF_Outbound!K10'),
-            ('=SUM(D7:D15)','=SUM(E7:E15)','=SUM(F7:F15)','=SUM(G7:G15)','=SUM(H7:H15)'),
-            ('','','','',''),
-            ('=Mon_Thu_AM_Contra!K13','=Mon_Thu_PM!K13','=Mon_Thu_PM_Contra!K13',	'=Mon_Thu_OFF_Inbound!K13','=Mon_Thu_OFF_Outbound!K13'),
-            ('=Mon_Thu_AM_Contra!K14','=Mon_Thu_PM!K14','=Mon_Thu_PM_Contra!K14',	'=Mon_Thu_OFF_Inbound!K14','=Mon_Thu_OFF_Outbound!K14'),
-            ('=Mon_Thu_AM_Contra!K15','=Mon_Thu_PM!K15','=Mon_Thu_PM_Contra!K15',	'=Mon_Thu_OFF_Inbound!K15','=Mon_Thu_OFF_Outbound!K15'),
-            ('=SUM(D18:D20)'	,'=SUM(E18:E20)'	,'=SUM(F18:F20)'	,'=SUM(G18:G20)','=SUM(H18:H20)'),
-            ('','','','','')
+            ('=Mon_Thu_AM_Contra!K10','=Mon_Thu_PM!K10','=Mon_Thu_PM_Contra!K10','=Mon_Thu_OFF_Inbound!K10','=Mon_Thu_OFF_Outbound!K10'),
+            ('=Mon_Thu_AM_Contra!K11','=Mon_Thu_PM!K11','=Mon_Thu_PM_Contra!K11','=Mon_Thu_OFF_Inbound!K11','=Mon_Thu_OFF_Outbound!K11'),
+            ('=Mon_Thu_AM_Contra!K12','=Mon_Thu_PM!K12','=Mon_Thu_PM_Contra!K12','=Mon_Thu_OFF_Inbound!K12','=Mon_Thu_OFF_Outbound!K12'),
+            ('=Mon_Thu_AM_Contra!K13','=Mon_Thu_PM!K13','=Mon_Thu_PM_Contra!K13','=Mon_Thu_OFF_Inbound!K13','=Mon_Thu_OFF_Outbound!K13'),
+            ('=Mon_Thu_AM_Contra!K14','=Mon_Thu_PM!K14','=Mon_Thu_PM_Contra!K14','=Mon_Thu_OFF_Inbound!K14','=Mon_Thu_OFF_Outbound!K14'),
+            ('=Mon_Thu_AM_Contra!K15','=Mon_Thu_PM!K15','=Mon_Thu_PM_Contra!K15','=Mon_Thu_OFF_Inbound!K15','=Mon_Thu_OFF_Outbound!K15'),
+            ('=Mon_Thu_AM_Contra!K16','=Mon_Thu_PM!K16','=Mon_Thu_PM_Contra!K16','=Mon_Thu_OFF_Inbound!K16','=Mon_Thu_OFF_Outbound!K16'),
+            ('=Mon_Thu_AM_Contra!K17','=Mon_Thu_PM!K17','=Mon_Thu_PM_Contra!K17','=Mon_Thu_OFF_Inbound!K17','=Mon_Thu_OFF_Outbound!K17'),
+            ('=Mon_Thu_AM_Contra!K18','=Mon_Thu_PM!K18','=Mon_Thu_PM_Contra!K18','=Mon_Thu_OFF_Inbound!K18','=Mon_Thu_OFF_Outbound!K18'),
+            ('=Mon_Thu_AM_Contra!K19','=Mon_Thu_PM!K19','=Mon_Thu_PM_Contra!K19','=Mon_Thu_OFF_Inbound!K19','=Mon_Thu_OFF_Outbound!K19'),
+            ('=Mon_Thu_AM_Contra!K20','=Mon_Thu_PM!K20','=Mon_Thu_PM_Contra!K20','=Mon_Thu_OFF_Inbound!K20','=Mon_Thu_OFF_Outbound!K20'),
+            ('=Mon_Thu_AM_Contra!K21','=Mon_Thu_PM!K21','=Mon_Thu_PM_Contra!K21','=Mon_Thu_OFF_Inbound!K21','=Mon_Thu_OFF_Outbound!K21'),
+            ('=Mon_Thu_AM_Contra!K22','=Mon_Thu_PM!K22','=Mon_Thu_PM_Contra!K22','=Mon_Thu_OFF_Inbound!K22','=Mon_Thu_OFF_Outbound!K22'),
             ] 
         
         FormulasList_MtT7 = ['=SUM(C8:H8)','=SUM(C9:H9)','=SUM(C10:H10)','=SUM(C11:H11)','=SUM(C12:H12)',
-                             '=SUM(C13:H13)','=SUM(C14:H14)','=SUM(C15:H15)','=SUM(C16:H16)','','=SUM(C18:H18)',
-                             '=SUM(C19:H19)','=SUM(C20:H20)','=SUM(C21:H21)',''] #totalcol
-        
-        
-        total_count.write('C7','=Mon_Thu_AM!K2',            whitecell_tbordertopleft)
-        total_count.write_row('D7',FormulasList_MtT1,       whitecell_tbordertop)
-        total_count.write('I7','=SUM(C7:H7)',               greyalln)
+                             '=SUM(C13:H13)','=SUM(C14:H14)','=SUM(C15:H15)','','=SUM(C17:H17)',
+                             '=SUM(C18:H18)','','=SUM(C20:H20)','','=SUM(C22:H22)','=SUM(C23:H23)','',
+                             '=SUM(C25:H25)','=SUM(C26:H26)','=SUM(C27:H27)','=SUM(C28:H28)','=SUM(C29:H29)',] #totalcol
+
+        FormulasList_MtT8 = ['=SUM(D25:D28)','=SUM(E25:E28)','=SUM(F25:F28)','=SUM(G25:G28)','=SUM(H25:H28)'] #shuttle sumrow
+
+        total_count.write('C8','=Mon_Thu_AM!K2',            whitecell_tbordertopleft)
+        total_count.write_row('D8',FormulasList_MtT1,       whitecell_tbordertop)
+        total_count.write('I8','=SUM(C8:H8)',               greyalln)
         total_count.write('I23','=SUM(C23:H23)',            greyallu)
-        total_count.write_column('C8',FormulasList_MtT2,    whitecell_tborderleft)
+        total_count.write_column('C9',FormulasList_MtT2,    whitecell_tborderleft)
         
         for i,x in enumerate(FormulasList_MtT6):
-            total_count.write_row(i+7,3,x,border)#bulk of table
+            total_count.write_row(i+8,3,x,border)#bulk of table
         
-        total_count.write('C16','=SUM(C7:C15)',             greyallleft)
-        total_count.write_row('D16',FormulasList_MtT3,      greyb)
-        total_count.write('C21','=SUM(C18:C20)',            greyallleft)
-        total_count.write_row('D21',FormulasList_MtT4,      greyb)
-        total_count.write('C23','=C16+C21',                 greyallbottomleft)
-        total_count.write_row('D23',FormulasList_MtT5,      greyallbottom)
+        total_count.write('C15','=SUM(C8:C14)',             greyallleft)
+        total_count.write_row('D15',FormulasList_MtT3,      greyb)
+        total_count.write('C23','=SUM(C17,C18,C20,C22)',    greyallleft)
+        total_count.write('C29','=SUM(C25:C28)',            greyallleft)
+        total_count.write_row('D23',FormulasList_MtT4,      greyb)
+        total_count.write('C31','=C15+C23+C29',             greyallbottomleft)
+        total_count.write_row('D31',FormulasList_MtT5,      greyallbottom)
         
         total_count.write_column('I8',FormulasList_MtT7,    greyallleftright)
-        
-        
-        
+        total_count.write_row('D29',FormulasList_MtT8,      greyb)
+
+        total_count.merge_range('C7:H7','Suburban',     whiteallu)
+        total_count.merge_range('C16:H16','Interurban', whiteallu)
+        total_count.merge_range('C24:H24','Shuttles',   whiteallu)
+
         #Friday
         ############################################################################
-        FormulasList_Fri1 = ['=Fri_AM_Contra!K2','=Fri_PM!K2','=Fri_PM_Contra!K2','=Fri_OFF_Inbound!K2','=Fri_OFF_Outbound!K2'	] #toprow
+        FormulasList_Fri1 = ['=Fri_AM_Contra!K2','=Fri_PM!K2','=Fri_PM_Contra!K2','=Fri_OFF_Inbound!K2','=Fri_OFF_Outbound!K2']
         FormulasList_Fri2 = ['=Fri_AM!K3','=Fri_AM!K4','=Fri_AM!K5','=Fri_AM!K6',
-                             '=Fri_AM!K7','=Fri_AM!K8','=Fri_AM!K9','=Fri_AM!K10',
-                             '=SUM(L7:L15)','','=Fri_AM!K13','=Fri_AM!K14','=Fri_AM!K15',
-                             '=SUM(L18:L20)',''] #firstcol
-        FormulasList_Fri3 = ['=SUM(M7:M15)','=SUM(N7:N15)','=SUM(O7:O15)','=SUM(P7:P15)',	'=SUM(Q7:Q15)'] #1st sumrow
-        FormulasList_Fri4 = ['=SUM(M18:M20)','=SUM(N18:N20)','=SUM(O18:O20)',	'=SUM(P18:P20)',	'=SUM(Q18:Q20)'] #2nd sumrow
-        FormulasList_Fri5 = ['=M16+M21',	'=N16+N21','=O16+O21','=P16+P21'	,'=Q16+Q21'] #3rd sumrow
-        
+                            '=Fri_AM!K7','=Fri_AM!K8','=SUM(L8:L14)','',
+                            '=Fri_AM!K11','=Fri_AM!K12','=Fri_AM!K13','=Fri_AM!K14','=Fri_AM!K15','=Fri_AM!K16',
+                            '=SUM(L17,L18,L20,L22)','',
+                            '=Fri_AM!K19','=Fri_AM!K20','=Fri_AM!K21','=Fri_AM!K22',
+                            '=SUM(L25:L28)','']
+        FormulasList_Fri3 = ['=SUM(M8:M14)','=SUM(N8:N14)','=SUM(O8:O14)','=SUM(P8:P14)','=SUM(Q8:Q14)']
+        FormulasList_Fri4 = ['=SUM(M17,M18,M20,M22)','=SUM(N17,N18,N20,N22)','=SUM(O17,O18,O20,O22)','=SUM(P17,P18,P20,P22)','=SUM(Q17,Q18,Q20,Q22)']
+        FormulasList_Fri5 = ['=M15+M23+M29','=N15+N23+N29','=O15+O23+O29','=P15+P23+P29','=Q15+Q23+Q29','=R15+R23+R29']
+
         FormulasList_Fri6 = [
             ('=Fri_AM_Contra!K3','=Fri_PM!K3','=Fri_PM_Contra!K3','=Fri_OFF_Inbound!K3','=Fri_OFF_Outbound!K3'),
-            ('=Fri_AM_Contra!K4'	,'=Fri_PM!K4','=Fri_PM_Contra!K4','=Fri_OFF_Inbound!K4','=Fri_OFF_Outbound!K4'),
+            ('=Fri_AM_Contra!K4','=Fri_PM!K4','=Fri_PM_Contra!K4','=Fri_OFF_Inbound!K4','=Fri_OFF_Outbound!K4'),
             ('=Fri_AM_Contra!K5','=Fri_PM!K5','=Fri_PM_Contra!K5','=Fri_OFF_Inbound!K5','=Fri_OFF_Outbound!K5'),
             ('=Fri_AM_Contra!K6','=Fri_PM!K6','=Fri_PM_Contra!K6','=Fri_OFF_Inbound!K6','=Fri_OFF_Outbound!K6'),
-            ('=Fri_AM_Contra!K7'	,'=Fri_PM!K7','=Fri_PM_Contra!K7','=Fri_OFF_Inbound!K7','=Fri_OFF_Outbound!K7'),
-            ('=Fri_AM_Contra!K8'	,'=Fri_PM!K8','=Fri_PM_Contra!K8','=Fri_OFF_Inbound!K8','=Fri_OFF_Outbound!K8'),
+            ('=Fri_AM_Contra!K7','=Fri_PM!K7','=Fri_PM_Contra!K7','=Fri_OFF_Inbound!K7','=Fri_OFF_Outbound!K7'),
+            ('=Fri_AM_Contra!K8','=Fri_PM!K8','=Fri_PM_Contra!K8','=Fri_OFF_Inbound!K8','=Fri_OFF_Outbound!K8'),
             ('=Fri_AM_Contra!K9','=Fri_PM!K9','=Fri_PM_Contra!K9','=Fri_OFF_Inbound!K9','=Fri_OFF_Outbound!K9'),
-            ('=Fri_AM_Contra!K10','=Fri_PM!K10','=Fri_PM_Contra!K10',	'=Fri_OFF_Inbound!K10','=Fri_OFF_Outbound!K10'),
-            ('=SUM(M7:M15)','=SUM(N7:N15)','=SUM(O7:O15)','=SUM(P7:P15)','=SUM(Q7:Q15)'),
-            ('','','','',''),
-            ('=Fri_AM_Contra!K13','=Fri_PM!K13','=Fri_PM_Contra!K13',	'=Fri_OFF_Inbound!K13','=Fri_OFF_Outbound!K13'),
-            ('=Fri_AM_Contra!K14','=Fri_PM!K14','=Fri_PM_Contra!K14',	'=Fri_OFF_Inbound!K14','=Fri_OFF_Outbound!K14'),
-            ('=Fri_AM_Contra!K15','=Fri_PM!K15','=Fri_PM_Contra!K15',	'=Fri_OFF_Inbound!K15','=Fri_OFF_Outbound!K15'),
-            ('=SUM(M18:M20)'	,'=SUM(N18:N20)'	,'=SUM(O18:O20)'	,'=SUM(P18:P20)','=SUM(Q18:Q20)'),
-            ('','','','','')
-            ] 
-        
+            ('=Fri_AM_Contra!K10','=Fri_PM!K10','=Fri_PM_Contra!K10','=Fri_OFF_Inbound!K10','=Fri_OFF_Outbound!K10'),
+            ('=Fri_AM_Contra!K11','=Fri_PM!K11','=Fri_PM_Contra!K11','=Fri_OFF_Inbound!K11','=Fri_OFF_Outbound!K11'),
+            ('=Fri_AM_Contra!K12','=Fri_PM!K12','=Fri_PM_Contra!K12','=Fri_OFF_Inbound!K12','=Fri_OFF_Outbound!K12'),
+            ('=Fri_AM_Contra!K13','=Fri_PM!K13','=Fri_PM_Contra!K13','=Fri_OFF_Inbound!K13','=Fri_OFF_Outbound!K13'),
+            ('=Fri_AM_Contra!K14','=Fri_PM!K14','=Fri_PM_Contra!K14','=Fri_OFF_Inbound!K14','=Fri_OFF_Outbound!K14'),
+            ('=Fri_AM_Contra!K15','=Fri_PM!K15','=Fri_PM_Contra!K15','=Fri_OFF_Inbound!K15','=Fri_OFF_Outbound!K15'),
+            ('=Fri_AM_Contra!K16','=Fri_PM!K16','=Fri_PM_Contra!K16','=Fri_OFF_Inbound!K16','=Fri_OFF_Outbound!K16'),
+            ('=Fri_AM_Contra!K17','=Fri_PM!K17','=Fri_PM_Contra!K17','=Fri_OFF_Inbound!K17','=Fri_OFF_Outbound!K17'),
+            ('=Fri_AM_Contra!K18','=Fri_PM!K18','=Fri_PM_Contra!K18','=Fri_OFF_Inbound!K18','=Fri_OFF_Outbound!K18'),
+            ('=Fri_AM_Contra!K19','=Fri_PM!K19','=Fri_PM_Contra!K19','=Fri_OFF_Inbound!K19','=Fri_OFF_Outbound!K19'),
+            ('=Fri_AM_Contra!K20','=Fri_PM!K20','=Fri_PM_Contra!K20','=Fri_OFF_Inbound!K20','=Fri_OFF_Outbound!K20'),
+            ('=Fri_AM_Contra!K21','=Fri_PM!K21','=Fri_PM_Contra!K21','=Fri_OFF_Inbound!K21','=Fri_OFF_Outbound!K21'),
+            ('=Fri_AM_Contra!K22','=Fri_PM!K22','=Fri_PM_Contra!K22','=Fri_OFF_Inbound!K22','=Fri_OFF_Outbound!K22'),
+            ]
+
         FormulasList_Fri7 = ['=SUM(L8:Q8)','=SUM(L9:Q9)','=SUM(L10:Q10)','=SUM(L11:Q11)','=SUM(L12:Q12)',
-                             '=SUM(L13:Q13)','=SUM(L14:Q14)','=SUM(L15:Q15)','=SUM(L16:Q16)','','=SUM(L18:Q18)',
-                             '=SUM(L19:Q19)','=SUM(L20:Q20)','=SUM(L21:Q21)',''] #totalcol
-        
-        
-        total_count.write('L7','=Fri_AM!K2',                whitecell_tbordertopleft)
-        total_count.write_row('M7',FormulasList_Fri1,       whitecell_tbordertop)
-        total_count.write('R7','=SUM(L7:Q7)',               greyalln)
+                            '=SUM(L13:Q13)','=SUM(L14:Q14)','=SUM(L15:Q15)','','=SUM(L17:Q17)',
+                            '=SUM(L18:Q18)','','=SUM(L20:Q20)','','=SUM(L22:Q22)','=SUM(L23:Q23)','',
+                            '=SUM(L25:Q25)','=SUM(L26:Q26)','=SUM(L27:Q27)','=SUM(L28:Q28)','=SUM(L29:Q29)']
+
+        FormulasList_Fri8 = ['=SUM(M25:M28)','=SUM(N25:N28)','=SUM(O25:O28)','=SUM(P25:P28)','=SUM(Q25:Q28)']
+
+        total_count.write('L8','=Fri_AM!K2',                whitecell_tbordertopleft)
+        total_count.write_row('M8',FormulasList_Fri1,       whitecell_tbordertop)
+        total_count.write('R8','=SUM(L8:Q8)',               greyalln)
         total_count.write('R23','=SUM(L23:Q23)',            greyallu)
-        total_count.write_column('L8',FormulasList_Fri2,    whitecell_tborderleft)
-        
+        total_count.write_column('L9',FormulasList_Fri2,    whitecell_tborderleft)
+
         for i,x in enumerate(FormulasList_Fri6):
-            total_count.write_row(i+7,12,x,border)#bulk of table
+            total_count.write_row(i+8,12,x,border)
+
+        total_count.write('L15','=SUM(L8:L14)',             greyallleft)
+        total_count.write_row('M15',FormulasList_Fri3,      greyb)
+        total_count.write('L23','=SUM(L17,L18,L20,L22)',    greyallleft)
+        total_count.write('L29','=SUM(L25:L28)',            greyallleft)
+        total_count.write_row('M23',FormulasList_Fri4,      greyb)
+        total_count.write('L31','=L15+L23+L29',             greyallbottomleft)
+        total_count.write_row('M31',FormulasList_Fri5,      greyallbottom)
+
+        total_count.write_column('R8',FormulasList_Fri7,    greyallleftright)
+        total_count.write_row('M29',FormulasList_Fri8,      greyb)
+
+        total_count.merge_range('L7:Q7','Suburban',     whiteallu)
+        total_count.merge_range('L16:Q16','Interurban', whiteallu)
+        total_count.merge_range('L24:Q24','Shuttles',   whiteallu)
+
+        #Airtrain
+        FormulasList_AirMtT = [
+                            '=Mon_Thu_AM_Contra!K25',
+                            '=Mon_Thu_PM!K25',
+                            '=Mon_Thu_PM_Contra!K25',
+                            '=Mon_Thu_OFF_Inbound!K25',
+                            '=Mon_Thu_OFF_Outbound!K25']
+
+        FormulasList_AirFri = [
+                                '=Fri_AM_Contra!K25',
+                                '=Fri_PM!K25',
+                                '=Fri_PM_Contra!K25',
+                                '=Fri_OFF_Inbound!K25',
+                                '=Fri_OFF_Outbound!K25']
+
+        total_count.write('L37','=Mon_Thu_AM!K25',whitecell_tbordertopleft)
+        total_count.write('L38','=Fri_AM!K25',whitecell_tborderbottomleft)
+
+        total_count.write_row('M37',FormulasList_AirMtT,whitecell_tbordertop)
+        total_count.write_row('M38',FormulasList_AirFri,whitecell_tborderbottom)
+
+        total_count.write('R37','=SUM(L37:Q37)',greyalln)
+        total_count.write('R38','=SUM(L38:Q38)',greyallu)
         
-        total_count.write('L16','=SUM(L7:L15)',             greyallleft)
-        total_count.write_row('M16',FormulasList_Fri3,      greyb)
-        total_count.write('L21','=SUM(L18:L20)',            greyallleft)
-        total_count.write_row('M21',FormulasList_Fri4,greyb)
-        total_count.write('L23','=L16+L21',greyallbottomleft)
-        total_count.write_row('M23',FormulasList_Fri5,greyallbottom)
         
-        total_count.write_column('R8',FormulasList_Fri7,greyallleftright)
-        
-        
-        
-        #Airtrain 
-        FormulasList_AirMtT = ['=Mon_Thu_AM_Contra!K18','=Mon_Thu_PM!K18','=Mon_Thu_PM_Contra!K18','=Mon_Thu_OFF_Inbound!K18','=Mon_Thu_OFF_Outbound!K18']
-        FormulasList_AirFri = ['=Fri_AM_Contra!K18','=Fri_PM!K18','=Fri_PM_Contra!K18','=Fri_OFF_Inbound!K18','=Fri_OFF_Outbound!K18']
-        
-        total_count.write('L28','=Mon_Thu_AM!K18',whitecell_tbordertopleft)#topleft
-        total_count.write('L29','=Fri_AM!K18',whitecell_tborderbottomleft)#bottomleft
-        total_count.write_row('M28',FormulasList_AirMtT,whitecell_tbordertop)#top row
-        total_count.write_row('M29',FormulasList_AirFri,whitecell_tborderbottom)#bottom row
-        total_count.write('R28','=SUM(L28:Q28)',greyalln)#total mtt
-        total_count.write('R29','=SUM(L29:Q29)',greyallu)#total fri
+        total_count.write('P42','=Sat_Inbound!K25',whitecell_tbordertopleft)#topleft
+        total_count.write('P43','=Sun_Inbound!K25',whitecell_tborderbottomleft)#bottomleft
+        total_count.write('Q42','=Sat_Outbound!K25',whitecell_tbordertop)#top middle
+        total_count.write('Q43','=Sun_Outbound!K25',whitecell_tborderbottom)#bottom middle
+
+        total_count.write('R42','=SUM(P42:Q42)',greyalln)#top right
+        total_count.write('R43','=SUM(P43:Q43)',greyallu)#bottom right
+        total_count.merge_range('L36:Q36','Suburban', whiteallu)
+        total_count.merge_range('P41:Q41','Suburban', whiteallu)
         
         
-        total_count.write('P32','=Sat_Inbound!K18',whitecell_tbordertopleft)#topleft
-        total_count.write('P33','=Sun_Inbound!K18',whitecell_tborderbottomleft)#bottomleft
-        total_count.write('Q32','=Sat_Outbound!K18',whitecell_tbordertop)#top middle
-        total_count.write('Q33','=Sun_Outbound!K18',whitecell_tborderbottom)#bottom middle
-        total_count.write('R32','=SUM(P32:Q32)',greyalln)#top right
-        total_count.write('R33','=SUM(P33:Q33)',greyallu)#bottom right
-        
-        
-        total_count.write('R44','=SUM((4*I23),R23,E44,I44,(4*R28),R29,R32,R33)', greyt)
-        # total_count.write('R44', total_tripcount, greyt)
-        # total_count.write('R46', total_shuttles,  greyt)
-        total_count.merge_range('O44:Q44','Total Weekly Trip Count:', boldright)
-        # total_count.merge_range('O46:Q46','Innercity Shuttles:', boldright)
-        
-        
+        # Total Weekly Trip Count
+        total_count.merge_range('Q59:R60','=SUM((4*I31),R31,E60,I60,(4*R37),R38,R42,R43)', bold13)
+
+        if has_fri_sat_only and apply_ratio_method:
+            varLabel = 'Fri + Sat Trip Count:'
+        else: varLabel = 'Total Weekly Trip Count:'
+
+        total_count.merge_range('L59:P60', varLabel, bold13)
+
+        #Formatting for Rosewood, Sunshine Coast in Interurban ranges
+        for cell in ['B19:H19','K19:Q19','B21:H21','K21:Q21',
+                     'B48:D48','B50:D50','G48:H48','G50:H50']:
+            total_count.conditional_format(cell, {
+                'type': 'no_blanks',
+                'format': grey_note
+            })
+
+        #Day Totals
+        for row, label in zip([54,55,56,57], ['MTh','Fri','Sat','Sun']):
+            total_count.write(f'Q{row}', f'{label} Tot.', whiteallu)
+
+        total_count.write_formula('R54', '=I31+R37', greyalln)
+        total_count.write_formula('R55', '=R31+R38', greyalln)
+        total_count.write_formula('R56', '=E60+R42', greyallu)
+        total_count.write_formula('R57', '=I60+R43', greyallu)
+
+        if has_fri_sat_only and apply_ratio_method:
+
+            Trips_MTh = trip_sets[use_trip_set]['MTh']
+            Trips_Fri = trip_sets[use_trip_set]['Fri']
+            Trips_Sat = trip_sets[use_trip_set]['Sat']
+            Trips_Sun = trip_sets[use_trip_set]['Sun']
+
+            total_count.merge_range('L65:P65', f'{use_trip_set} MTh Trip Count', whiteallu)
+            total_count.merge_range('Q65:R65', Trips_MTh, greyalln)
+
+            total_count.merge_range('L66:P66', f'{use_trip_set} Fri Trip Count', whiteallu)
+            total_count.merge_range('Q66:R66', Trips_Fri, greyalln)
+
+            total_count.merge_range('L67:P67', 'MTh/Fri Ratio', whiteallu)
+            total_count.merge_range('Q67:R67', '=Q65/Q66', percent_border)
+
+            total_count.merge_range('L69:P69', f'{use_trip_set} Sat Trip Count', whiteallu)
+            total_count.merge_range('Q69:R69', Trips_Sat, greyalln)
+
+            total_count.merge_range('L70:P70', f'{use_trip_set} Sun Trip Count', whiteallu)
+            total_count.merge_range('Q70:R70', Trips_Sun, greyalln)
+
+            total_count.merge_range('L71:P71', 'Sun/Sat Ratio', whiteallu)
+            total_count.merge_range('Q71:R71', '=Q70/Q69', percent_border)
+
+            total_count.merge_range('L62:P63','Weekly Trip Count Ratio Method',bold13)
+            total_count.merge_range('Q62:R63','=ROUND(SUM(4*R55*Q67,R55,R56,R56*Q71),-2)',bold13)
+
         info_sheet.write('B2','Trip Count Report', boldleft)
         info_sheet.write('B4','Extracted from \'' + filename + '\'', left)
         info_sheet.write('B6','Report created on ' + datetime.now().strftime("%d-%b-%Y %H:%M"), left)
@@ -1309,7 +1506,7 @@ def TTS_TC(path, mypath = None):
     except Exception as e:
         logging.error(traceback.format_exc())
         if ProcessDoneMessagebox:
-            time.sleep(15)
+            time.sleep(5)
             
 if __name__ == "__main__":
 
