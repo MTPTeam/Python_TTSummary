@@ -226,15 +226,10 @@ def TTS_TC(path, mypath = None):
         else:
             apply_ratio_method = False
             
-        include_inner_crr_shuttles = select_option_safe(
-                "Shuttle Trip Counts",
-                "Do you want to include Inner City and CRR Shuttle trips?",
-                [("Yes", True), ("No", False)]
-            )
-
-        if include_inner_crr_shuttles is None:
-            return  # User clicked X
-
+        if use_trip_set == 'Current':
+            include_inner_crr_shuttles = False
+        else:
+            include_inner_crr_shuttles = True
 
         if tn_doubles:
             print('           Error: Duplicate train numbers')
@@ -1426,7 +1421,7 @@ def TTS_TC(path, mypath = None):
             total_count.merge_range('Q71:R71', '=Q70/Q69', percent_border)
 
             total_count.merge_range('L62:P63','Weekly Trip Count Ratio Method',bold13)
-            total_count.merge_range('Q62:R63','=SUM(4*R55*Q67,R55,R56,R56*Q71)',bold13)
+            total_count.merge_range('Q62:R63','=ROUND(SUM(4*R55*Q67,R55,R56,R56*Q71),-2)',bold13)
 
         info_sheet.write('B2','Trip Count Report', boldleft)
         info_sheet.write('B4','Extracted from \'' + filename + '\'', left)
