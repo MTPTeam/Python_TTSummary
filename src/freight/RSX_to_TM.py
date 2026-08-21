@@ -55,12 +55,31 @@ STAGE_4 = "Stage 4 - Examples"
 ### recover the true category by rereading Regional Path Summary and
 ### joining on that ID.
 
-######################################## SET STAGE HERE ######################################################################################
-STAGE = STAGE_3
 REGIONAL_PATH_SUMMARY_XLSX = r"C:\Users\r919150\Downloads\Regional Path Summary.xlsx"  # same source build_rsx_freight.py reads
-REGIONAL_PATH_SUMMARY_SHEET = STAGE  # match whichever STAGE_SHEETS entry built this RSX
+
+### Stage is no longer hardcoded here - it's inferred from the folder structure
+### of the .rsx file being processed (see infer_stage_from_path below). This looks
+### for "stage 1"/"stage1"/etc in any parent folder name and maps it to the
+### matching sheet name in Regional Path Summary. Override with --stage on the
+### command line if a file isn't sitting under a folder that names its stage.
+STAGE_NUMBER_MAP = {'1': STAGE_1, '2': STAGE_2, '3': STAGE_3, '4': STAGE_4}
 
 
+def infer_stage_from_path(path):
+    """
+    Looks at every folder name in path's absolute directory tree (nearest to
+    the file first) for something matching "stage <digit>" (case-insensitive,
+    optional space/hyphen/underscore between the word and the digit - e.g.
+    "Stage 2", "STAGE-3", "stage_1 expand"). Returns the matching STAGE_x
+    constant, or None if no folder in the path mentions a stage.
+    """
+    abs_dir = os.path.abspath(os.path.dirname(path))
+    parts = re.split(r'[\\/]+', abs_dir)  # split on both separators, in case path is mixed
+    for part in reversed(parts):  # nearest-to-file folder wins
+        match = re.search(r'stage[\s_-]*([1-4])', part, re.IGNORECASE)
+        if match:
+            return STAGE_NUMBER_MAP[match.group(1)]
+    return None
 
 
 ampeak_srt = '06:00:00'
@@ -154,31 +173,118 @@ def load_original_train_types(xlsx_path, sheet_name):
     return lookup
 
 
-ORIGINAL_TRAIN_TYPE_LOOKUP = load_original_train_types(
-    REGIONAL_PATH_SUMMARY_XLSX, REGIONAL_PATH_SUMMARY_SHEET
-)
+ORIGINAL_TRAIN_TYPE_LOOKUP = {}  # populated per-run in TTS_TM, once the stage is known
+BASE_NUMBER_LOOKUP = {}          # {numeric prefix: (matched Service ID, train_type_cd)} - built alongside the above
 
 _fallback_used = []  # tracked so a summary can be printed once, near the end of a run
 
 
+def numeric_prefix(tn):
+    """Returns the leading digit-run of a train number, e.g. '311' from any
+    of '311X', '311D', '311T', or plain '311'. None if tn doesn't start with
+    a digit at all."""
+    if not tn:
+        return None
+    match = re.match(r'\d+', tn)
+    return match.group(0) if match else None
+
+
+def build_base_number_lookup(lookup):
+    """
+    Builds {numeric prefix: (Service ID, train_type_cd)} from
+    ORIGINAL_TRAIN_TYPE_LOOKUP, so a train number's trailing letter can be
+    ignored entirely when falling back to a base service (e.g. "311X" and
+    "311D" both resolve to whichever Service ID sharing the "311" prefix is
+    in Regional Path Summary - "311T" or otherwise, it doesn't matter which
+    letter it uses). If more than one Service ID shares the same numeric
+    prefix with different train_type_cd values, the first one seen wins and
+    a warning is printed - this shouldn't normally happen since they're meant
+    to represent the same underlying service.
+    """
+    base_lookup = {}
+    conflicts = []
+    for svc_id, train_type in lookup.items():
+        prefix = numeric_prefix(svc_id)
+        if prefix is None:
+            continue
+        if prefix in base_lookup and base_lookup[prefix][1] != train_type:
+            conflicts.append((prefix, base_lookup[prefix], (svc_id, train_type)))
+            continue
+        base_lookup.setdefault(prefix, (svc_id, train_type))
+
+    if conflicts:
+        print(f"WARNING: {len(conflicts)} numeric train prefix(es) matched more than one "
+              f"Service ID with different train_type_cd - keeping the first seen for each, "
+              f"double check these manually: {conflicts}")
+
+    return base_lookup
+
+
 def get_original_train_type(tn):
     """
-    Looks up tn's original train_type_cd. Some train numbers (seen so far always
-    ending in 'X', e.g. "311X") are additional/empty/repositioning legs that don't
-    have their own row in Regional Path Summary - only the base scheduled service
-    does (e.g. "311T"). For those, fall back to the base ID with the letter suffix
-    swapped for 'T', since they represent the same underlying service/rolling stock.
+    Looks up tn's original train_type_cd. Some train numbers (e.g. additional/
+    empty/repositioning legs like "311X") don't have their own row in Regional
+    Path Summary - only a base scheduled service sharing the same leading
+    digits does (e.g. "311T", or "311D", or just "311" - whatever letter, if
+    any, that base service happens to use). For those, fall back to matching
+    on the numeric prefix alone via BASE_NUMBER_LOOKUP, ignoring the trailing
+    letter on both tn and the candidate Service ID.
     """
     if tn in ORIGINAL_TRAIN_TYPE_LOOKUP:
         return ORIGINAL_TRAIN_TYPE_LOOKUP[tn]
 
-    if tn and not tn[-1].isdigit():
-        base_id = tn[:-1] + 'T'
-        if base_id in ORIGINAL_TRAIN_TYPE_LOOKUP:
+    prefix = numeric_prefix(tn)
+    if prefix and prefix in BASE_NUMBER_LOOKUP:
+        base_id, train_type = BASE_NUMBER_LOOKUP[prefix]
+        if base_id != tn:
             _fallback_used.append((tn, base_id))
-            return ORIGINAL_TRAIN_TYPE_LOOKUP[base_id]
+        return train_type
 
     return ''
+
+
+### --- Stage 4 coal-train override ---
+### Stage 4 trains are synthetic examples that don't have a matching Service ID
+### row in Regional Path Summary, so the normal get_original_train_type() lookup
+### (and its 'X'->'T' fallback) can't resolve them - it'll just return ''.
+### For Stage 4 ONLY, the original train type is instead inferred directly from
+### the train's first/last station in the RSX itself:
+###   - starts at LJN  -> empty coal train
+###   - ends   at LJN  -> loaded coal train
+### Adjust the two label strings below if Regional Path Summary/other stages
+### use different text for these categories - they're currently set to match
+### the trainTypeId values seen in the Stage 4 RSX examples (e.g. "Loaded_Coal").
+STAGE4_EMPTY_COAL_LABEL = 'Empty_Coal'
+STAGE4_LOADED_COAL_LABEL = 'Loaded_Coal'
+
+STAGE4_PATTERN_RE = re.compile(r'stage[\s_-]*4', re.IGNORECASE)
+
+
+def is_stage4_train(train_elem):
+    """True if this <train> element's pattern attribute (e.g.
+    "/Freight/Stage4/34") identifies it as a Stage 4 train."""
+    pattern = train_elem.attrib.get('pattern', '')
+    return bool(STAGE4_PATTERN_RE.search(pattern))
+
+
+def resolve_original_train_type(tn, train_elem, oID, dID):
+    """
+    Returns the 'Original Train Type' value for a train, handling the Stage 4
+    special case: Stage 4 trains skip the Regional Path Summary lookup
+    entirely and are classified purely by whether they start or end at LJN
+    (see module note above). Every other stage keeps using the normal
+    get_original_train_type() lookup/fallback.
+    """
+    if is_stage4_train(train_elem):
+        if oID == 'LJN':
+            return STAGE4_EMPTY_COAL_LABEL
+        if dID == 'LJN':
+            return STAGE4_LOADED_COAL_LABEL
+        ### Neither end is LJN - not a coal train covered by this rule.
+        ### Fall back to the normal lookup rather than silently guessing.
+        return get_original_train_type(tn)
+
+    return get_original_train_type(tn)
 
 
 ### Column headers for workbook
@@ -300,7 +406,57 @@ non_revenue_stations = [
        
         
 
-def TTS_TM(path, mypath=None, reports=('tm', 'tmfo')):
+def infer_stages_from_pattern(root):
+    """
+    Looks at every <train pattern="..."> attribute in the parsed RSX (e.g.
+    "/Freight/Stage3/11") for a "stage <digit>" segment (case-insensitive,
+    optional space/hyphen/underscore between word and digit). Returns the
+    distinct STAGE_x constants found, in first-seen order, so a file with
+    trains from more than one stage is detected rather than just picking
+    whichever stage the first train happens to be on.
+    """
+    stages_found = []
+    for train in root.iter('train'):
+        pattern = train.attrib.get('pattern', '')
+        match = re.search(r'stage[\s_-]*([1-4])', pattern, re.IGNORECASE)
+        if match:
+            stage = STAGE_NUMBER_MAP[match.group(1)]
+            if stage not in stages_found:
+                stages_found.append(stage)
+    return stages_found
+
+
+def load_combined_train_types(xlsx_path, stages):
+    """
+    Loads and merges the {Service ID: train_type_cd} lookup from each sheet
+    in `stages` (one call to load_original_train_types per sheet, so a
+    mixed-stage RSX gets correct types for every train regardless of which
+    stage it came from). If the same Service ID appears in more than one
+    stage's sheet with a different train_type_cd, the first stage's value
+    wins and a warning is printed - Service IDs shouldn't collide across
+    stages, but this is a safety net, not silent data loss.
+    """
+    combined = {}
+    conflicts = []
+    for stage in stages:
+        stage_lookup = load_original_train_types(xlsx_path, stage)
+        for svc_id, train_type in stage_lookup.items():
+            if svc_id in combined and combined[svc_id] != train_type:
+                conflicts.append((svc_id, combined[svc_id], stage, train_type))
+                continue
+            combined[svc_id] = train_type
+
+    if conflicts:
+        print(f"WARNING: {len(conflicts)} Service ID(s) found in more than one stage's "
+              f"sheet with different train_type_cd - keeping the first stage seen for "
+              f"each, double check these manually: {conflicts}")
+
+    return combined
+
+
+def TTS_TM(path, mypath=None, reports=('tm', 'tmfo'), stage=None):
+
+    global ORIGINAL_TRAIN_TYPE_LOOKUP, BASE_NUMBER_LOOKUP
 
     source_dir = os.path.abspath(os.path.dirname(path))
     dest_dir = os.path.abspath(mypath) if mypath is not None else None
@@ -318,6 +474,43 @@ def TTS_TM(path, mypath=None, reports=('tm', 'tmfo')):
         
         tree = ET.parse(filename)
         root = tree.getroot()
+
+        ### Work out which Regional Path Summary sheet(s) to re-read the original
+        ### train types from. Use the explicit --stage override if one was given
+        ### (single sheet only); otherwise infer from every train's
+        ### pattern="/Freight/StageN/..." attribute in the RSX - if trains come
+        ### from more than one stage, load and merge all of them - falling back
+        ### to the folder path if no pattern mentions a stage at all.
+        if stage is not None:
+            stages = [stage]
+        else:
+            stages = infer_stages_from_pattern(root)
+            if stages:
+                if len(stages) > 1:
+                    print(f"Detected mixed stages from train pattern attributes: "
+                          f"{', '.join(stages)} - merging Regional Path Summary "
+                          f"lookups from all of them")
+                else:
+                    print(f"Inferred {stages[0]!r} from train pattern attribute")
+            else:
+                folder_stage = infer_stage_from_path(path)
+                stages = [folder_stage] if folder_stage is not None else []
+                if stages:
+                    print(f"Inferred {stages[0]!r} from folder path")
+
+        if not stages:
+            print(f"WARNING: could not infer stage from the RSX pattern attributes or "
+                  f"the folder path of {path} - 'Original Train Type' column will be "
+                  f"blank. Pass --stage to set it explicitly.")
+            ORIGINAL_TRAIN_TYPE_LOOKUP = {}
+        else:
+            ORIGINAL_TRAIN_TYPE_LOOKUP = load_combined_train_types(
+                REGIONAL_PATH_SUMMARY_XLSX, stages
+            )
+        ### Numeric-prefix index used by get_original_train_type()'s fallback -
+        ### rebuilt every run so it always matches the lookup dict above.
+        BASE_NUMBER_LOOKUP = build_base_number_lookup(ORIGINAL_TRAIN_TYPE_LOOKUP)
+
         filename = filename[:-4]
         
         filename_xlsx_tm = f'TrainMovements-{filename}.xlsx'
@@ -1227,7 +1420,7 @@ def TTS_TM(path, mypath=None, reports=('tm', 'tmfo')):
                 # to only work for the hardcoded '120' case.
                 for d in decompose_weekday_key(WeekdayKey):
 
-                    original_type = get_original_train_type(tn)
+                    original_type = resolve_original_train_type(tn, train, oID, dID)
 
                     ### If this (train number, weekdayKey) pair was flagged earlier as a
                     ### duplicate, mark the FIRST row we emit for it so it can be
@@ -1428,6 +1621,14 @@ def main():
         action='store_true',
         help='Do not automatically open the generated workbook when finished'
     )
+    parser.add_argument(
+        '--stage',
+        choices=['1', '2', '3', '4'],
+        default=None,
+        help="Which stage's sheet to use in Regional Path Summary (1-4). "
+             "By default this is inferred from the .rsx file's folder path "
+             "(a parent folder named e.g. 'Stage 2'); only pass this to override that."
+    )
     args = parser.parse_args()
 
     rsx_path = args.rsx_path
@@ -1450,7 +1651,8 @@ def main():
         global OpenWorkbook
         OpenWorkbook = False
 
-    TTS_TM(rsx_path, mypath=args.output_dir, reports=args.reports)
+    stage_override = STAGE_NUMBER_MAP[args.stage] if args.stage else None
+    TTS_TM(rsx_path, mypath=args.output_dir, reports=args.reports, stage=stage_override)
 
 
 if __name__ == "__main__":
