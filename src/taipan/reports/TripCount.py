@@ -36,10 +36,21 @@ ampeak_end = '09:00:00'
 pmpeak_srt = '15:30:00'
 pmpeak_end = '18:30:00'
 
-Trips_MTh = 1343
-Trips_Fri = 1381
-Trips_Sat = 928
-Trips_Sun = 822
+trip_sets = {
+    'Current': {
+        'MTh': 1343,
+        'Fri': 1381,
+        'Sat': 928,
+        'Sun': 822
+    },
+
+    '3STT': {
+        'MTh': 1533,
+        'Fri': 1571,
+        'Sat': 1252,
+        'Sun': 1186
+    }
+}
 
 ### Used to filter out stations where passengers cannot board
 ### Want to only iterate over revenue locations
@@ -175,7 +186,14 @@ def TTS_TC(path, mypath = None):
             filename_xlsx = f'TripCountCENTRAL-{filename}.xlsx'
         workbook = xlsxwriter.Workbook(filename_xlsx)
         
-    
+        use_trip_set = '3STT' if any(
+                        {'RSW','BDT'} == {
+                            list(t.iter('entry'))[0].attrib['stationID'],
+                            list(t.iter('entry'))[-1].attrib['stationID']
+                        }
+                        for t in root.findall('.//train')
+                    ) else 'Current'
+
         ### Check for duplicate train numbers before executing the script
         ### Print warning for user if duplicates exist
         ### Print out all duplicates
@@ -1383,25 +1401,31 @@ def TTS_TC(path, mypath = None):
         total_count.write_formula('R57', '=I60+R43', greyallu)
 
         if has_fri_sat_only and apply_ratio_method:
-            total_count.merge_range('L65:P65', 'Current MTh Trip Count', whiteallu)
+
+            Trips_MTh = trip_sets[use_trip_set]['MTh']
+            Trips_Fri = trip_sets[use_trip_set]['Fri']
+            Trips_Sat = trip_sets[use_trip_set]['Sat']
+            Trips_Sun = trip_sets[use_trip_set]['Sun']
+
+            total_count.merge_range('L65:P65', f'{use_trip_set} MTh Trip Count', whiteallu)
             total_count.merge_range('Q65:R65', Trips_MTh, greyalln)
 
-            total_count.merge_range('L66:P66', 'Current Fri Trip Count', whiteallu)
+            total_count.merge_range('L66:P66', f'{use_trip_set} Fri Trip Count', whiteallu)
             total_count.merge_range('Q66:R66', Trips_Fri, greyalln)
 
             total_count.merge_range('L67:P67', 'MTh/Fri Ratio', whiteallu)
             total_count.merge_range('Q67:R67', '=Q65/Q66', percent_border)
 
-            total_count.merge_range('L69:P69', 'Current Sat Trip Count', whiteallu)
+            total_count.merge_range('L69:P69', f'{use_trip_set} Sat Trip Count', whiteallu)
             total_count.merge_range('Q69:R69', Trips_Sat, greyalln)
 
-            total_count.merge_range('L70:P70', 'Current Sun Trip Count', whiteallu)
+            total_count.merge_range('L70:P70', f'{use_trip_set} Sun Trip Count', whiteallu)
             total_count.merge_range('Q70:R70', Trips_Sun, greyalln)
 
             total_count.merge_range('L71:P71', 'Sun/Sat Ratio', whiteallu)
             total_count.merge_range('Q71:R71', '=Q70/Q69', percent_border)
 
-            total_count.merge_range('L62:P63','Estimated Weekly Trip Count Ratio Method',bold13)
+            total_count.merge_range('L62:P63','Weekly Trip Count Ratio Method',bold13)
             total_count.merge_range('Q62:R63','=SUM(4*R55*Q67,R55,R56,R56*Q71)',bold13)
 
         info_sheet.write('B2','Trip Count Report', boldleft)
