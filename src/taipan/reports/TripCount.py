@@ -82,11 +82,11 @@ non_revenue_stations = [
     'WOBS',
     'PETS',
     'KPRS',
-    'RDKS'
+    'RDKS',
     'BQYS',
     'ROBS',
     'WUL',
-    'WFE'
+    'WFE',
     'FEE',
     'WFW',
     

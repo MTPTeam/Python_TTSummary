@@ -222,3 +222,15 @@ backups/
 # ignore pdfs 
 *.pdf
 
+# Added by code-review-graph
+.code-review-graph/
+
+# Local Cursor and AI tooling configuration
+.cursor/
+.cursorrules
+AGENTS.md
+
+# Claude md ignore
+CLAUDE.md
+
+
